@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>问知轩 · 于无形之境，寻智慧之光</title>
+  <meta name="description" content="问知轩：以问题为原点的知识与认知设计实验室。知识涌现范式、问际空间理论、智慧涟漪律。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;700;900&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* 墨色系 */
+      --bg-ink: #0b1720;
+      --bg-ink-2: #0f2430;
+      --text-main: #e6f1f5;
+      --text-dim: #b7c8cf;
+      --accent-1: #2ec4b6;   /* 湖蓝 */
+      --accent-2: #ff9f1c;   /* 琥珀 */
+      --accent-3: #6a7dff;   /* 靛光 */
+      --line: #1e3a46;
+      --card: rgba(255,255,255,0.04);
+      --card-border: rgba(255,255,255,0.08);
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      color: var(--text-main);
+      font-family: 'Noto Serif SC', serif;
+      background: radial-gradient(1200px 800px at 10% -10%, #123247 0%, transparent 60%),
+                  radial-gradient(900px 700px at 120% 10%, #0e2330 0%, transparent 60%),
+                  linear-gradient(180deg, var(--bg-ink) 0%, var(--bg-ink-2) 100%);
+      overflow-x: hidden;
+    }
+
+    /* 问纹背景（细密问号脉冲感的线网） */
+    body::before {
+      content: "";
+      position: fixed; inset: 0; z-index: -1;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(46,196,182,0.06), transparent 45%),
+        radial-gradient(circle at 80% 20%, rgba(106,125,255,0.06), transparent 40%),
+        radial-gradient(circle at 60% 70%, rgba(255,159,28,0.06), transparent 40%),
+        repeating-linear-gradient(90deg, transparent 0 38px, rgba(255,255,255,0.03) 38px 39px),
+        repeating-linear-gradient(0deg, transparent 0 38px, rgba(255,255,255,0.03) 38px 39px);
+      mask: radial-gradient(1200px 1200px at 50% 30%, black 45%, transparent 80%);
+      pointer-events: none;
+    }
+
+    /* 左侧品牌竖排导览（桌面端独有） */
+    .brand-rail {
+      position: fixed; left: 20px; top: 0; bottom: 0;
+      display: grid; place-items: center; width: 60px;
+      border-right: 1px solid var(--line);
+      pointer-events: none;
+    }
+    .brand-rail__wordmark {
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      letter-spacing: 2px;
+      font-weight: 900;
+      font-size: 22px;
+      color: var(--accent-1);
+      text-shadow: 0 0 12px rgba(46,196,182,0.25);
+      pointer-events: auto;
+      user-select: none;
+    }
+
+    /* 顶部滚动进度条 */
+    .progress {
+      position: fixed; top: 0; left: 0; height: 3px; width: 0%; z-index: 8888;
+      background: linear-gradient(90deg, var(--accent-1), var(--accent-3), var(--accent-2));
+      box-shadow: 0 0 12px rgba(46,196,182,0.5);
+      transition: width 0.1s linear;
+    }
+
+    /* 顶部最小化导航（移动端/内容内联） */
+    .nav {
+      position: fixed; left: 90px; right: 24px; top: 18px; z-index: 999;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(6px);
+      border-radius: 14px;
+      padding: 10px 14px;
+      box-shadow: var(--shadow);
+    }
+    .nav__brand {
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: 22px; color: var(--accent-1);
+      text-decoration: none;
+    }
+    .nav__links { display: flex; gap: 18px; }
+    .nav__link {
+      color: var(--text-dim); text-decoration: none; font-size: 14px;
+      letter-spacing: 1px; transition: color .2s ease;
+    }
+    .nav__link:hover { color: var(--text-main); }
+
+    /* 容器与区块 */
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    section { padding: 110px 0; position: relative; }
+
+    /* 英雄区：非同质化的编辑化版式 */
+    .hero {
+      display: grid; grid-template-columns: 1fr 0.8fr; gap: 60px;
+      align-items: end; min-height: 92vh;
+    }
+    .eyebrow { color: var(--accent-1); font-size: 14px; letter-spacing: 6px; margin-bottom: 18px; opacity: .9; }
+    .title {
+      font-weight: 900; line-height: 1.1; margin: 0 0 18px 0;
+      font-size: clamp(34px, 6.2vw, 78px);
+      background: linear-gradient(90deg, #fff, #a7d5ce 60%, #d8c7a8);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .lead { color: var(--text-dim); font-size: 18px; line-height: 1.8; max-width: 720px; }
+    .cta {
+      margin-top: 28px; display: flex; gap: 14px; flex-wrap: wrap;
+    }
+    .btn {
+      appearance: none; border: none; cursor: pointer; text-decoration: none;
+      padding: 12px 18px; border-radius: 14px; font-weight: 600; letter-spacing: .5px;
+      color: #0c1216; background: linear-gradient(135deg, var(--accent-1), #a7f5ea);
+      box-shadow: 0 8px 24px rgba(46,196,182,0.25);
+    }
+    .btn.secondary { background: transparent; color: var(--text-main); border: 1px solid var(--card-border); }
+    .btn.secondary:hover { border-color: rgba(255,255,255,0.2); }
+
+    /* 右侧“问阵”画布：纯 CSS 几何，替代粒子常见风格 */
+    .constellation {
+      height: 480px; border-radius: 22px; position: relative; overflow: hidden;
+      background:
+        radial-gradient(120px 120px at 30% 30%, rgba(46,196,182,0.16), transparent 60%),
+        radial-gradient(160px 160px at 70% 40%, rgba(106,125,255,0.16), transparent 60%),
+        radial-gradient(200px 200px at 50% 70%, rgba(255,159,28,0.13), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow);
+      isolation: isolate;
+    }
+    .orb {
+      position: absolute; width: 6px; height: 6px; border-radius: 50%;
+      background: white; box-shadow: 0 0 10px rgba(255,255,255,0.6);
+      opacity: .8; transform: translate(-50%, -50%);
+    }
+    .orb--a { left: 20%; top: 35%; }
+    .orb--b { left: 55%; top: 20%; }
+    .orb--c { left: 72%; top: 58%; }
+    .orb--d { left: 38%; top: 72%; }
+    .link-line {
+      position: absolute; inset: 0; pointer-events: none;
+      background-image:
+        linear-gradient( to right, transparent 19.8%, rgba(255,255,255,0.08) 20%, transparent 20.2% ),
+        linear-gradient( to bottom, transparent 29.8%, rgba(255,255,255,0.08) 30%, transparent 30.2% );
+      background-size: 500px 1px, 1px 380px;
+      background-position: 0 0, 0 0;
+      mix-blend-mode: screen;
+      opacity: .4;
+    }
+
+    /* 编号标题风格 */
+    .section-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 28px; }
+    .no { font-family: 'Ma Shan Zheng', cursive; font-size: 26px; color: var(--accent-2); }
+    .section-title { font-size: 28px; font-weight: 800; letter-spacing: 1px; }
+    .section-note { color: var(--text-dim); font-size: 14px; }
+
+    /* 方法论卡片 */
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 18px; padding: 22px; box-shadow: var(--shadow);
+      transition: transform .2s ease, border-color .2s ease;
+    }
+    .card:hover { transform: translateY(-6px); border-color: rgba(255,255,255,0.18); }
+    .card__title { font-size: 18px; font-weight: 800; margin: 6px 0 8px; }
+    .card__desc { color: var(--text-dim); line-height: 1.75; font-size: 15px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 10px; border-radius: 999px; font-size: 12px;
+      background: linear-gradient(135deg, rgba(46,196,182,0.12), rgba(106,125,255,0.12));
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    /* 提问实验台 */
+    .lab {
+      display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; align-items: start;
+    }
+    .lab__panel { padding: 24px; border-radius: 18px; border: 1px solid var(--card-border); background: var(--card); box-shadow: var(--shadow); }
+    .lab__question {
+      font-size: 20px; line-height: 1.8; min-height: 90px; color: var(--text-main);
+      border-left: 3px solid var(--accent-3); padding-left: 14px; margin: 0 0 16px;
+    }
+    .lab__actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn.ghost { background: transparent; border: 1px solid var(--card-border); color: var(--text-main); }
+
+    /* 路径链接 */
+    .paths { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .path-link { display: block; padding: 18px; border: 1px solid var(--card-border); border-radius: 16px; color: var(--text-main); text-decoration: none; background: var(--card); }
+    .path-link:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-4px); transition: .18s ease; }
+    .path-link small { display: block; color: var(--text-dim); margin-top: 6px; }
+
+    /* 页脚 */
+    footer { padding: 60px 0 40px; border-top: 1px solid var(--line); margin-top: 30px; }
+    .foot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .copyright { margin-top: 20px; color: #96a8af; font-size: 13px; opacity: .8; }
+
+    /* 响应式 */
+    @media (max-width: 1200px) {
+      .hero { grid-template-columns: 1fr; }
+      .constellation { height: 380px; }
+    }
+    @media (max-width: 1024px) {
+      .brand-rail { display: none; }
+      .nav { left: 16px; right: 16px; }
+      .grid-3 { grid-template-columns: 1fr 1fr; }
+      .lab { grid-template-columns: 1fr; }
+      .paths { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      section { padding: 84px 0; }
+      .grid-3 { grid-template-columns: 1fr; }
+      .paths { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+  <aside class="brand-rail" aria-hidden="true">
+    <div class="brand-rail__wordmark">问知轩</div>
+  </aside>
+
+  <nav class="nav">
+    <a href="#home" class="nav__brand">问知轩</a>
+    <div class="nav__links">
+      <a class="nav__link" href="#method">方法</a>
+      <a class="nav__link" href="#lab">实验台</a>
+      <a class="nav__link" href="#paths">路径</a>
+      <a class="nav__link" href="#contact">联系</a>
+    </div>
+  </nav>
+
+  <main class="wrap" id="home">
+    <section>
+      <div class="hero">
+        <div>
+          <div class="eyebrow">于无形之境 · 寻智慧之光</div>
+          <h1 class="title">以问题为原点，点亮你的知识星图</h1>
+          <p class="lead">问知轩是一座以问题为坐标系的认知设计实验室。我们不提供标准答案，而是构建可复用的“提问-生成-校准”方法论，让潜在的洞见从无形处涌现为可操作的知识。</p>
+          <div class="cta">
+            <a class="btn" href="#lab">开启提问</a>
+            <a class="btn secondary" href="#method">了解方法</a>
+          </div>
+        </div>
+        <div class="constellation" aria-hidden="true">
+          <div class="orb orb--a"></div>
+          <div class="orb orb--b"></div>
+          <div class="orb orb--c"></div>
+          <div class="orb orb--d"></div>
+          <div class="link-line"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="method">
+      <div class="section-head">
+        <div class="no">01</div>
+        <div>
+          <div class="section-title">方法论三律</div>
+          <div class="section-note">从“提出问题”到“生成知识”的可复用路径</div>
+        </div>
+      </div>
+      <div class="grid-3">
+        <article class="card">
+          <span class="chip">知识涌现范式</span>
+          <h3 class="card__title">由隐入显：从心智火种到知识星河</h3>
+          <p class="card__desc">每一次探索都是点亮思维星辰的火种。通过递归式探询体系，将内隐于心的直觉与证据构造成可复用、可迁移的知识结构。</p>
+        </article>
+        <article class="card">
+          <span class="chip">问际空间理论</span>
+          <h3 class="card__title">让问与答在同一场域中共振</h3>
+          <p class="card__desc">把求知精神与前沿智能置于统一的“知识场”。在语义、因果、情境三层协同下，完成问题的重述、扩展与聚焦，提升认知分辨率。</p>
+        </article>
+        <article class="card">
+          <span class="chip">智慧涟漪律</span>
+          <h3 class="card__title">触发奇点式跃迁的提问</h3>
+          <p class="card__desc">每个高质量问题如同扰动时空的引力波，触发多轮波纹扩散。通过观测涟漪在不同尺度的变化，捕获可行动的突破口。</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="lab">
+      <div class="section-head">
+        <div class="no">02</div>
+        <div>
+          <div class="section-title">提问实验台</div>
+          <div class="section-note">让今天的一个好问题，改变接下来的行动</div>
+        </div>
+      </div>
+      <div class="lab">
+        <div class="lab__panel">
+          <h4 style="margin:0 0 14px 0">今日之问</h4>
+          <p class="lab__question" id="qtext">如果把“我正在做的事情”抽象成系统，它的输入、状态、转移与奖励各是什么？</p>
+          <div class="lab__actions">
+            <button class="btn" id="nextq">换一个问题</button>
+            <button class="btn ghost" id="copyq">复制问题</button>
+          </div>
+        </div>
+        <div class="lab__panel">
+          <h4 style="margin:0 0 14px 0">如何使用</h4>
+          <ol style="color:var(--text-dim); line-height:1.9; margin:0; padding-left:18px;">
+            <li>选择一个与你当前处境最相关的“今日之问”。</li>
+            <li>用 5 分钟把问题重述 3 次，逐步提高分辨率。</li>
+            <li>给出一个“今天可执行的最小行动”，并约束在 30 分钟内完成。</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section id="paths">
+      <div class="section-head">
+        <div class="no">03</div>
+        <div>
+          <div class="section-title">探索路径</div>
+          <div class="section-note">把方法装进日常：从点状问题到结构化成长</div>
+        </div>
+      </div>
+      <div class="paths">
+        <a class="path-link" href="#">知识殿堂<small>关键概念与术语表</small></a>
+        <a class="path-link" href="#">思想实验<small>将观点置于反例与极端</small></a>
+        <a class="path-link" href="#">智慧课程<small>从问题框架到行动清单</small></a>
+        <a class="path-link" href="#">问学共振<small>与同路人进行对齐与迭代</small></a>
+      </div>
+    </section>
+  </main>
+
+  <footer id="contact" class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div style="font-family:'Ma Shan Zheng',cursive; font-size:28px; color:var(--accent-1); margin-bottom:8px;">问知轩</div>
+        <div style="color:var(--text-dim); max-width:560px; line-height:1.8;">于无形之境，寻智慧之光。我们致力于把深度思考变成可练习的技艺，把好的问题变成可落地的路径。</div>
+      </div>
+      <div>
+        <div style="font-weight:800; margin-bottom:10px;">联系与加入</div>
+        <div style="color:var(--text-dim); line-height:1.9;">
+          <div>邮箱：hello@wenzhixuan.example</div>
+          <div>加入我们：发送你的“今日之问”与一段行动记录</div>
+        </div>
+      </div>
+    </div>
+    <div class="copyright">© <span id="year"></span> 问知轩 · 保留所有权利</div>
+  </footer>
+
+  <script>
+    // 顶部滚动进度
+    const progress = document.getElementById('progress');
+    const setProgress = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const p = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      progress.style.width = p + '%';
+    };
+    window.addEventListener('scroll', setProgress, { passive: true });
+    setProgress();
+
+    // 提问实验台
+    const deepQuestionList = [
+      '如果把“我正在做的事情”抽象成系统，它的输入、状态、转移与奖励各是什么？',
+      '若把目标延迟 10 倍、约束也增加 10 倍，我会如何重构策略？',
+      '当前最关键的未知数是什么？我能以多快的速度把它从未知变成已知？',
+      '如果用“反对者”的视角审视结论，哪条证据最薄弱？',
+      '当我把问题规模缩小到 30 分钟能验证时，最小可行实验是什么？',
+      '若只能以问题的形式进行沟通，我会提出哪 3 个问题来推动团队前进？',
+      '这个决策的反事实世界里，最有可能发生的连锁效应是什么？',
+      '若把答案延后，先把问题写成函数签名，它的参数与返回值该如何命名？'
+    ];
+    const qtext = document.getElementById('qtext');
+    const nextq = document.getElementById('nextq');
+    const copyq = document.getElementById('copyq');
+    nextq.addEventListener('click', () => {
+      const idx = Math.floor(Math.random() * deepQuestionList.length);
+      qtext.textContent = deepQuestionList[idx];
+    });
+    copyq.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(qtext.textContent || ''); copyq.textContent = '已复制'; setTimeout(()=> copyq.textContent='复制问题', 1200); } catch(e) { console.log(e); }
+    });
+
+    // 年份
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
+
+

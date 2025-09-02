@@ -1,0 +1,191 @@
+{
+    "QuickPrompts": {
+      "title": "Quick Examples",
+      "prompt_math": "When the teacher was explaining derivatives, they mentioned 'the limit as Δx approaches 0,' but I don't quite understand why Δx can't simply be equal to 0?",
+      "prompt_language": "What exactly does the Chinese particle '了' mean? Why is it sometimes used and sometimes not?",
+      "prompt_biology": "Why can DNA store and transmit genetic information?",
+      "prompt_physics": "What is the difference between acceleration and velocity? Why is acceleration described as 'the change in velocity'?",
+      "prompt_economics": "What is supply and demand equilibrium in economics?",
+      "prompt_computer": "TCP uses a three-way handshake to establish a connection, but if the packet for the second handshake is lost, will the client keep waiting indefinitely?",
+      "prompt_programing": "What exactly do 'variables' and 'loops' mean in programming? Why are they so important?"
+    },
+    "SettingsPanel": {
+      "title": "Settings",
+      "developerMode": "Developer Mode",
+      "answerCardWaitingTime": "Answer Card Waiting Time",
+      "enableWaitingTime": "Enable Waiting Time",
+      "waitingTime": "Waiting Time",
+      "seconds": "Seconds",
+      "currentSettingOff": "Current Setting: Display answer immediately without waiting",
+      "currentSettingOn": "Current Setting: Display answer after waiting",
+      "tabs": {
+        "general": "General",
+        "model": "Model",
+        "prompt": "Agent Settings",
+        "about": "About"
+      },
+      "header": {
+        "close": "Close"
+      },
+      "language": {
+        "label": "Interface Language",
+        "zh": "中文",
+        "en": "English",
+        "saveHint": "After selecting a language, click the \"Confirm\" button at the bottom to save changes",
+        "changeSuccess": "Language has been switched to English!"
+      },
+      "chatHistory": {
+        "title": "Chat History Management",
+        "export": "Export Chat History",
+        "importLabel": "Import Chat History",
+        "importButton": "Select File",
+        "importTips": "Supports importing previously exported JSON format chat history files",
+        "clearAll": "Clear All Chat History",
+        "clearAllTips": "A backup will be automatically exported before clearing"
+      },
+      "footer": {
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "saved": "Saved",
+        "saveSuccess": "Settings saved!"
+      },
+      "about": {
+        "title": "About WisClick",
+        "email": "Email:",
+        "github": "GitHub:"
+      }
+    },
+    "ModelConfigPanel": {
+      "mainModel": "Main Model Configuration",
+      "optionModel": "Option Model Configuration",
+      "mainModelTip": "Recommend using highly intelligent models like Claude-sonnet, qwq-plus is also quite good. Otherwise, reply errors may occur.",
+      "optionModelTip": "Recommend fast models like gemini-2.0-flash for a quicker answer experience.",
+      "useCustomFullURL": "Use Custom Full URL",
+      "fullURLLabel": "Complete Request URL",
+      "presetLabel": "Preset Configuration",
+      "selectPreset": "Select Preset Configuration",
+      "baseURLLabel": "Base URL",
+      "endpointLabel": "API Path",
+      "apiKeyLabel": "API Key",
+      "modelLabel": "Model Name"
+    },
+    "AgentConfigPanel": {
+      "mainAgent": "Main Model Agent Settings",
+      "learningMode": "Socratic Questioning",
+      "learningModeDesc": "Inspire thinking, lead beyond. Through Q&A interaction, stimulate independent thinking. Think differently.",
+      "learningModeEnglish": "Socratic Questioning (English)",
+      "learningModeEnglishDesc": "Inspire thinking, lead beyond. Through Q&A interaction, stimulate independent thinking. Think differently.",
+      "testMode": "Casual Conversation",
+      "testModeDesc": "Communicate freely, chat naturally.",
+      "optionAiMode": "Precise Response (Predict Answer)",
+      "optionAiModeDesc": "Tailor your options, think from your perspective to answer.",
+      "optionAgent": "Option Model Agent Settings",
+      "selectMode": "Select Agent Mode",
+      "optionDefault": "Please select a mode"
+    },
+    "PromptConfigPanel": {
+      "mainAgent": "Main Model Agent Settings",
+      "optionAgent": "Option Model Agent Settings",
+      "selectMode": "Select Agent Mode",
+      "optionDefault": "Please select a mode",
+      "advancedTitle": "Advanced Settings",
+      "advancedTips": "After selecting a preset mode, the system will automatically apply the prompt settings most suitable for that mode. For more advanced customization, please contact the administrator."
+    },
+    "UserInput": {
+      "placeholder": "Ask what you want to know."
+    },
+    "AnswerCard": {
+      "none": "Blank",
+      "heard": "Heard",
+      "basic": "Basic",
+      "familiar": "Familiar",
+      "expert": "Expert",
+      "custom": "Custom",
+      "aiError": "AI Prediction Failed",
+      "aiErrorTips": "You can provide a custom answer on the right side",
+      "placeholder": "Enter your insights here... (Press Enter to send, Shift + Enter to newline)",
+      "customAnswer": "Custom",
+      "tips1": "Take a moment to pause, reflection has its time. Just ",
+      "tips2": " seconds until the answer finds you.",
+      "tips3": "Truth beyond, thought gets you there.",
+      "questionDetails": "Question"
+    },
+    "WelcomeScreen": {
+      "welcome": "Welcome to ",
+      "title": "WisClick",
+      "description": "Hello, what do you want to learn today? Please directly propose the field or knowledge you want to understand.",
+      "quickStart": "Quick Start"
+    },
+    "HeaderButtons": {
+      "mainModel": "Main Model - Click to open settings",
+      "optionModel": "Option Model - Click to open settings",
+      "settings": "Settings",
+      "newChat": "New Chat",
+      "debug": "Debug",
+      "developerMode": "Developer Mode",
+      "history": "History",
+      "language": "Switch Language"
+    },
+    "ChatLayout": {
+      "pendingQuestions": "Pending Questions",
+      "totalQuestions": "Here are ",
+      "questions": "questions",
+      "answered": "answered"
+    },
+    "ChatWindow": {
+      "thinking": "Thinking..."
+    },
+    "MessageBubble": {
+      "copy": "Copy",
+      "copied": "Copied",
+      "copyError": "Copy failed",
+      "copySuccess": "Copy success",
+      "retry": "Retry",
+      "retryError": "Retry failed",
+      "retrySuccess": "Retry success",
+      "thinking": "Thinking..."
+    },
+    "HistorySidebar": {
+      "title": "Dialogue History",
+      "export": "Export Dialogue History",
+      "import": "Import Dialogue History",
+      "clear": "Clear Dialogue History"
+    },
+    "ChatPage": {
+      "title": "WisClick-Socratic Enlightenment Method",
+      "developerMode": "Developer Mode",
+      "developerModeDesc": "Developer mode allows you to view the current model configuration and prompt.",
+      "initPrompt": "Hello, what do you want to learn today? Please directly propose the field or knowledge you want to understand.",
+      "uiInitPrompt": "Hello, what do you want to learn today? Please directly propose the field or knowledge you want to understand.",
+      "question": "Question",
+      "answer": "Answer",
+      "summary": "Summary",
+      "newChat": "New Chat",
+      "developerModeOn": "Developer mode is on",
+      "developerModeOff": "Developer mode is off"
+    },
+    "QuestionCard": {
+      "exploreQuestion": "Explore Question",
+      "answered": "(Answered)",
+      "confirmed": "Confirmed",
+      "AIPreparing": "AI Preparing...",
+      "AIProcessing": "AI Processing...",
+      "AICompleted": "AI Completed!",
+      "AIError": "AI Prediction Failed",
+      "AIErrorTips": "You can provide a custom answer on the right side",
+      "deleteQuestion": "Delete Question"
+    },
+    "AnswerMessageCard": {
+      "none": "Blank",
+      "heard": "Heard",
+      "basic": "Basic",
+      "familiar": "Familiar",
+      "expert": "Expert",
+      "custom": "Custom",
+      "questionAnswer": "Question Answer"
+    },
+    "SystemPrompts": {
+      "optionAiMode": "# Knowledge Level Assessment Mode\n@Role\nYou will receive a question and play the role of students with different levels of understanding to provide corresponding answers. You need to give 5 different answers, combining the previous explanation to provide appropriate responses.\n\n@Output Format:\n〖none〗I don't understand what the question means〖/none〗\n〖heard〗I don't understand the explanation〖/heard〗\n〖basic〗I have a basic understanding of the question〖/basic〗\n〖familiar〗I'm quite familiar with this question〖/familiar〗\n〖expert〗I have expert-level knowledge of this question〖/expert〗\n\n@Principles:\n- Each statement should be brief and precise, preferably under 20 words\n- Clear distinction between levels\n- Expression matches corresponding level, but avoid terms like \"familiar\" or \"mastered\"\n- Responses should reflect humanized characteristics of corresponding roles\n- Please respond in the same language I use to ask my questions.",
+      "learningMode": "You are a mentor who follows the \"Socratic\" style. Please strictly adhere to all of the following instructions and output formats during conversations to help me (the learner) learn new knowledge through \"continuous thinking and answering your questions\":\n\n---\n\n#### 1. Role Positioning and Goals\n\n1. **Your Role**:  \n   - As a clear-thinking, patient mentor, you will ask questions progressively based on my level of understanding, guiding me to think.  \n   - You cannot directly tell me the final answers or conclusions, but must inspire me to obtain answers gradually through questioning.  \n\n2. **My Role**:  \n   - I am a **completely novice** learner.  \n   - During the conversation, I will try to answer based on your questions, revealing my thinking process; if I don't understand certain concepts, you need to help me understand through further questions or explanations.  \n\n---\n\n#### 2. Conversation Flow\n\n1. **I** raise a question or concept.  \n2. **You** conduct \"knowledge assessment\":  \n   - Consider what prerequisite knowledge I might lack;  \n   - Use appropriate questions to confirm my grasp of these prerequisite concepts.  \n3. **You** teach in layers:  \n   - If I haven't mastered the necessary basic knowledge, you need to explain it to me first;  \n   - After ensuring I understand the prerequisite concepts, lead me back to the initial question and continue with questions or further explanations.  \n4. **You** conduct \"understanding verification\":  \n   - Through 1-3 questions, confirm whether I have truly mastered the content learned;  \n   - If my answer is correct or my thinking is clear, end the current topic or propose a concluding question; if doubts remain, return to step 3.  \n\n---\n\n#### 3. Output Format and Considerations\n\n1. **Using Tags**:  \n   - Use \"〖response〗...〖/response〗\" to wrap **explanations, statements, answers** and other non-question content;  \n   - Use \"〖question〗...〖/question〗\" to wrap **questions**.  \n2. **Single Question Mark Principle**:  \n   - Within a \"〖question〗...〖/question〗\" tag, only one topic question can be included, and only one question mark can appear, ending with the question mark.  \n3. **No Nesting**:  \n   - Tags must not be nested, but must be used independently of each other.  \n4. **For Formulas or Code**:  \n   - You can use \"...\" (inline) or \"$$...$$\" (block) to wrap formulas and code within tags;  \n   - No formulas or code should appear outside of tags.  \n5. **Markdown and Tags**:  \n   - You can use Markdown formatting within \"〖response〗...〖/response〗\", but cannot nest other tags.  \n6. **Multiple Question Scenarios**:  \n   - Multiple questions use multiple \"〖question〗...〖/question〗\" tags, arranged in parallel or in sequence.  \n7. **Self-Check Rules**:  \n   - Before generating an answer, check that tags are completely closed;  \n   - Confirm that each question contains only one question mark;  \n   - Ensure there are no formatting errors or tag nesting.  \n\n---\n\n#### 4. Demonstration (Correct Format) Example\n\n〖response〗Before diving deeper into a topic, I'd like to understand your level of familiarity with it.〖/response〗\n〖question〗Have you heard of the X concept?〖/question〗\n〖question〗What disciplines or fields do you think the X concept might relate to?〖/question〗\n\n- In the example above, each question is placed separately in \"〖question〗...〖/question〗\", and only one question mark appears.\n\n---\n\n#### 5. Additional Notes\n\n- During the conversation, you can return to the \"knowledge assessment\" or \"layered teaching\" stage at any time based on my response.  \n- When you determine that I understand the current question, you can end the topic with a concluding \"〖response〗\" and a final \"〖question〗...〖/question〗\" (e.g., \"Do you have any other questions you'd like to discuss?\").  \n- **Do not** add unnecessary examples or content unrelated to this prompt in the dialogue output.  \n\n---\n\n> **Remember**: You must follow the above rules for dialogue, all output must be in the corresponding tags, and there should be no errors of multiple question marks or nested tags. Use clear and understandable examples from everyday life in the conversation, explaining to the user as if they were an elementary school student."
+    }
+  }

@@ -1,0 +1,31 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Main Logo -->
+  <g transform="translate(20, 20)">
+    <!-- Circular Background -->
+    <circle 
+      cx="80" 
+      cy="80" 
+      r="80" 
+      fill="#2563eb"
+    />
+    
+    <!-- Abstract Book Pages -->
+    <path 
+      d="M 40 50
+         C 60 40, 100 40, 120 50
+         L 120 110
+         C 100 100, 60 100, 40 110
+         Z" 
+      fill="#ffffff"
+    />
+    
+    <!-- Light Ray Effect -->
+    <path 
+      d="M 80 20
+         L 80 140" 
+      stroke="#ffffff" 
+      stroke-width="8"
+      stroke-linecap="round"
+    />
+  </g>
+</svg>
