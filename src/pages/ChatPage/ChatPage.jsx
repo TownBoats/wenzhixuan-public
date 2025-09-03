@@ -179,7 +179,7 @@ const ChatPage = ({ className }) => {
       
     } catch (error) {
       console.error("Error:", error);
-      alert("发送消息时出错");
+      alert("发送消息时出错，请检查api配置");
     } finally {
       setIsLoading(false);
     }

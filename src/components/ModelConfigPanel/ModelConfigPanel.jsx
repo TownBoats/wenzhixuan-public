@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 // 预设已移除，使用纯自定义模式
 import { useTranslation } from 'react-i18next';
+import ConfigManager from '../../utils/ConfigManager';
 
 // 预设相关 UI 已移除
 
@@ -19,6 +20,8 @@ const ModelConfigPanel = ({
     model: currentConfig?.model || '',
     fullURL: currentConfig?.fullURL || ''
   });
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,6 +45,78 @@ const ModelConfigPanel = ({
   // 预设显示名逻辑已移除
 
   // 预设列表已移除
+
+  // 构建请求 URL（与 AgentModel 保持一致）
+  const buildRequestURL = (cfg) => {
+    const url = ConfigManager.buildEndpointUrl(cfg);
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/')) return `${window.location.origin}${url}`;
+    return `${window.location.origin}/${url}`;
+  };
+
+  const handleLoadDefault = () => {
+    const defaultConfig = {
+      baseURL: 'https://open.bigmodel.cn',
+      customEndpoint: '/api/paas/v4/chat/completions',
+      apiKey: 'b8e17bace7ca4c1e94986a712927aae5.myggdGFghhXCq2Jp',
+      model: 'glm-4.5',
+      fullURL: '',
+      useCustomURL: false
+    };
+    setConfig(defaultConfig);
+    onConfigChange(defaultConfig);
+  };
+
+  const handleTestConnection = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const endpoint = buildRequestURL({ ...config, useCustomURL });
+      if (!endpoint || !config.model) {
+        setTestResult({ ok: false, message: t('ModelConfigPanel.invalidConfig') });
+        setTesting(false);
+        return;
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (config.apiKey) {
+        headers['Authorization'] = `Bearer ${config.apiKey}`;
+      }
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        signal: controller.signal,
+        headers,
+        body: JSON.stringify({
+          model: config.model,
+          messages: [
+            { role: 'user', content: 'ping' }
+          ],
+          stream: false,
+          max_tokens: 1,
+          temperature: 0
+        })
+      });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        setTestResult({ ok: true, message: t('ModelConfigPanel.testSuccess') });
+      } else {
+        let errText = '';
+        try { errText = await res.text(); } catch {}
+        setTestResult({ ok: false, message: `${t('ModelConfigPanel.testFailed')} ${res.status} ${res.statusText}${errText ? ' - ' + errText.slice(0, 200) : ''}` });
+      }
+    } catch (e) {
+      setTestResult({ ok: false, message: `${t('ModelConfigPanel.testFailed')} ${e.message}` });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   return (
     <div className="p-4 md:p-5 rounded-xl shadow-sm bg-white border border-gray-200">
@@ -170,8 +245,39 @@ const ModelConfigPanel = ({
           />
         </div>
       </div>
+
+      {/* 按钮区域 */}
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <div className="flex gap-2">
+          <button
+            onClick={handleLoadDefault}
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md active:shadow-inner"
+          >
+            {t('ModelConfigPanel.loadDefault')}
+          </button>
+          <button
+            onClick={handleTestConnection}
+            disabled={testing}
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gray-800 hover:bg-gray-900 text-white disabled:opacity-60 disabled:cursor-not-allowed shadow-sm hover:shadow-md active:shadow-inner"
+          >
+            {testing ? t('ModelConfigPanel.testing') : t('ModelConfigPanel.testConnection')}
+          </button>
+        </div>
+        <div className="text-xs">
+          {testResult && (
+            <span className={testResult.ok ? 'text-green-600' : 'text-red-600'}>
+              {testResult.message}
+            </span>
+          )}
+        </div>
+      </div>
+      {developerMode && (
+        <div className="mt-2 text-[11px] text-gray-500 break-all">
+          Endpoint: {buildRequestURL({ ...config, useCustomURL })}
+        </div>
+      )}
     </div>
   );
 };
 
-export default ModelConfigPanel; 
+export default ModelConfigPanel;

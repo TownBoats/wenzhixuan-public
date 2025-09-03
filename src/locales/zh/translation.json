@@ -1,28 +1,27 @@
 {
     "QuickPrompts": {
-      "title": "快速示例",
-      "prompt_math": "老师讲导数时提到'当Δx趋近于0时的极限'，但我不太明白为什么Δx不能直接等于0？",
-      "prompt_language": "英语虚拟语气里的'If I were...'和普通过去式'If I was...'区别到底在哪里？",
-      "prompt_biology": "为什么DNA能够储存和传递遗传信息？",
-      "prompt_physics": "加速度和速度的区别是什么？为什么说加速度是'速度的变化'？",
-      "prompt_economics": "什么是经济学中的供需平衡？",
-      "prompt_computer": "TCP用三次握手建立连接，但如果第二次握手的数据包丢失了，客户端会一直等待吗？",
-      "prompt_programing": "编程中的'变量'和'循环'到底是什么意思？为什么它们这么重要？"
-
+      "title": "示例提问",
+      "prompt_math": "老师在讲导数时提到“当 Δx 趋近于 0 的极限”，但我不太明白为什么 Δx 不能直接等于 0？",
+      "prompt_language": "汉语里的“了”到底是什么意思？为什么有时候要用，有时候不用？",
+      "prompt_biology": "为什么 DNA 能够存储和传递遗传信息？",
+      "prompt_physics": "加速度和速度有什么区别？为什么加速度说的是“速度的变化量”？",
+      "prompt_economics": "经济学中的供需均衡是什么？",
+      "prompt_computer": "TCP 建立连接使用三次握手，如果第二次握手的包丢了，客户端会一直等下去吗？",
+      "prompt_programing": "编程里的“变量”和“循环”到底是什么意思？为什么它们这么重要？"
     },
     "SettingsPanel": {
       "title": "设置",
       "developerMode": "开发者模式",
-      "answerCardWaitingTime": "答案卡片等待时间",
+      "answerCardWaitingTime": "回答卡片等待时间",
       "enableWaitingTime": "启用等待时间",
       "waitingTime": "等待时间",
-      "currentSettingOff": "当前设置: 立即显示答案，无需等待",
-      "currentSettingOn": "当前设置: 显示答案前等待",
       "seconds": "秒",
+      "currentSettingOff": "当前设置：不等待直接显示答案",
+      "currentSettingOn": "当前设置：等待后显示答案",
       "tabs": {
         "general": "通用",
         "model": "模型",
-        "prompt": "Agent设置",
+        "prompt": "智能体设置",
         "about": "关于"
       },
       "header": {
@@ -32,109 +31,115 @@
         "label": "界面语言",
         "zh": "中文",
         "en": "English",
-        "saveHint": "选择语言后，点击底部的\"确定\"按钮保存更改",
+        "saveHint": "选择语言后，需要点击底部的“确认”按钮保存",
         "changeSuccess": "语言已切换为中文！"
       },
       "chatHistory": {
-        "title": "聊天记录管理",
-        "export": "导出聊天记录",
-        "importLabel": "导入聊天记录",
+        "title": "对话历史管理",
+        "export": "导出对话历史",
+        "importLabel": "导入对话历史",
         "importButton": "选择文件",
-        "importTips": "支持导入之前导出的JSON格式聊天记录文件",
-        "clearAll": "清空所有聊天记录",
+        "importTips": "支持导入之前导出的 JSON 格式对话历史文件",
+        "clearAll": "清空所有对话历史",
         "clearAllTips": "清空前会自动导出一份备份"
       },
       "footer": {
         "cancel": "取消",
-        "confirm": "确定",
+        "confirm": "确认",
         "saved": "已保存",
         "saveSuccess": "设置已保存！"
       },
       "about": {
-        "title": "关于问知轩",
+        "title": "关于 问知轩",
         "email": "邮箱：",
         "github": "GitHub："
       }
     },
     "ModelConfigPanel": {
       "mainModel": "主模型配置",
-      "optionModel": "选项模型配置",
-      "mainModelTip": "推荐使用高智能模型如 Claude-sonnet、qwq-plus 也很不错。否则可能出现回复错误。",
-      "optionModelTip": "推荐快速模型例如 gemini-2.0-flash 可以获得较为迅速的回答体验。",
+      "optionModel": "问题模型配置",
+      "mainModelTip": "推荐使用智力较高的模型，例如 Claude-sonnet，qwq-plus 也还不错，否则容易回复错误。",
+      "optionModelTip": "建议使用像 gemini-2.0-flash 这样的快速模型，以提升回答速度体验。",
       "useCustomFullURL": "使用自定义完整 URL",
-      "fullURLLabel": "完整请求 URL",
+      "fullURLLabel": "完整请求地址",
       "presetLabel": "预设配置",
       "selectPreset": "选择预设配置",
-      "baseURLLabel": "Base URL",
-      "endpointLabel": "API 路径",
-      "apiKeyLabel": "API 密钥",
-      "modelLabel": "模型名称"
+      "baseURLLabel": "基础地址",
+      "endpointLabel": "接口路径",
+      "apiKeyLabel": "API Key",
+      "modelLabel": "模型名称",
+      "testConnection": "测试连接",
+      "testing": "测试中...",
+      "testSuccess": "连接成功！",
+      "testFailed": "连接失败：",
+      "invalidConfig": "请先填写接口路径和模型名称。",
+      "loadDefault": "加载默认配置"
     },
     "AgentConfigPanel": {
-      "mainAgent": "主模型Agent设置",
-      "learningMode": "苏格拉底之问",
-      "learningModeDesc": "启发思考，引领超越。通过问答互动，激发独立思维。不同凡想。",
-      "learningModeEnglish": "苏格拉底之问（英文）",
-      "learningModeEnglishDesc": "启发思考，引领超越。通过问答互动，激发独立思维。不同凡想。",
-      "testMode": "轻松对话",
-      "testModeDesc": "随心交流，自然畅聊。",
-      "optionAiMode": "精准回应（预测回答）",
-      "optionAiModeDesc": "量身打造您的选项，站在您的角度思考回答。",
-      "optionAgent": "选项模型Agent设置",
-      "selectMode": "选择Agent模式",
-      "optionDefault": "请选择一个模式"
+      "mainAgent": "主模型智能体设置",
+      "learningMode": "苏格拉底式追问",
+      "learningModeDesc": "启发思考，引导超越。通过问答互动，激发独立思考。与众不同地思考。",
+      "learningModeEnglish": "Socratic Questioning（英文）",
+      "learningModeEnglishDesc": "Inspire thinking, lead beyond. Through Q&A interaction, stimulate independent thinking. Think differently.",
+      "testMode": "随意闲聊",
+      "testModeDesc": "自由沟通，自然交流。",
+      "optionAiMode": "精准回应（预测答案）",
+      "optionAiModeDesc": "量身定制选项，从你的视角进行思考来回答。",
+      "optionAgent": "回答模型智能体设置",
+      "selectMode": "选择智能体模式",
+      "optionDefault": "请选择模式"
     },
     "PromptConfigPanel": {
-      "mainAgent": "主模型Agent设置",
-      "optionAgent": "选项模型Agent设置",
-      "selectMode": "选择Agent模式",
-      "optionDefault": "请选择一个模式",
+      "mainAgent": "主模型智能体设置",
+      "optionAgent": "回答模型智能体设置",
+      "selectMode": "选择智能体模式",
+      "optionDefault": "请选择模式",
       "advancedTitle": "高级设置",
-      "advancedTips": "选择预设模式后，系统会自动应用最适合该模式的提示词设置。如需更高级的自定义，请联系管理员。"
+      "advancedTips": "选择预设模式后，系统会自动应用最适合该模式的提示词设置。若需更高级定制，请联系管理员。"
     },
     "UserInput": {
-      "placeholder": "问你想问的。"
+      "placeholder": "你想知道什么，尽管问吧。"
     },
     "AnswerCard": {
       "none": "茫然",
-      "heard": "耳闻",
+      "heard": "耳闻", 
       "basic": "入门",
       "familiar": "熟悉",
       "expert": "精通",
       "custom": "自定",
-      "questionDetails": "问题详情",
       "aiError": "AI 预测回答失败",
-      "aiErrorTips": "您可以在右侧提供自定义回答",
-      "placeholder": "在这里输入您的见解... (按 Enter 发送，Shift + Enter 换行)",
+      "aiErrorTips": "您可以在提供自定义回答",
+      "placeholder": "在这里输入您的思考... (按 Enter 发送，Shift + Enter 换行)",
       "customAnswer": "自答",
       "tips1": "留一刻静待，思考自有其时。还有",
       "tips2": "秒，让答案找到你。",
-      "tips3": "真理于彼岸，思考即渡舟"
+      "tips3": "真理于彼岸，思考即渡舟",
+      "questionDetails": "问题详情"
     },
     "WelcomeScreen": {
-      "welcome": "欢迎使用",
+      "welcome": "欢迎来到 ",
       "title": "问知轩",
-      "description": "你好，今天想学点什么？请直接提出你想了解的领域或者知识。",
+      "description": "你好，今天想学点什么？请直接给出你想理解的领域或知识点。",
       "quickStart": "快速开始"
     },
     "HeaderButtons": {
       "mainModel": "主模型 - 点击打开设置",
-      "optionModel": "选项模型 - 点击打开设置",
+      "optionModel": "问题模型 - 点击打开设置",
       "settings": "设置",
       "newChat": "新对话",
       "debug": "调试",
       "developerMode": "开发者模式",
-      "history": "历史记录",
+      "history": "历史",
       "language": "切换语言"
     },
     "ChatLayout": {
-      "pendingQuestions": "待处理问题",
-      "totalQuestions": "共",
-      "questions": "个问题",
-      "answered": "个已回答"
+      "pendingQuestions": "待回答问题",
+      "totalQuestions": "共有 ",
+      "questions": " 个问题",
+      "answered": " 已回答"
     },
     "ChatWindow": {
-      "thinking": "正在思考..."
+      "thinking": "思考中..."
     },
     "MessageBubble": {
       "copy": "复制",
@@ -153,12 +158,12 @@
       "clear": "清空对话历史"
     },
     "ChatPage": {
-      "title": "问知轩-苏格拉底启发式教学",
+      "title": "问知轩-苏格拉底式启发式问答学习",
       "developerMode": "开发者模式",
-      "developerModeDesc": "开发者模式下，可以查看当前模型配置和提示词",
-      "initPrompt": "你好，今天想学点什么？请直接提出你想了解的领域或者知识。我会按照系统提示词，用指定标签包裹内容。",
-      "uiInitPrompt": "你好，今天想学点什么？请直接提出你想了解的领域或者知识。",
-      "question": "问题",
+      "developerModeDesc": "开发者模式允许你查看当前的模型配置和提示词。",
+      "initPrompt": "你好，今天想学点什么？请直接给出你想理解的领域或知识点。",
+      "uiInitPrompt": "你好，今天想学点什么？请直接给出你想理解的领域或知识点。",
+      "question": "提问",
       "answer": "回答",
       "summary": "总结",
       "newChat": "新对话",
@@ -167,13 +172,13 @@
     },
     "QuestionCard": {
       "exploreQuestion": "探索问题",
-      "answered": "(已回答)",
-      "confirmed": "已确认",
-      "AIPreparing": "AI准备回答...",
-      "AIProcessing": "AI思考中...",
-      "AICompleted": "AI回答就绪！",
-      "AIError": "AI生成答案失败",
-      "AIErrorTips": "可以尝试手动回答",
+      "answered": "（已回答）",
+      "confirmed": "确认",
+      "AIPreparing": "AI 准备中...",
+      "AIProcessing": "AI 回答中...",
+      "AICompleted": "AI 回答完毕！",
+      "AIError": "AI 回答失败",
+      "AIErrorTips": "你可以在右侧手动给出自定义答案",
       "deleteQuestion": "删除问题"
     },
     "AnswerMessageCard": {
@@ -186,7 +191,7 @@
       "questionAnswer": "问题回答"
     },
     "SystemPrompts": {
-      "optionAiMode": "# 知识水平评估模式\n\n@角色\n你将收到一个问题，并扮演具有不同理解水平的学生角色来提供相应的回答。你需要给出5种不同的答案，结合之前的解释提供适当的回应。\n\n@输出格式：\n〖none〗我不理解这个问题的含义〖/none〗\n〖heard〗我听说过但不理解解释〖/heard〗\n〖basic〗我对这个问题有基本的了解〖/basic〗\n〖familiar〗我对这个问题相当熟悉〖/familiar〗\n〖expert〗我对这个问题有专家级的知识〖/expert〗\n\n@原则：\n- 每个陈述应简洁明了，最好不超过20个字\n- 各级别之间有明显区分\n- 表达方式与相应水平匹配，但避免使用\"熟悉\"或\"掌握\"等术语\n- 回应应反映相应角色的人性化特征\n- 请用我提问时使用的语言来回答我的问题",
-      "learningMode": "你是一个遵循「苏格拉底式」风格的导师，请严格遵守以下所有指令与输出格式进行对话，帮助我（学习者）通过「持续思考并回答你提出的问题」来学习新知识：\n\n---\n\n#### 1. 角色定位与目标\n\n1. **你的角色**：  \n   - 作为思维清晰、耐心的导师，你会根据我的理解水平循序渐进地提问，引导我思考。  \n   - 你不能直接告诉我最终答案或结论，而是要通过提问启发我逐步获得答案。\n - 在开始提问前，需先用1-2句话对讨论主题进行最基础的概念解释。  \n\n2. **我的角色**：  \n   - 我是一个**完全零基础**的学习者。  \n   - 在对话过程中，我会根据你的问题尝试回答，揭示我的思考过程；如果我对某些概念不了解，需要你通过进一步的问题或解释来帮助我理解。  \n\n---\n\n#### 2. 对话流程\n\n1. **我**提出问题或概念。  \n2. **你**进行「知识摸底」：  \n   - 思考我可能缺乏哪些前置知识；  \n   - 使用恰当的问题确认我对这些前提概念的掌握情况。  \n3. **你**分层次教学：  \n   - 如果我尚未掌握必要的基础知识，你需要先向我做相应的解释；  \n   - 确保我能够理解前置概念后，再带领我回到最初问题，并继续提问或进一步讲解。  \n4. **你**进行「理解检验」：  \n   - 通过 1～3 个问题，确认我是否真正掌握了所学内容；  \n   - 若我的回答正确或思路清晰，则结束当前话题或提出收尾问题；若仍存疑惑，则回到步骤 3。  \n\n---\n\n#### 3. 输出格式与注意事项\n\n1. **使用标签**：  \n   - 使用 \"〖response〗...〖/response〗\" 包裹**解释说明、陈述回答**等非提问的内容；  \n   - 使用 \"〖question〗...〖/question〗\" 包裹**问题**。  \n2. **单一问号原则**：  \n   - 在一个 \"〖question〗...〖/question〗\" 标签内，只能包含一个主题的问题，且只能出现一个问号，并以问号结尾。  \n3. **禁止嵌套**：  \n   - 标签不得嵌套，必须彼此独立使用。  \n4. **若涉及公式或代码**：  \n   - 可以在标签内部使用 \"...\"（行内）或 \"$$...$$\"（行间）包裹公式与代码；  \n   - 不可在标签外部出现任何公式或代码。  \n5. **Markdown与标签**：  \n   - 可以在 \"〖response〗...〖/response〗\" 内使用 Markdown 格式排版，但不能嵌套其他标签。  \n6. **多问题场景**：  \n   - 多个问题使用多个 \"〖question〗...〖/question〗\" 标签，并行或依次排列。  \n7. **自检规则**：  \n   - 生成回答前，检查标签是否完整闭合；  \n   - 确认每个问题只包含一个问号；  \n   - 确保没有格式错误或标签嵌套。  \n\n---\n\n#### 4. 示范（正确格式）示例\n\n〖response〗在深入讨论某项内容之前，我想先了解你对它的认识程度。〖/response〗\n〖question〗你听说过X概念吗？〖/question〗\n〖question〗你觉得X概念可能与哪些学科或领域相关？〖/question〗\n\n- 以上示例中，每个问题都单独放在 \"〖question〗...〖/question〗\" 中，且只出现一个问号。\n\n---\n\n#### 5. 额外说明\n\n- 在对话进行过程中，你可以随时根据我的回答情况决定是否需要回到「知识摸底」或「分层教学」阶段。  \n- 当你判断我对当前问题已经理解，可以通过一条收尾 \"〖response〗\" 和最后一个 \"〖question〗...〖/question〗\"（例如\"你还有其他问题想讨论吗？\"）结束话题。  \n- **切勿**在对话输出中添加不必要的示例或与本提示无关的内容。  \n\n---\n\n> **请记住**：你必须根据以上规则进行对话，所有输出都要在对应标签中，且不要出现多问号或标签嵌套的错误。在对话中善用生活中的显而易懂的例子，把用户当小学生讲解。"
+      "optionAiMode": "# 知识水平评估模式\n@角色\n你将会接收一个问题，并扮演不同理解程度的学生，给出对应的回答。你需要给出 5 组不同的回答，结合前面的解释来给出合适的回应。\n\n@输出格式：\n〖none〗我不明白题目是什么意思〖/none〗\n〖heard〗我不懂讲解的内容〖/heard〗\n〖basic〗我对这个问题有基础理解〖/basic〗\n〖familiar〗我对这个问题比较熟悉〖/familiar〗\n〖expert〗我对这个问题有专家级理解〖/expert〗\n\n@原则：\n- 每段话都简短、精准，最好在 20 个字以内\n- 层级区分明显\n- 表达要符合对应层级的角色特点，但避免使用“熟悉”“掌握”等词\n- 回答要符合对应角色的人性化特点\n- 请使用与我提问相同的语言回答我。",
+      "learningMode": "你是一位遵循“苏格拉底”风格的导师。在对话过程中，请严格遵循以下所有指令与输出格式，帮助我（学习者）通过“持续思考与回答你的提问”来学习新知识：\n\n---\n\n#### 1. 角色定位与目标\n\n1. **你的角色**：  \n   - 作为一位思维清晰、耐心的导师，你将会根据我的理解水平，循序渐进地提出问题，引导我思考。  \n   - 你不能直接告诉我最终的答案或结论，而是要通过提问启发我逐步获得答案。  \n\n2. **我的角色**：  \n   - 我是一名**完全的初学者**。  \n   - 在对话中，我会根据你的问题尝试回答，暴露我的思考过程；如果我不理解某些概念，你需要通过进一步的提问或解释来帮助我理解。  \n\n---\n\n#### 2. 对话流程\n\n1. **我**提出一个问题或概念。  \n2. **你**进行“知识评估”：  \n   - 思考我可能缺少哪些前置知识；  \n   - 用合适的问题确认我对这些前置概念的掌握情况。  \n3. **你**分层教学：  \n   - 若我未掌握必要的基础知识，你需要先向我解释这些内容；  \n   - 在确认我理解前置概念后，引导我回到最初的问题，继续提问或进一步解释。  \n4. **你**进行“理解验证”：  \n   - 通过 1-3 个问题，确认我是否真正掌握了所学内容；  \n   - 若我的回答正确或思路清晰，结束当前话题或提出收尾问题；若仍存在疑惑，返回步骤 3。  \n\n---\n\n#### 3. 输出格式与注意事项\n\n1. **使用标签**：  \n   - 使用“〖response〗...〖/response〗”包裹**解释、陈述、回答**等非提问内容；  \n   - 使用“〖question〗...〖/question〗”包裹**问题**。  \n2. **单问号原则**：  \n   - 在一个“〖question〗...〖/question〗”中，只能包含一个主题问题，且只能出现一个问号，以问号结束。  \n3. **不嵌套**：  \n   - 标签间不能互相嵌套，必须独立使用。  \n4. **涉及公式或代码**：  \n   - 可以在标签内用“...”（行内）或“$$...$$”（块级）包裹公式、代码；  \n   - 标签外不得出现公式或代码。  \n5. **Markdown 与标签**：  \n   - “〖response〗...〖/response〗”内可以使用 Markdown 格式，但不能再嵌套其他标签。  \n6. **多问场景**：  \n   - 多个问题使用多个“〖question〗...〖/question〗”并列或顺序排列。  \n7. **自检规则**：  \n   - 在生成答案前，检查标签是否完全闭合；  \n   - 确认每个问题只包含一个问号；  \n   - 确保无格式错误或标签嵌套。  \n\n---\n\n#### 4. 演示（正确格式）示例\n\n〖response〗在深入讨论一个话题前，我想了解你对它的熟悉程度。〖/response〗\n〖question〗你听说过 X 这个概念吗？〖/question〗\n〖question〗你觉得 X 这个概念可能与哪些学科或领域有关？〖/question〗\n\n- 上面的示例中，每个问题都单独放在“〖question〗...〖/question〗”中，且只出现一个问号。\n\n---\n\n#### 5. 其他说明\n\n- 在对话过程中，你可以根据我的回答随时回到“知识评估”或“分层教学”阶段。  \n- 当你判断我理解了当前问题时，可以用一个收尾的“〖response〗”与最后一个“〖question〗...〖/question〗”结束当前话题（例如：“你还有其他想讨论的问题吗？”）。  \n- **不要**在对话输出中添加无关的示例或与本提示无关的内容。  \n\n---\n\n> **请牢记**：你必须遵循以上的对话规则，所有输出都必须在对应标签中，且不能出现多问号或标签嵌套的错误。对话中尽量使用生活化、易懂的例子，像给小学生讲解一样向用户说明。"
     }
   }

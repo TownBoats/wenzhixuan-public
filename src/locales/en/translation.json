@@ -67,7 +67,13 @@
       "baseURLLabel": "Base URL",
       "endpointLabel": "API Path",
       "apiKeyLabel": "API Key",
-      "modelLabel": "Model Name"
+      "modelLabel": "Model Name",
+      "testConnection": "Test Connection",
+      "testing": "Testing...",
+      "testSuccess": "Connection successful!",
+      "testFailed": "Connection failed:",
+      "invalidConfig": "Please fill in endpoint and model first.",
+      "loadDefault": "Load Default Config"
     },
     "AgentConfigPanel": {
       "mainAgent": "Main Model Agent Settings",
