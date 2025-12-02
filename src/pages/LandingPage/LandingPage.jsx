@@ -128,9 +128,28 @@ const LandingPage = () => {
     // 页面加载时的淡入效果
     document.body.classList.add("loaded");
 
-    // 清理事件监听器
+    // 清理事件监听器和粒子效果
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      
+      // 销毁 particlesJS，停止动画循环
+      if (window.pJSDom && window.pJSDom.length > 0) {
+        window.pJSDom.forEach((pJS) => {
+          if (pJS.pJS && pJS.pJS.fn && pJS.pJS.fn.vendors) {
+            pJS.pJS.fn.vendors.destroypJS();
+          }
+        });
+        window.pJSDom = [];
+      }
+      
+      // 移除 canvas 元素
+      const particlesContainer = document.getElementById('particles-js');
+      if (particlesContainer) {
+        const canvas = particlesContainer.querySelector('canvas');
+        if (canvas) {
+          canvas.remove();
+        }
+      }
     };
   }, []);
 
