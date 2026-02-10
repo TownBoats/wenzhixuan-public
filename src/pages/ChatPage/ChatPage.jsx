@@ -635,6 +635,7 @@ const ChatPage = ({ className }) => {
                 isLoading={isLoading}
                 showQuickPrompts={showQuickPrompts}
                 handleQuickPromptSelect={handleQuickPromptSelect}
+                onOpenSettings={() => setShowSettings(true)}
               />
             ) : (
               <ChatLayout 
