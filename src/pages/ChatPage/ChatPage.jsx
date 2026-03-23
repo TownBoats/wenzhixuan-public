@@ -326,7 +326,7 @@ const ChatPage = ({ className }) => {
     });
 
     const nextMessages = [...messagesRef.current, summaryPair.message];
-    const nextUiMessages = [...uiMessagesRef.current, summaryPair.uiMessage];
+    const nextUiMessages = uiMessagesRef.current;
 
     syncConversationState(nextMessages, nextUiMessages);
     clearAllQuestions();
