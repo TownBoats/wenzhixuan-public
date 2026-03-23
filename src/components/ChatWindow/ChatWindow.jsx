@@ -71,14 +71,18 @@ const ChatWindow = ({
         <div className="max-w-[48rem] mx-auto">
           {messages.map((message, index) => (
             <MessageBubble
-              key={index}
+              key={message.id || index}
               isUser={message.role === "user"}
               content={message.content}
+              status={message.status}
+              error={message.error}
               theme={theme}
               onRetry={
-                message.role === "assistant" 
-                  ? () => onRetryMessage(index)
-                  : () => onRetryUserMessage(index)
+                message.retryable === false
+                  ? undefined
+                  : message.role === "assistant"
+                    ? () => onRetryMessage(message.sourceMessageId || message.id)
+                    : () => onRetryUserMessage(message.sourceMessageId || message.id)
               }
             />
           ))}

@@ -59,7 +59,7 @@ const ModelConfigPanel = ({
     const defaultConfig = {
       baseURL: 'https://open.bigmodel.cn',
       customEndpoint: '/api/paas/v4/chat/completions',
-      apiKey: 'b8e17bace7ca4c1e94986a712927aae5.myggdGFghhXCq2Jp',
+      apiKey: '',
       model: 'glm-4.5',
       fullURL: '',
       useCustomURL: false

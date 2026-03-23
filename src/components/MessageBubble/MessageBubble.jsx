@@ -3,21 +3,32 @@ import MarkdownRenderer from '../MarkdownRenderer/MarkdownRenderer';
 import AnswerMessageCard from '../AnswerMessageCard/AnswerMessageCard';
 import { PulseLoader, BeatLoader, ClipLoader } from 'react-spinners';
 import { useTranslation } from 'react-i18next';
-const MessageBubble = ({ isUser, content = [], onRetry, isLoading = false }) => {
+const MessageBubble = ({
+  isUser,
+  content = [],
+  onRetry,
+  isLoading = false,
+  status = 'completed',
+  error = null
+}) => {
   const [showButtons, setShowButtons] = useState(false);
   const [showCopyTip, setShowCopyTip] = useState(false);
   const { t } = useTranslation();
+  const normalizedContent = Array.isArray(content) ? content : [];
+  const isError = status === 'error';
   const bubbleStyles = {
-    user: content[0]?.type === 'answer-card' 
+    user: normalizedContent[0]?.type === 'answer-card' 
       ? ''
       : 'bg-cyan-50 text-slate-700 border border-cyan-200 rounded-xl',
-    assistant: content[0]?.type === 'answer-card'
+    assistant: normalizedContent[0]?.type === 'answer-card'
       ? ''
-      : 'bg-[#F5F1EA] rounded-xl text-gray-700 border border-gray-300'
+      : isError
+        ? 'bg-red-50 rounded-xl text-red-900 border border-red-200'
+        : 'bg-[#F5F1EA] rounded-xl text-gray-700 border border-gray-300'
   };
 
   const handleCopy = async () => {
-    const text = content
+    const text = normalizedContent
       .map(item => {
         switch (item.type) {
           case 'text':
@@ -45,7 +56,7 @@ const MessageBubble = ({ isUser, content = [], onRetry, isLoading = false }) => 
   };
 
   const renderContent = () => {
-    return content.map((item, index) => {
+    return normalizedContent.map((item, index) => {
       switch (item.type) {
         case 'text':
           return (
@@ -211,14 +222,14 @@ const MessageBubble = ({ isUser, content = [], onRetry, isLoading = false }) => 
       >
         <div 
           className={`relative break-words transition-all ${
-            content[0]?.type === 'answer-card' ? '' : 'px-5 py-4'
+            normalizedContent[0]?.type === 'answer-card' ? '' : 'px-5 py-4'
           } ${
             isUser ? bubbleStyles.user : bubbleStyles.assistant
           } ${
-            content[0]?.type === 'answer-card' ? 'bg-transparent' : ''
+            normalizedContent[0]?.type === 'answer-card' ? 'bg-transparent' : ''
           }`}
         >
-          {showButtons && content[0]?.type !== 'answer-card' && !isLoading && (
+          {showButtons && normalizedContent[0]?.type !== 'answer-card' && !isLoading && (
             <div className="absolute -top-3 right-2 flex gap-1.5">
               {!isUser && onRetry && (
                 <button
@@ -261,6 +272,14 @@ const MessageBubble = ({ isUser, content = [], onRetry, isLoading = false }) => 
           )}
           
           {isLoading ? renderLoading() : renderContent()}
+          {isError && !isUser && (
+            <div className="mt-3 flex items-center gap-2 text-xs text-red-700">
+              <span className="inline-flex h-2 w-2 rounded-full bg-red-500" />
+              <span>
+                {error?.message || t('MessageBubble.failed', { defaultValue: '请求失败，可点击重试。' })}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>

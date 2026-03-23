@@ -3,6 +3,9 @@ import { createPortal } from 'react-dom';
 import UserInput from '../UserInput/UserInput';
 import QuickPrompts from '../QuickPrompts/QuickPrompts';
 import { useTranslation } from 'react-i18next';
+
+const SETUP_GUIDE_DISMISSED_KEY = 'welcome_setup_guide_dismissed';
+
 const WelcomeScreen = ({
   inputText,
   setInputText,
@@ -10,10 +13,15 @@ const WelcomeScreen = ({
   isLoading,
   showQuickPrompts,
   handleQuickPromptSelect,
-  onOpenSettings
+  onOpenSettings,
+  isModelConfigured = false
 }) => {
   const { t } = useTranslation();
-  const [showSetupGuideModal, setShowSetupGuideModal] = useState(true);
+  const [showSetupGuideModal, setShowSetupGuideModal] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const dismissed = window.localStorage.getItem(SETUP_GUIDE_DISMISSED_KEY) === 'true';
+    return !isModelConfigured && !dismissed;
+  });
   const setupGuideTitle = t('WelcomeScreen.setupGuideTitle', {
     defaultValue: '\u4f7f\u7528\u63d0\u793a'
   });
@@ -30,18 +38,37 @@ const WelcomeScreen = ({
     defaultValue: '\u4ec5\u9700\u4e00\u6b65\u914d\u7f6e\uff0c\u5373\u53ef\u5f00\u59cb\u5bf9\u8bdd\u3002'
   });
 
+  const dismissSetupGuide = () => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(SETUP_GUIDE_DISMISSED_KEY, 'true');
+    }
+    setShowSetupGuideModal(false);
+  };
+
   const handleOpenSettings = () => {
     if (onOpenSettings) {
       onOpenSettings();
     }
-    setShowSetupGuideModal(false);
+    dismissSetupGuide();
   };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (isModelConfigured) {
+      setShowSetupGuideModal(false);
+      return;
+    }
+
+    const dismissed = window.localStorage.getItem(SETUP_GUIDE_DISMISSED_KEY) === 'true';
+    setShowSetupGuideModal(!dismissed);
+  }, [isModelConfigured]);
 
   useEffect(() => {
     if (!showSetupGuideModal) return;
     const onKeydown = (event) => {
       if (event.key === 'Escape') {
-        setShowSetupGuideModal(false);
+        dismissSetupGuide();
       }
     };
     window.addEventListener('keydown', onKeydown);
@@ -55,7 +82,7 @@ const WelcomeScreen = ({
           type="button"
           aria-label="Close guide"
           className="absolute inset-0 bg-slate-900/10 backdrop-blur-[1px]"
-          onClick={() => setShowSetupGuideModal(false)}
+          onClick={dismissSetupGuide}
         />
         <div
           role="dialog"
@@ -70,7 +97,7 @@ const WelcomeScreen = ({
           <div className="mt-5 flex justify-end gap-2">
             <button
               type="button"
-              onClick={() => setShowSetupGuideModal(false)}
+              onClick={dismissSetupGuide}
               className="rounded-lg border border-slate-300 bg-white px-3.5 py-1.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
             >
               {closeGuide}

@@ -180,6 +180,16 @@ class ConfigManager {
     if (!normalizedBase) return normalizedEndpoint;
     return normalizedBase + normalizedEndpoint;
   }
+
+  static isModelConfigured(config) {
+    if (!config) return false;
+
+    const hasModel = Boolean(String(config.model || '').trim());
+    const hasApiKey = Boolean(String(config.apiKey || '').trim());
+    const hasEndpoint = Boolean(String(this.buildEndpointUrl(config) || '').trim());
+
+    return hasModel && hasApiKey && hasEndpoint;
+  }
 }
 
 export default ConfigManager; 

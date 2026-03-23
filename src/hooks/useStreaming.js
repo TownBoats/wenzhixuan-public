@@ -31,8 +31,21 @@ export default function useStreaming({ onQuestionFound } = {}) {
   }), [onQuestionFound]);
 
   const end = () => parser.end();
+  const reset = () => {
+    parser.dispose();
+    lastTagRef.current = "response";
+    currResponseRef.current = [];
+    setCurrResponse([]);
+  };
 
-  return { parser, currResponse, currResponseRef, setCurrResponse, end };
+  return {
+    parser,
+    currResponse,
+    currResponseRef,
+    setCurrResponse,
+    end,
+    reset,
+  };
 }
 
 

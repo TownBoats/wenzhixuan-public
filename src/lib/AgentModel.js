@@ -59,14 +59,8 @@ export class AgentModel {
 
   // 主要的完成请求方法
   async getCompletion(messages, onDataReceived, onComplete) {
-    const controller = new AbortController();
     // 触发请求开始回调
     this.callbacks.onRequestStart();
-    
-    const timeoutId = setTimeout(() => {
-      controller.abort();
-      console.warn('请求超时，正在重试...');
-    }, 60000);
 
     let retryCount = 0;
     const maxRetries = 3;
@@ -74,6 +68,12 @@ export class AgentModel {
     let responseStarted = false;
 
     while (retryCount < maxRetries) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        console.warn('请求超时，正在重试...');
+      }, 60000);
+
       try {
         // 确保使用正确的 URL，并且添加正确的斜杠
         const requestURL = this.API_URL.startsWith('http') 
@@ -114,6 +114,10 @@ export class AgentModel {
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        if (!response.body) {
+          throw new Error('响应体为空');
         }
 
         const reader = response.body.getReader();
@@ -179,16 +183,10 @@ export class AgentModel {
 
       } catch (error) {
         console.error(`尝试 ${retryCount + 1} 失败:`, error);
-        
-        // 清理当前请求的资源
         clearTimeout(timeoutId);
-        controller.abort();
 
         if (retryCount === maxRetries - 1) {
-          if (onComplete) {
-            onComplete();
-          }
-          throw new Error(`请求在 ${maxRetries} 次尝试后失败`);
+          throw new Error(`请求在 ${maxRetries} 次尝试后失败: ${error.message}`);
         }
         
         retryCount++;
