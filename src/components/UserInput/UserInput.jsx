@@ -27,7 +27,7 @@ const UserInput = ({ inputText, setInputText, handleSendMessage, isLoading, cent
             outline-none min-h-[56px] max-h-32`}
         />
         <button
-          onClick={handleSendMessage}
+          onClick={() => handleSendMessage()}
           disabled={isLoading || !inputText.trim()}
           className={`absolute right-3 bottom-[12px] p-1.5 rounded-lg transition-all duration-300
             text-cyan-500 disabled:text-slate-300
