@@ -13,6 +13,7 @@ import useChatHistory from "../../hooks/useChatHistory";
 import useAgentsConfig from "../../hooks/useAgentsConfig";
 import useQuestionFlow from "../../hooks/useQuestionFlow";
 import useDeveloperMode from "../../hooks/useDeveloperMode";
+import useRequestLogger from "../../hooks/useRequestLogger";
 import ConfigManager from "../../utils/ConfigManager";
 import {
   createLinkedMessagePair,
@@ -93,8 +94,12 @@ const ChatPage = ({ className }) => {
     parser: responseParser,
     currResponse,
     currResponseRef,
+    currThinking,
+    currThinkingRef,
+    feedThinking,
     end: endParser,
     reset: resetStreaming,
+    resetThinking,
   } = useStreaming({
     onQuestionFound: (content, index) => {
       const question = addQuestion(content, index);
@@ -126,6 +131,16 @@ const ChatPage = ({ className }) => {
   });
 
   const {
+    logs,
+    startLog,
+    markStreaming,
+    appendResponse,
+    appendThinking,
+    finishLog,
+    clearLogs,
+  } = useRequestLogger();
+
+  const {
     questions: singleTurnQuestion,
     selectedQuestion,
     addQuestion,
@@ -135,7 +150,7 @@ const ChatPage = ({ className }) => {
     cancelQuestion,
     deselect,
     clearAllQuestions,
-  } = useQuestionFlow({ optionAgent });
+  } = useQuestionFlow({ optionAgent, logger: { startLog, markStreaming, appendResponse, finishLog } });
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -216,22 +231,36 @@ const ChatPage = ({ className }) => {
       setShowQuickPrompts(false);
       resetStreaming();
 
+      let logId;
       try {
         let streamedResponse = "";
+        logId = startLog('main', requestMessages, null, mainAgent.getRequestMeta());
         await mainAgent.getCompletion(
           requestMessages,
           (content) => {
             streamedResponse += content;
             responseParser.feed(content);
+            appendResponse(logId, content);
+            markStreaming(logId);
           },
-          () => {}
+          () => {},
+          {
+            onReasoning: (chunk) => {
+              feedThinking(chunk);
+              appendThinking(logId, chunk);
+            },
+          }
         );
 
         endParser();
 
-        const assistantUiContent = cloneUiContent(currResponseRef.current);
+        const thinkingText = currThinkingRef.current;
+        const assistantUiContent = [
+          ...(thinkingText ? [{ type: "thinking", value: thinkingText }] : []),
+          ...cloneUiContent(currResponseRef.current),
+        ];
         const assistantText =
-          streamedResponse || extractTextContent(assistantUiContent);
+          streamedResponse || extractTextContent(cloneUiContent(currResponseRef.current));
         const assistantPair = createLinkedMessagePair({
           id: assistantMessageId,
           role: "assistant",
@@ -242,6 +271,7 @@ const ChatPage = ({ className }) => {
               : [{ type: "response", value: assistantText }],
         });
 
+        finishLog(logId, 'success');
         syncConversationState(
           [...baseMessages, assistantPair.message],
           [...baseUiMessages, assistantPair.uiMessage]
@@ -251,6 +281,14 @@ const ChatPage = ({ className }) => {
         return { ok: true, response: assistantText };
       } catch (error) {
         console.error("主对话请求失败:", error);
+        if (logId) finishLog(
+          logId, 'error',
+          error?.message || '请求失败',
+          error?.statusCode ?? null,
+          error?.responseBody ?? null,
+          error?.actualUrl ?? null,
+          error?.requestBodyValues ? JSON.stringify(error.requestBodyValues, null, 2) : null,
+        );
         const failedPair = buildFailedAssistantPair(error, assistantMessageId);
         syncConversationState(
           [...baseMessages, failedPair.message],
@@ -259,16 +297,25 @@ const ChatPage = ({ className }) => {
         return { ok: false, error };
       } finally {
         resetStreaming();
+        resetThinking();
         setIsLoading(false);
       }
     },
     [
+      appendResponse,
+      appendThinking,
       buildFailedAssistantPair,
       currResponseRef,
+      currThinkingRef,
       endParser,
+      feedThinking,
+      finishLog,
       mainAgent,
+      markStreaming,
       resetStreaming,
+      resetThinking,
       responseParser,
+      startLog,
       syncConversationState,
     ]
   );
@@ -614,6 +661,7 @@ const ChatPage = ({ className }) => {
                 onLevelSelect={handleLevelSelect}
                 onCloseAnswer={handleCloseAnswer}
                 currResponse={currResponse}
+                currThinking={currThinking}
               />
             )}
           </div>
@@ -682,6 +730,8 @@ const ChatPage = ({ className }) => {
           messages={messages}
           singleTurnQuestion={singleTurnQuestion}
           histories={histories}
+          logs={logs}
+          clearLogs={clearLogs}
         />
       )}
     </div>

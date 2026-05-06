@@ -40,7 +40,8 @@ const ChatWindow = ({
   onQuestionClick, 
   onRetryMessage,
   onRetryUserMessage,
-  currResponse, 
+  currResponse,
+  currThinking,
   selectedQuestion,
   onLevelSelect,
   onCloseAnswer,
@@ -89,10 +90,14 @@ const ChatWindow = ({
 
           {isLoading && (
             <div>
-              {(currResponse && currResponse.length > 0) ? (
+              {(currThinking || (currResponse && currResponse.length > 0)) ? (
                 <MessageBubble
                   isUser={false}
-                  content={currResponse}
+                  content={[
+                    ...(currThinking ? [{ type: 'thinking', value: currThinking }] : []),
+                    ...(currResponse || []),
+                  ]}
+                  isStreaming={true}
                   theme={theme}
                 />
               ) : (

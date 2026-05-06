@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import MarkdownRenderer from '../MarkdownRenderer/MarkdownRenderer';
 import AnswerMessageCard from '../AnswerMessageCard/AnswerMessageCard';
+import ThinkingBlock from '../ThinkingBlock/ThinkingBlock';
 import { PulseLoader, BeatLoader, ClipLoader } from 'react-spinners';
 import { useTranslation } from 'react-i18next';
 const MessageBubble = ({
@@ -8,6 +9,7 @@ const MessageBubble = ({
   content = [],
   onRetry,
   isLoading = false,
+  isStreaming = false,
   status = 'completed',
   error = null
 }) => {
@@ -181,6 +183,14 @@ const MessageBubble = ({
                 })()
               )}
             </div>
+          );
+        case 'thinking':
+          return (
+            <ThinkingBlock
+              key={index}
+              content={item.value}
+              isStreaming={isStreaming && index === 0}
+            />
           );
         case 'answer-card':
           return (

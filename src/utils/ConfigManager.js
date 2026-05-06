@@ -30,7 +30,9 @@ class ConfigManager {
           apiKey: parsed.apiKey || '',
           model: parsed.model || this.DEFAULT_MAIN_CONFIG.settings.model,
           useCustomURL: parsed.useCustomURL || false,
-          fullURL: parsed.fullURL || ''
+          fullURL: parsed.fullURL || '',
+          enableThinking: parsed.enableThinking || false,
+          thinkingBudget: parsed.thinkingBudget ?? 8000,
         };
       }
     } catch (error) {
@@ -45,7 +47,9 @@ class ConfigManager {
       apiKey: '',
       model: this.DEFAULT_MAIN_CONFIG.settings.model,
       useCustomURL: false,
-      fullURL: ''
+      fullURL: '',
+      enableThinking: false,
+      thinkingBudget: 8000,
     };
   }
   

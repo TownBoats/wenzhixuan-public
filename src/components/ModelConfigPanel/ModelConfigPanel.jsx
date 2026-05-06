@@ -55,6 +55,17 @@ const ModelConfigPanel = ({
     return `${window.location.origin}/${url}`;
   };
 
+  /**
+   * 将完整端点 URL 转换为 AI SDK 使用的 baseURL（与 AgentModel._buildAiSdkBaseUrl 保持一致）。
+   * 用于在设置面板展示实际生效的请求地址。
+   */
+  const buildEffectiveUrl = (cfg) => {
+    const full = buildRequestURL(cfg);
+    if (!full) return '';
+    const base = full.replace(/\/chat\/completions(\?.*)?$/, '');
+    return `${base}/chat/completions`;
+  };
+
   const handleLoadDefault = () => {
     const defaultConfig = {
       baseURL: 'https://open.bigmodel.cn',
@@ -81,38 +92,59 @@ const ModelConfigPanel = ({
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
-      const headers = {
-        'Content-Type': 'application/json',
-      };
+      const headers = { 'Content-Type': 'application/json' };
       if (config.apiKey) {
         headers['Authorization'] = `Bearer ${config.apiKey}`;
       }
 
+      // 使用 stream: true + 完整参数，与实际对话路径保持一致
       const res = await fetch(endpoint, {
         method: 'POST',
         signal: controller.signal,
         headers,
         body: JSON.stringify({
           model: config.model,
-          messages: [
-            { role: 'user', content: 'ping' }
-          ],
-          stream: false,
-          max_tokens: 1,
-          temperature: 0
+          messages: [{ role: 'user', content: 'hi' }],
+          stream: true,
+          max_tokens: 5,
+          temperature: 0,
+          top_p: 1,
+          frequency_penalty: 0,
+          presence_penalty: 0,
         })
       });
       clearTimeout(timeoutId);
 
-      if (res.ok) {
-        setTestResult({ ok: true, message: t('ModelConfigPanel.testSuccess') });
-      } else {
+      if (!res.ok) {
         let errText = '';
         try { errText = await res.text(); } catch {}
-        setTestResult({ ok: false, message: `${t('ModelConfigPanel.testFailed')} ${res.status} ${res.statusText}${errText ? ' - ' + errText.slice(0, 200) : ''}` });
+        // 尝试解析 JSON 以获取更清晰的错误消息
+        let errDetail = errText.slice(0, 400);
+        try {
+          const parsed = JSON.parse(errText);
+          const msg = parsed?.error?.message || parsed?.message;
+          if (msg) errDetail = msg;
+        } catch {}
+        setTestResult({
+          ok: false,
+          statusCode: res.status,
+          message: `HTTP ${res.status} ${res.statusText}`,
+          detail: errDetail,
+        });
+        return;
+      }
+
+      // 读取至少一个 chunk，验证流式响应正常
+      const reader = res.body.getReader();
+      try {
+        const { value } = await reader.read();
+        const preview = value ? new TextDecoder().decode(value).slice(0, 80) : '';
+        setTestResult({ ok: true, message: t('ModelConfigPanel.testSuccess'), detail: preview });
+      } finally {
+        reader.cancel();
       }
     } catch (e) {
-      setTestResult({ ok: false, message: `${t('ModelConfigPanel.testFailed')} ${e.message}` });
+      setTestResult({ ok: false, message: e.name === 'AbortError' ? '连接超时 (15s)' : e.message });
     } finally {
       setTesting(false);
     }
@@ -263,17 +295,55 @@ const ModelConfigPanel = ({
             {testing ? t('ModelConfigPanel.testing') : t('ModelConfigPanel.testConnection')}
           </button>
         </div>
-        <div className="text-xs">
-          {testResult && (
-            <span className={testResult.ok ? 'text-green-600' : 'text-red-600'}>
-              {testResult.message}
-            </span>
+      </div>
+
+      {/* 测试结果区域 */}
+      {testResult && (
+        <div className={`mt-3 rounded-lg border text-xs p-3 ${
+          testResult.ok
+            ? 'bg-green-50 border-green-200 text-green-800'
+            : 'bg-red-50 border-red-200 text-red-800'
+        }`}>
+          <div className="flex items-center gap-2 font-medium">
+            {testResult.ok ? (
+              <svg className="w-4 h-4 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4 text-red-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            )}
+            {testResult.statusCode && (
+              <span className={`font-mono font-bold px-1.5 py-0.5 rounded ${
+                testResult.ok ? 'bg-green-100' : 'bg-red-100'
+              }`}>
+                {testResult.statusCode}
+              </span>
+            )}
+            <span>{testResult.message}</span>
+          </div>
+          {testResult.detail && (
+            <pre className={`mt-2 text-[11px] font-mono whitespace-pre-wrap break-all p-2 rounded ${
+              testResult.ok ? 'bg-green-100/50 text-green-700' : 'bg-red-100/50 text-red-700'
+            }`}>
+              {testResult.ok ? `首个响应数据: ${testResult.detail}` : testResult.detail}
+            </pre>
+          )}
+          {!testResult.ok && (
+            <p className="mt-1.5 text-[11px] text-red-600 opacity-80">
+              测试使用 stream: true 与实际对话相同，404 通常表示模型名称无效。
+            </p>
           )}
         </div>
-      </div>
+      )}
+
       {developerMode && (
-        <div className="mt-2 text-[11px] text-gray-500 break-all">
-          Endpoint: {buildRequestURL({ ...config, useCustomURL })}
+        <div className="mt-2 space-y-1 text-[11px] text-gray-500 break-all">
+          <div>配置 URL: {buildRequestURL({ ...config, useCustomURL })}</div>
+          <div className="text-violet-600">
+            实际 URL (AI SDK): {buildEffectiveUrl({ ...config, useCustomURL })}
+          </div>
         </div>
       )}
     </div>

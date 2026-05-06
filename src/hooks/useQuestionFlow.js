@@ -85,7 +85,7 @@ function generateQuestionId() {
   return `q${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-export default function useQuestionFlow({ optionAgent }) {
+export default function useQuestionFlow({ optionAgent, logger }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const parserRef = useRef(
     new ContentParser(["none", "heard", "basic", "familiar", "expert"])
@@ -115,8 +115,12 @@ export default function useQuestionFlow({ optionAgent }) {
       dispatch({ type: "SET_STATUS", id: question.id, status: "requesting" });
 
       let accumulated = "";
+      const logId = logger?.startLog('option', contextMessages, question.question);
+
       await optionAgent.getCompletion(contextMessages, (chunk) => {
         accumulated += chunk;
+        logger?.markStreaming(logId);
+        logger?.appendResponse(logId, chunk);
         const parsed = parserRef.current.parse(accumulated);
         dispatch({
           type: "SET_ANSWER",
@@ -130,12 +134,16 @@ export default function useQuestionFlow({ optionAgent }) {
           },
         });
         dispatch({ type: "SET_STATUS", id: question.id, status: "responding" });
+      }).catch((err) => {
+        logger?.finishLog(logId, 'error', err?.message || '选项请求失败', err?.statusCode ?? null, err?.responseBody ?? null);
+        throw err;
       });
 
+      logger?.finishLog(logId, 'success');
       dispatch({ type: "SET_STATUS", id: question.id, status: "completed" });
       dispatch({ type: "MARK_FETCHED", id: question.id });
     },
-    [optionAgent]
+    [optionAgent, logger]
   );
 
   const selectQuestion = useCallback((q) => {

@@ -25,6 +25,10 @@ export default function useAgentsConfig({ onMainLoadingChange, onOptionStatusCha
     const endpoint = ConfigManager.buildEndpointUrl(mainModelConfig);
     mainAgent.updateApiConfig(endpoint, mainModelConfig.apiKey);
     mainAgent.setModel(mainModelConfig.model);
+    mainAgent.updateSettings({
+      enableThinking: mainModelConfig.enableThinking ?? false,
+      thinkingBudget: mainModelConfig.thinkingBudget ?? 8000,
+    });
   }, [mainAgent, mainModelConfig]);
 
   useEffect(() => {

@@ -15,7 +15,8 @@ const ChatLayout = ({
   selectedQuestion,
   onLevelSelect,
   onCloseAnswer,
-  currResponse
+  currResponse,
+  currThinking,
 }) => {
   const { t } = useTranslation();
   return (
@@ -89,6 +90,7 @@ const ChatLayout = ({
           onLevelSelect={onLevelSelect}
           onCloseAnswer={onCloseAnswer}
           currResponse={currResponse}
+          currThinking={currThinking}
         />
       </div>
     </>
