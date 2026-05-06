@@ -1,31 +1,21 @@
 import React from 'react';
 import MessageBubble from '../MessageBubble/MessageBubble';
-import { RingLoader, HashLoader, PuffLoader, PulseLoader } from 'react-spinners';
 import { useTranslation } from 'react-i18next';
-// 加载动画组件
-const LoadingIndicator = ({ theme = 'default' }) => {
+
+// 轻量加载指示器 - 侧边线风格，与 ThinkingBlock 及助手气泡暖色系一致
+const LoadingIndicator = () => {
   const { t } = useTranslation();
-  // 根据主题设置颜色，与消息气泡匹配
-  const themeColor = theme === 'tech' ? '#6366f1' : '#0ea5e9';
-  
+
   return (
     <div className="flex justify-start mb-4 px-4">
-      <div className={`${
-        theme === 'tech' 
-          ? 'bg-tech-primary/90 border-tech-text/20' 
-          : 'bg-[#F5F1EA] border-[#F5F1EA]/60'
-      } border p-4 rounded-xl rounded-tl-sm shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex flex-col items-center`}>
-        <div className="mb-2">
-          {theme === 'tech' ? (
-            <HashLoader color={themeColor} size={36} speedMultiplier={0.8} />
-          ) : (
-            <PuffLoader color="#6B7280" size={40} speedMultiplier={0.8} />
-          )}
-        </div>
-        <div className={`text-sm mt-1 ${
-          theme === 'tech' ? 'text-tech-accent' : 'text-gray-700'
-        } font-medium animate-pulse`}>
-          {t('ChatWindow.thinking')}
+      <div className="border-l-2 border-amber-400/70 pl-3 py-2">
+        <div className="flex items-center gap-2 text-sm text-stone-500">
+          <span className="inline-flex gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse [animation-delay:200ms]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse [animation-delay:400ms]" />
+          </span>
+          <span className="font-medium">{t('ChatWindow.thinking')}</span>
         </div>
       </div>
     </div>
@@ -101,7 +91,7 @@ const ChatWindow = ({
                   theme={theme}
                 />
               ) : (
-                <LoadingIndicator theme={theme} />
+                <LoadingIndicator />
               )}
             </div>
           )}

@@ -139,7 +139,12 @@
       "answered": "answered"
     },
     "ChatWindow": {
-      "thinking": "Thinking..."
+      "thinking": "Thinking"
+    },
+    "ThinkingBlock": {
+      "thinking": "Thinking",
+      "done": "Thought deeply",
+      "charCount": "{{count}} chars"
     },
     "MessageBubble": {
       "copy": "Copy",

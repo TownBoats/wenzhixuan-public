@@ -1,27 +1,17 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import MarkdownRenderer from '../MarkdownRenderer/MarkdownRenderer';
 import { useTranslation } from 'react-i18next';
 
-const ThinkingIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-    />
-  </svg>
-);
-
-const ChevronIcon = ({ open }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-    fill="none" viewBox="0 0 24 24" stroke="currentColor"
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-  </svg>
-);
-
 /**
- * ThinkingBlock — 可折叠的模型思考内容块。
+ * ThinkingBlock — 侧边线风格的思考内容块
+ *
+ * 色彩方案与助手气泡(bg-[#F5F1EA])协调，使用 amber/stone 暖色系。
+ *
+ * 三态：
+ * 1. 流式中：侧边线 + 渐隐内容 + 闪烁光标
+ * 2. 完成折叠：侧边线 + 摘要行（可点击展开）
+ * 3. 完成展开：侧边线 + 完整 Markdown 内容
  *
  * @param {string}  content     思考文本（Markdown）
  * @param {boolean} isStreaming 是否仍在流式输出中
@@ -33,67 +23,96 @@ const ThinkingBlock = ({ content = '', isStreaming = false }) => {
   const charCount = content.length;
   const charLabel = charCount.toLocaleString();
 
+  // 流式阶段：截取最后 400 字用于渲染
+  const streamingContent = content.slice(-400);
+
+  if (isStreaming) {
+    return (
+      <div className="mb-3 border-l-2 border-amber-400/70 pl-3 py-1">
+        {/* 标题行 */}
+        <div className="flex items-center gap-2 mb-2">
+          <span className="inline-flex gap-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse [animation-delay:200ms]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse [animation-delay:400ms]" />
+          </span>
+          <span className="text-xs text-stone-500 font-medium">
+            {t('ThinkingBlock.thinking', { defaultValue: '正在思考' })}
+          </span>
+        </div>
+
+        {/* 流式内容区域 */}
+        {content && (
+          <div
+            className="relative max-h-32 overflow-hidden"
+            style={{
+              maskImage: 'linear-gradient(to bottom, transparent 0%, black 30%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 30%)',
+            }}
+          >
+            <div className="text-sm text-stone-500 leading-relaxed">
+              <MarkdownRenderer content={streamingContent} />
+            </div>
+          </div>
+        )}
+
+        {/* 闪烁光标 */}
+        <span className="inline-block w-0.5 h-4 bg-amber-500/70 animate-blink ml-0.5 align-middle" />
+      </div>
+    );
+  }
+
+  // 完成态
   return (
-    <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50/60 overflow-hidden text-sm">
-      {/* 折叠头部 */}
+    <div className="mb-3 border-l-2 border-stone-300/60 hover:border-amber-400/70 transition-colors duration-200 pl-3 py-1">
+      {/* 摘要行 - 可点击 */}
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100/70 transition-colors duration-150"
+        className="flex items-center gap-2 text-xs text-stone-500 hover:text-stone-700 transition-colors duration-150 w-full text-left"
       >
-        <span className="text-violet-400">
-          <ThinkingIcon />
+        <span className="text-amber-500/80">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
+              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+            />
+          </svg>
         </span>
-
-        {isStreaming ? (
-          <span className="flex items-center gap-1.5 text-xs text-violet-500 font-medium animate-pulse">
-            {t('ThinkingBlock.thinking', { defaultValue: '思考中' })}
-            <span className="inline-flex gap-0.5">
-              <span className="w-1 h-1 rounded-full bg-violet-400 animate-bounce [animation-delay:0ms]" />
-              <span className="w-1 h-1 rounded-full bg-violet-400 animate-bounce [animation-delay:150ms]" />
-              <span className="w-1 h-1 rounded-full bg-violet-400 animate-bounce [animation-delay:300ms]" />
-            </span>
-          </span>
-        ) : (
-          <span className="text-xs font-medium">
-            {open
-              ? t('ThinkingBlock.hideProcess', { defaultValue: '收起思考过程' })
-              : t('ThinkingBlock.showProcess', { defaultValue: '查看思考过程' })}
+        <span className="font-medium">
+          {t('ThinkingBlock.done', { defaultValue: '已深度思考' })}
+        </span>
+        {charCount > 0 && (
+          <span className="text-stone-400">
+            · {t('ThinkingBlock.charCount', { count: charLabel, defaultValue: `${charLabel} 字` })}
           </span>
         )}
-
-        {!isStreaming && charCount > 0 && (
-          <span className="ml-auto text-xs text-slate-400 font-normal">
-            {t('ThinkingBlock.charCount', { count: charLabel, defaultValue: `思考了 ${charLabel} 字` })}
-          </span>
-        )}
-
-        {!isStreaming && (
-          <span className={isStreaming ? 'hidden' : ''}>
-            <ChevronIcon open={open} />
-          </span>
-        )}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={`h-3 w-3 ml-auto transition-transform duration-200 text-stone-400 ${open ? 'rotate-90' : ''}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
       </button>
 
       {/* 展开内容 */}
-      {open && !isStreaming && content && (
-        <div className="px-4 py-3 border-t border-slate-200 bg-white/50">
-          <div className="font-mono text-xs text-slate-600 leading-relaxed whitespace-pre-wrap break-words">
-            <MarkdownRenderer content={content} />
-          </div>
-        </div>
-      )}
-
-      {/* 流式阶段展示最新内容片段（尾部 200 字） */}
-      {isStreaming && content && (
-        <div className="px-4 py-3 border-t border-slate-200 bg-white/50 max-h-28 overflow-hidden relative">
-          <div className="font-mono text-xs text-slate-400 leading-relaxed whitespace-pre-wrap break-words">
-            {content.slice(-200)}
-          </div>
-          {/* 顶部渐隐遮罩 */}
-          <div className="absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-white/70 to-transparent pointer-events-none" />
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {open && content && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            <div className="mt-2 pt-2 border-t border-stone-200/60">
+              <div className="text-sm text-stone-600 leading-relaxed">
+                <MarkdownRenderer content={content} />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

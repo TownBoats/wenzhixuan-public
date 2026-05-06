@@ -11,6 +11,7 @@ module.exports = {
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'border-flow': 'border-flow 3s linear infinite',
         'fade-in-out': 'fade-in-out 2s ease-in-out',
+        'blink': 'blink 1s steps(2, start) infinite',
       },
       keyframes: {
         blob: {
@@ -36,7 +37,11 @@ module.exports = {
           '20%': { opacity: '1', transform: 'translateY(0)' },
           '80%': { opacity: '1', transform: 'translateY(0)' },
           '100%': { opacity: '0', transform: 'translateY(-10px)' },
-        }
+        },
+        'blink': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0' },
+        },
       },
       colors: {
         'tech': {

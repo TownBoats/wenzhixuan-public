@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import MarkdownRenderer from '../MarkdownRenderer/MarkdownRenderer';
 import AnswerMessageCard from '../AnswerMessageCard/AnswerMessageCard';
 import ThinkingBlock from '../ThinkingBlock/ThinkingBlock';
-import { PulseLoader, BeatLoader, ClipLoader } from 'react-spinners';
 import { useTranslation } from 'react-i18next';
 const MessageBubble = ({
   isUser,
@@ -214,11 +213,13 @@ const MessageBubble = ({
 
   const renderLoading = () => {
     return (
-      <div className="flex flex-col items-center justify-center py-4">
-        <div className="mb-3">
-          <BeatLoader color="#4B5563" size={10} margin={3} />
-        </div>
-        <div className="text-sm text-gray-500 animate-pulse">{t('MessageBubble.thinking')}</div>
+      <div className="flex items-center gap-2 py-1">
+        <span className="inline-flex gap-0.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse [animation-delay:200ms]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse [animation-delay:400ms]" />
+        </span>
+        <span className="text-sm text-stone-500 font-medium">{t('MessageBubble.thinking')}</span>
       </div>
     );
   };

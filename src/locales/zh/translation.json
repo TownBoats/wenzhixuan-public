@@ -139,7 +139,12 @@
       "answered": " 已回答"
     },
     "ChatWindow": {
-      "thinking": "思考中..."
+      "thinking": "正在思考"
+    },
+    "ThinkingBlock": {
+      "thinking": "正在思考",
+      "done": "已深度思考",
+      "charCount": "{{count}} 字"
     },
     "MessageBubble": {
       "copy": "复制",
