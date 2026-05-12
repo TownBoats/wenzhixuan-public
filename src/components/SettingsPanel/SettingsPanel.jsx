@@ -1,42 +1,112 @@
-import React, { useState, useEffect } from 'react';
-import ModelConfigPanel from '../ModelConfigPanel/ModelConfigPanel';
-import AgentConfigPanel from '../AgentConfigPanel/AgentConfigPanel';
+import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import ModelConfigPanel from '../ModelConfigPanel/ModelConfigPanel';
+import AgentConfigPanel from '../AgentConfigPanel/AgentConfigPanel';
+import {
+  Button,
+  Icon,
+  BrandLogo,
+  Screwdriver,
+  Tag,
+  cn,
+} from '@/components/ui';
 
-// 自定义Checkbox组件
-const StyledCheckbox = ({ label, checked, onChange }) => {
-  return (
-    <label className="flex items-center space-x-2 cursor-pointer group">
-      <div className="relative">
-        <input 
-          type="checkbox" 
-          className="sr-only" 
-          checked={checked} 
-          onChange={onChange}
-        />
-        <div className={`w-5 h-5 border rounded-md flex items-center justify-center transition-all duration-200 ${
-          checked 
-            ? 'bg-gradient-to-r from-gray-800 to-black border-transparent' 
-            : 'border-slate-300 bg-white group-hover:border-gray-700'
-        }`}>
-          {checked && (
-            <svg 
-              className="w-3.5 h-3.5 text-white" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="3"
-            >
-              <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          )}
-        </div>
+/**
+ * SettingsPanel — 设置面板（P3f Susan Kare 重设计版）
+ *
+ * 视觉迁移自旧版（docs/REDESIGN_KARE.md §3.7）：
+ *   - 横向胶囊 Tab + 黑底白字选中 → 240px 竖向 Tab 列 + paper-100 +
+ *                                     3px sage 左竖线
+ *   - max-w-4xl + rounded-2xl     → max-w-3xl + rounded-lg
+ *   - 标题区 gear icon            → BrandLogo + display 字号
+ *   - 黑色 (gray-800) 主按钮       → ui/Button intent="primary" (sage-500)
+ *   - 危险操作 gray-200 chip       → state-alert/10 hover state-alert/15
+ *   - 4 段卡片重复内联样式          → SettingsCard 子组件统一
+ *   - 自定义 Checkbox black gradient → sage-500 单色 + 圆头 check
+ *   - alert(...) 简单弹窗仍保留     → 留待 P5/Toast 系统
+ *
+ * 行为完全保留：
+ *   - 4 个 Tab + AnimatePresence
+ *   - localStorage（developerMode / enableWaitTime / waitTime）
+ *   - 语言切换的 SystemPrompts 同步逻辑（CustomEvent + handleOptionPromptChange）
+ *   - 聊天记录导入/导出/清空 完整流程
+ *   - Props 接口完全不变
+ */
+
+// ── 子组件：自定义 Checkbox ──────────────────────────────
+const StyledCheckbox = ({ checked, onChange, label }) => (
+  <label className="group flex cursor-pointer items-center gap-2">
+    <div className="relative">
+      <input type="checkbox" className="sr-only" checked={checked} onChange={onChange} />
+      <div
+        className={cn(
+          'flex h-5 w-5 items-center justify-center rounded-sm border transition-colors duration-fast',
+          checked
+            ? 'bg-sage-500 border-sage-500'
+            : 'bg-paper-50 border-paper-200 group-hover:border-sage-500',
+        )}
+      >
+        {checked && <Icon name="Check" size={14} className="text-white" strokeWidth={3} />}
       </div>
-      <span className="text-slate-600 text-sm">{label}</span>
-    </label>
-  );
+    </div>
+    {label && <span className="text-small text-ink-700">{label}</span>}
+  </label>
+);
+StyledCheckbox.propTypes = {
+  checked: PropTypes.bool,
+  onChange: PropTypes.func,
+  label: PropTypes.string,
 };
+
+// ── 子组件：设置区块卡片 ─────────────────────────────────
+const SettingsCard = ({ icon, title, children }) => (
+  <div className="rounded-md border border-paper-200 bg-paper-50 p-4 shadow-soft">
+    <h3 className="mb-3 flex items-center gap-2 text-h2 font-serif text-ink-900">
+      {icon}
+      {title}
+    </h3>
+    {children}
+  </div>
+);
+SettingsCard.propTypes = {
+  icon: PropTypes.node,
+  title: PropTypes.string.isRequired,
+  children: PropTypes.node,
+};
+
+// ── 子组件：左侧 Tab 项 ─────────────────────────────────
+const SidebarTab = ({ active, icon, label, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={cn(
+      'group relative flex w-full items-center gap-3 rounded-sm px-3 py-2',
+      'text-body font-sans transition-colors duration-fast',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/30',
+      active
+        ? 'bg-paper-100 text-ink-900'
+        : 'text-ink-500 hover:bg-paper-100/60 hover:text-ink-700',
+    )}
+  >
+    {active && (
+      <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-pill bg-sage-500" />
+    )}
+    <span className={cn('shrink-0', active ? 'text-sage-700' : 'text-ink-500')}>{icon}</span>
+    <span className="truncate">{label}</span>
+  </button>
+);
+SidebarTab.propTypes = {
+  active: PropTypes.bool,
+  icon: PropTypes.node,
+  label: PropTypes.string.isRequired,
+  onClick: PropTypes.func.isRequired,
+};
+
+// ─────────────────────────────────────────────────────────
+// SettingsPanel
+// ─────────────────────────────────────────────────────────
 
 const SettingsPanel = ({
   showSettings,
@@ -49,613 +119,503 @@ const SettingsPanel = ({
   optionPrompt,
   handleMainPromptChange,
   handleOptionPromptChange,
+  // histories list itself is unused here; we read/write via localStorage
+  // and only need setHistories to push merges. Kept in props for back-compat.
+  // eslint-disable-next-line no-unused-vars
   histories,
   setHistories,
-  handleNewChat
+  handleNewChat,
 }) => {
-  const [settingsTab, setSettingsTab] = useState('general');
-  // 获取i18n实例
   const { i18n, t } = useTranslation();
-  
-  // 使用当前语言初始化state
-  const [language, setLanguage] = useState(() => {
-    return i18n.language || 'zh';
-  });
-  
-  // 获取开发者模式状态，但不在界面上显示开关
-  const [developerMode, setDeveloperMode] = useState(() => {
-    return localStorage.getItem('developerMode') === 'true';
-  });
-  
-  // 添加等待时间设置
-  const [enableWaitTime, setEnableWaitTime] = useState(() => {
-    return localStorage.getItem('enableWaitTime') !== 'false'; // 默认启用
-  });
-  
+  const [settingsTab, setSettingsTab] = useState('general');
+  const [language, setLanguage] = useState(() => i18n.language || 'zh');
+  const [developerMode, setDeveloperMode] = useState(
+    () => localStorage.getItem('developerMode') === 'true',
+  );
+  const [enableWaitTime, setEnableWaitTime] = useState(
+    () => localStorage.getItem('enableWaitTime') !== 'false',
+  );
   const [waitTime, setWaitTime] = useState(() => {
-    const savedTime = localStorage.getItem('waitTime');
-    return savedTime ? parseInt(savedTime) : 5; // 默认5秒
+    const saved = localStorage.getItem('waitTime');
+    return saved ? parseInt(saved, 10) : 5;
   });
-  
-  // 处理等待时间设置变更
+
   const handleWaitTimeChange = (newTime) => {
-    const time = parseInt(newTime);
+    const time = parseInt(newTime, 10);
     if (!isNaN(time) && time >= 0 && time <= 30) {
       setWaitTime(time);
       localStorage.setItem('waitTime', time.toString());
     }
   };
-  
-  // 处理等待时间开关变更
+
   const handleEnableWaitTimeChange = () => {
-    const newValue = !enableWaitTime;
-    setEnableWaitTime(newValue);
-    localStorage.setItem('enableWaitTime', newValue.toString());
+    const next = !enableWaitTime;
+    setEnableWaitTime(next);
+    localStorage.setItem('enableWaitTime', next.toString());
   };
 
-  // 监听开发者模式变化
+  // ── 监听 developerMode 变化 ──
   useEffect(() => {
     const handleStorageChange = () => {
       const currentValue = localStorage.getItem('developerMode') === 'true';
-      if (currentValue !== developerMode) {
-        setDeveloperMode(currentValue);
-      }
+      if (currentValue !== developerMode) setDeveloperMode(currentValue);
     };
-
     window.addEventListener('storage', handleStorageChange);
-    
-    // 定期检查localStorage中的开发者模式状态
-    const interval = setInterval(() => {
-      handleStorageChange();
-    }, 1000);
-
+    const interval = setInterval(handleStorageChange, 1000);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       clearInterval(interval);
     };
   }, [developerMode]);
 
-  // 处理语言选择（立即应用并关闭设置面板）
+  // ── ESC 关闭 ──
+  useEffect(() => {
+    if (!showSettings) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setShowSettings(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showSettings, setShowSettings]);
+
+  // ── 语言切换（保留旧逻辑） ──
   const handleLanguageSelect = (lng) => {
-    // 如果选择的语言与当前语言不同，则应用语言切换
-    if (lng !== language) {
-      i18n.changeLanguage(lng);
-      setLanguage(lng);
-      
-      // 让i18next有时间完成语言切换
-      setTimeout(() => {
-        try {
-          // 从翻译文件中获取新语言的选项AI提示词
-          const newOptionPrompt = i18n.t('SystemPrompts.optionAiMode', { lng });
-          
-          // 如果获取到有效的提示词（不是翻译键本身）
-          if (newOptionPrompt && !newOptionPrompt.includes('SystemPrompts.')) {
-            // 将更新后的提示词存入localStorage
-            localStorage.setItem('option_ai_prompt', newOptionPrompt);
-            
-            // 触发提示词更新 - 通过自定义事件广播
-            const event = new CustomEvent('language-changed', { 
-              detail: { language: lng, prompt: newOptionPrompt } 
-            });
-            window.dispatchEvent(event);
-            
-            // 如果当前选中的是选项AI模式，则立即更新提示词
-            if (optionPrompt && (
-                optionPrompt === localStorage.getItem('optionAgentPrompt') ||
-                optionPrompt === i18n.t('SystemPrompts.optionAiMode', { lng: language })
-            )) {
-              handleOptionPromptChange(newOptionPrompt);
-              console.log('SettingsPanel: 成功更新选项AI提示词', lng);
-            }
-          } else {
-            console.warn('SettingsPanel: 无法获取新语言的提示词');
+    if (lng === language) return;
+    i18n.changeLanguage(lng);
+    setLanguage(lng);
+    setTimeout(() => {
+      try {
+        const newOptionPrompt = i18n.t('SystemPrompts.optionAiMode', { lng });
+        if (newOptionPrompt && !newOptionPrompt.includes('SystemPrompts.')) {
+          localStorage.setItem('option_ai_prompt', newOptionPrompt);
+          window.dispatchEvent(
+            new CustomEvent('language-changed', {
+              detail: { language: lng, prompt: newOptionPrompt },
+            }),
+          );
+          if (
+            optionPrompt &&
+            (optionPrompt === localStorage.getItem('optionAgentPrompt') ||
+              optionPrompt === i18n.t('SystemPrompts.optionAiMode', { lng: language }))
+          ) {
+            handleOptionPromptChange(newOptionPrompt);
           }
-        } catch (error) {
-          console.error('SettingsPanel: 更新选项AI提示词时出错:', error);
         }
-        
-        // 显示切换成功提示
-        alert(i18n.t('SettingsPanel.language.changeSuccess', { lng }));
-        
-        // 关闭设置面板
-        setShowSettings(false);
-      }, 100); // 给i18next一点时间完成切换
-    }
+      } catch (error) {
+        console.error('SettingsPanel: 更新选项AI提示词时出错:', error);
+      }
+      alert(i18n.t('SettingsPanel.language.changeSuccess', { lng }));
+      setShowSettings(false);
+    }, 100);
   };
-  
-  // 处理设置保存
+
   const handleSaveSettings = () => {
-    // 保存等待时间设置
     localStorage.setItem('enableWaitTime', enableWaitTime.toString());
     localStorage.setItem('waitTime', waitTime.toString());
-    
-    // 显示网页提示
     alert(t('SettingsPanel.footer.saveSuccess'));
-    
-    // 直接关闭设置面板
     setShowSettings(false);
+  };
+
+  // ── 聊天记录导出 ──
+  const handleExport = () => {
+    const chatHistories = localStorage.getItem('chat_histories');
+    if (!chatHistories) {
+      alert('没有可导出的聊天记录');
+      return;
+    }
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(chatHistories);
+    const a = document.createElement('a');
+    a.setAttribute('href', dataStr);
+    a.setAttribute(
+      'download',
+      `问知轩聊天记录_${new Date().toISOString().slice(0, 10)}.json`,
+    );
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  // ── 聊天记录导入 ──
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const importedData = JSON.parse(event.target.result);
+        if (!Array.isArray(importedData)) throw new Error('导入的数据格式不正确');
+        const existing = localStorage.getItem('chat_histories');
+        let merged = [];
+        if (existing) {
+          const map = new Map();
+          JSON.parse(existing).forEach((h) => map.set(h.id, h));
+          importedData.forEach((h) => map.set(h.id, h));
+          merged = Array.from(map.values()).sort((a, b) => b.timestamp - a.timestamp);
+        } else {
+          merged = importedData;
+        }
+        localStorage.setItem('chat_histories', JSON.stringify(merged));
+        setHistories(merged);
+        alert(`成功导入 ${importedData.length} 条聊天记录`);
+        e.target.value = null;
+      } catch (error) {
+        console.error('导入聊天记录失败:', error);
+        alert(`导入失败: ${error.message}`);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // ── 清空所有聊天记录 ──
+  const handleClearAll = () => {
+    if (!confirm('确定要清空所有聊天记录吗？此操作不可恢复。')) return;
+    const chatHistories = localStorage.getItem('chat_histories');
+    if (chatHistories) {
+      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(chatHistories);
+      const a = document.createElement('a');
+      a.setAttribute('href', dataStr);
+      a.setAttribute(
+        'download',
+        `问知轩聊天记录备份_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`,
+      );
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+    localStorage.removeItem('chat_histories');
+    setHistories([]);
+    handleNewChat();
+    alert('所有聊天记录已清空，并已自动创建了一个新的对话。');
   };
 
   if (!showSettings) return null;
 
-  // 标签页定义，包含图标
+  // ── Tab 定义 ──
   const tabs = [
-    { 
-      id: 'general', 
-      label: t('SettingsPanel.tabs.general'), 
-      icon: (
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      ) 
-    },
-    { 
-      id: 'model', 
-      label: t('SettingsPanel.tabs.model'), 
-      icon: (
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-        </svg>
-      ) 
-    },
-    { 
-      id: 'prompt', 
-      label: t('SettingsPanel.tabs.prompt'), 
-      icon: (
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-        </svg>
-      ) 
-    },
-    { 
-      id: 'about', 
-      label: t('SettingsPanel.tabs.about'), 
-      icon: (
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ) 
-    },
+    { id: 'general', label: t('SettingsPanel.tabs.general'), icon: <Icon name="SlidersHorizontal" size={18} /> },
+    { id: 'model',   label: t('SettingsPanel.tabs.model'),   icon: <Icon name="Brain" size={18} /> },
+    { id: 'prompt',  label: t('SettingsPanel.tabs.prompt'),  icon: <Icon name="ScrollText" size={18} /> },
+    { id: 'about',   label: t('SettingsPanel.tabs.about'),   icon: <BrandLogo size={18} /> },
   ];
 
   return (
     <AnimatePresence>
       {showSettings && (
-        <motion.div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/15 p-4 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
+          onClick={() => setShowSettings(false)}
         >
-          <motion.div 
-            className="w-full max-w-4xl h-[80vh] flex flex-col rounded-2xl shadow-2xl bg-white border border-gray-200"
-            initial={{ scale: 0.95, y: 20 }}
+          <motion.div
+            className={cn(
+              'flex h-[78vh] w-full max-w-3xl flex-col overflow-hidden',
+              'rounded-lg border border-paper-200 bg-paper-50 shadow-float',
+            )}
+            initial={{ scale: 0.96, y: 20 }}
             animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.95, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            exit={{ scale: 0.96, y: 20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex-none flex items-center justify-between p-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-                <svg className="w-5 h-5 mr-2 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                {t('SettingsPanel.title')}
+            <div className="flex flex-none items-center justify-between border-b border-paper-200 bg-paper-100 px-5 py-3">
+              <div className="flex items-center gap-3">
+                <BrandLogo size={28} className="text-sage-700" />
+                <h2 className="font-display text-h1 text-ink-900">
+                  {t('SettingsPanel.title')}
+                </h2>
                 {developerMode && (
-                  <span className="ml-2 text-xs text-blue-500 opacity-70">{t('SettingsPanel.developerMode')}</span>
+                  <Tag variant="active">{t('SettingsPanel.developerMode')}</Tag>
                 )}
-              </h2>
-              <button
+              </div>
+              <Button
+                intent="ghost"
+                size="sm"
+                iconOnly
                 onClick={() => setShowSettings(false)}
-                className="p-2 rounded-full transition-all duration-300 hover:bg-gray-100 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                 aria-label="关闭"
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+                <Icon name="X" size={16} />
+              </Button>
             </div>
 
-            {/* Tabs */}
-            <div className="flex-none p-3 border-b border-gray-200">
-              <div className="flex relative rounded-xl p-1 bg-gray-100">
-                {tabs.map((tab, index) => (
-                  <button
+            {/* Body: sidebar + content */}
+            <div className="flex min-h-0 flex-1">
+              {/* Sidebar */}
+              <nav className="flex w-[200px] shrink-0 flex-col gap-1 border-r border-paper-200 bg-paper-50/60 p-3">
+                {tabs.map((tab) => (
+                  <SidebarTab
                     key={tab.id}
+                    active={settingsTab === tab.id}
+                    icon={tab.icon}
+                    label={tab.label}
                     onClick={() => setSettingsTab(tab.id)}
-                    className={`relative flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium z-10 transition-all duration-300 ${
-                      settingsTab === tab.id
-                        ? 'text-white'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    {tab.icon}
-                    {tab.label}
-                    {settingsTab === tab.id && (
-                      <motion.div
-                        className="absolute inset-0 bg-gray-800 rounded-lg shadow-md"
-                        layoutId="tab-background"
-                        initial={false}
-                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        style={{ zIndex: -1 }}
-                      />
-                    )}
-                  </button>
+                  />
                 ))}
-              </div>
-            </div>
+              </nav>
 
-            {/* Content */}
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <div className="p-4 h-full">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={settingsTab}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {settingsTab === 'general' && (
-                      <div className="space-y-4 pr-2">
-                        {/* 界面语言 */}
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                          <h3 className="text-sm font-medium mb-2 text-gray-700 flex items-center">
-                            <svg className="w-4 h-4 mr-2 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                            </svg>
-                            {t('SettingsPanel.language.label')}
-                          </h3>
-                          <div className="flex relative rounded-xl p-1 bg-gray-100 mt-2">
-                            <button
-                              onClick={() => handleLanguageSelect('zh')}
-                              className={`relative flex-1 flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-medium z-10 transition-all duration-300 ${
-                                language === 'zh'
-                                  ? 'text-white'
-                                  : 'text-gray-600 hover:text-gray-900'
-                              }`}
-                            >
-                              {t('SettingsPanel.language.zh')}
-                              {language === 'zh' && (
-                                <motion.div
-                                  className="absolute inset-0 bg-gray-800 rounded-lg shadow-md"
-                                  layoutId="language-background"
-                                  initial={false}
-                                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                                  style={{ zIndex: -1 }}
-                                />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleLanguageSelect('en')}
-                              className={`relative flex-1 flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-medium z-10 transition-all duration-300 ${
-                                language === 'en'
-                                  ? 'text-white'
-                                  : 'text-gray-600 hover:text-gray-900'
-                              }`}
-                            >
-                              {t('SettingsPanel.language.en')}
-                              {language === 'en' && (
-                                <motion.div
-                                  className="absolute inset-0 bg-gray-800 rounded-lg shadow-md"
-                                  layoutId="language-background"
-                                  initial={false}
-                                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                                  style={{ zIndex: -1 }}
-                                />
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                        
-                        {/* 添加等待时间设置 */}
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                          <h3 className="text-sm font-medium mb-3 text-gray-700 flex items-center">
-                            <svg className="w-4 h-4 mr-2 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            {t('SettingsPanel.answerCardWaitingTime')}
-                          </h3>
-                          
-                          <div className="space-y-3">
-                            {/* 开关 */}
-                            <div className="flex items-center justify-between bg-gray-50 p-2.5 rounded-lg">
-                              <span className="text-sm text-gray-600 font-medium">{t('SettingsPanel.enableWaitingTime')}</span>
-                              <StyledCheckbox 
-                                label="" 
-                                checked={enableWaitTime} 
-                                onChange={handleEnableWaitTimeChange} 
-                              />
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto scrollbar-custom">
+                <div className="p-5">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={settingsTab}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {settingsTab === 'general' && (
+                        <div className="space-y-4">
+                          {/* 语言 */}
+                          <SettingsCard
+                            icon={<Icon name="Languages" size={16} className="text-sage-700" />}
+                            title={t('SettingsPanel.language.label')}
+                          >
+                            <div className="inline-flex rounded-pill bg-paper-100 p-1">
+                              {[
+                                { code: 'zh', label: t('SettingsPanel.language.zh') },
+                                { code: 'en', label: t('SettingsPanel.language.en') },
+                              ].map((opt) => (
+                                <button
+                                  key={opt.code}
+                                  type="button"
+                                  onClick={() => handleLanguageSelect(opt.code)}
+                                  className={cn(
+                                    'rounded-pill px-4 py-1 text-small transition-colors duration-fast',
+                                    language === opt.code
+                                      ? 'bg-paper-50 text-ink-900 shadow-soft'
+                                      : 'text-ink-500 hover:text-ink-700',
+                                  )}
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
                             </div>
-                            
-                            {/* 时间设置 */}
-                            <div className={`${enableWaitTime ? "bg-gray-50 p-3 rounded-lg" : "opacity-50 pointer-events-none bg-gray-50/50 p-3 rounded-lg"} transition-all duration-200`}>
-                              <label className="block text-sm text-gray-600 mb-2 font-medium">
-                                {t('SettingsPanel.answerCardWaitingTime')} ({waitTime} {t('SettingsPanel.seconds')})
-                              </label>
-                              <div className="flex items-center space-x-3">
-                                <span className="text-xs text-gray-500">0</span>
-                                <input
-                                  type="range"
-                                  min="0"
-                                  max="30"
-                                  value={waitTime}
-                                  onChange={(e) => handleWaitTimeChange(e.target.value)}
-                                  className="flex-1 accent-gray-700 h-1.5 rounded-full bg-gray-200"
+                          </SettingsCard>
+
+                          {/* 答题等待时间 */}
+                          <SettingsCard
+                            icon={<Icon name="Hourglass" size={16} className="text-sage-700" />}
+                            title={t('SettingsPanel.answerCardWaitingTime')}
+                          >
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between rounded-sm bg-paper-100 p-3">
+                                <span className="text-small text-ink-700">
+                                  {t('SettingsPanel.enableWaitingTime')}
+                                </span>
+                                <StyledCheckbox
+                                  checked={enableWaitTime}
+                                  onChange={handleEnableWaitTimeChange}
                                 />
-                                <span className="text-xs text-gray-500">30</span>
-                                <div className="w-12 flex justify-center">
+                              </div>
+
+                              <div
+                                className={cn(
+                                  'rounded-sm bg-paper-100 p-3 transition-opacity duration-base',
+                                  !enableWaitTime && 'pointer-events-none opacity-50',
+                                )}
+                              >
+                                <label className="mb-2 block text-small font-medium text-ink-700">
+                                  {t('SettingsPanel.answerCardWaitingTime')} ({waitTime}{' '}
+                                  {t('SettingsPanel.seconds')})
+                                </label>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-caption font-mono text-ink-500">0</span>
+                                  <input
+                                    type="range"
+                                    min="0"
+                                    max="30"
+                                    value={waitTime}
+                                    onChange={(e) => handleWaitTimeChange(e.target.value)}
+                                    className="h-1.5 flex-1 rounded-pill bg-paper-200 accent-sage-500"
+                                  />
+                                  <span className="text-caption font-mono text-ink-500">30</span>
                                   <input
                                     type="number"
                                     min="0"
                                     max="30"
                                     value={waitTime}
                                     onChange={(e) => handleWaitTimeChange(e.target.value)}
-                                    className="w-12 px-2 py-1 text-center border border-gray-300 rounded text-sm focus:ring-1 focus:ring-gray-500 focus:border-gray-500 outline-none shadow-sm"
+                                    className="h-8 w-12 rounded-sm border border-paper-200 bg-paper-50 px-2 text-center font-mono text-small text-ink-900 caret-sage-500 outline-none focus:border-sage-500 focus:ring-2 focus:ring-sage-500/20"
                                   />
                                 </div>
+                                <p className="mt-2 text-caption font-serif italic text-ink-500">
+                                  {waitTime === 0
+                                    ? t('SettingsPanel.currentSettingOff')
+                                    : t('SettingsPanel.currentSettingOn', { seconds: waitTime })}
+                                </p>
                               </div>
-                              <p className="mt-2 text-xs text-gray-500">
-                                {waitTime === 0 
-                                  ? t('SettingsPanel.currentSettingOff') 
-                                  : t('SettingsPanel.currentSettingOn', { seconds: waitTime })}
-                              </p>
                             </div>
-                          </div>
-                        </div>
-                        
-                        {/* 聊天记录管理 */}
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                          <h3 className="text-sm font-medium mb-2 text-gray-700 flex items-center">
-                            <svg className="w-4 h-4 mr-2 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                            </svg>
-                            {t('SettingsPanel.chatHistory.title')}
-                          </h3>
-                          <div className="space-y-3">
-                            {/* 导出按钮 */}
-                            <button
-                              onClick={() => {
-                                // 导出聊天记录
-                                const chatHistories = localStorage.getItem('chat_histories');
-                                if (!chatHistories) {
-                                  alert('没有可导出的聊天记录');
-                                  return;
-                                }
-                                
-                                // 创建下载链接
-                                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(chatHistories);
-                                const downloadAnchorNode = document.createElement('a');
-                                downloadAnchorNode.setAttribute("href", dataStr);
-                                downloadAnchorNode.setAttribute("download", `问知轩聊天记录_${new Date().toISOString().slice(0, 10)}.json`);
-                                document.body.appendChild(downloadAnchorNode);
-                                downloadAnchorNode.click();
-                                downloadAnchorNode.remove();
-                              }}
-                              className="w-full px-4 py-2.5 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-sm hover:shadow-md active:shadow-inner flex items-center justify-center"
-                            >
-                              <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                              </svg>
-                              {t('SettingsPanel.chatHistory.export')}
-                            </button>
-                            
-                            {/* 导入区域 */}
-                            <div>
-                              <label className="block text-sm font-medium mb-2 text-slate-700">
-                                {t('SettingsPanel.chatHistory.importLabel')}
-                              </label>
-                              <div className="flex items-center gap-2">
+                          </SettingsCard>
+
+                          {/* 聊天记录管理 */}
+                          <SettingsCard
+                            icon={<Icon name="Archive" size={16} className="text-sage-700" />}
+                            title={t('SettingsPanel.chatHistory.title')}
+                          >
+                            <div className="space-y-3">
+                              <Button
+                                intent="primary"
+                                size="md"
+                                onClick={handleExport}
+                                className="w-full"
+                              >
+                                <Icon name="Download" size={16} className="text-current" />
+                                {t('SettingsPanel.chatHistory.export')}
+                              </Button>
+
+                              <div>
+                                <label className="mb-2 block text-small font-medium text-ink-700">
+                                  {t('SettingsPanel.chatHistory.importLabel')}
+                                </label>
                                 <input
                                   type="file"
                                   id="chat-history-import"
                                   accept=".json"
                                   className="hidden"
-                                  onChange={(e) => {
-                                    const file = e.target.files[0];
-                                    if (!file) return;
-                                    
-                                    const reader = new FileReader();
-                                    reader.onload = (event) => {
-                                      try {
-                                        // 验证JSON格式
-                                        const importedData = JSON.parse(event.target.result);
-                                        
-                                        // 验证数据结构
-                                        if (!Array.isArray(importedData)) {
-                                          throw new Error('导入的数据格式不正确');
-                                        }
-                                        
-                                        // 合并现有历史记录和导入的历史记录
-                                        const existingHistories = localStorage.getItem('chat_histories');
-                                        let mergedHistories = [];
-                                        
-                                        if (existingHistories) {
-                                          const existingData = JSON.parse(existingHistories);
-                                          // 使用Map去重，以ID为键
-                                          const historyMap = new Map();
-                                          
-                                          // 先添加现有的历史记录
-                                          existingData.forEach(history => {
-                                            historyMap.set(history.id, history);
-                                          });
-                                          
-                                          // 再添加导入的历史记录（如有重复ID则覆盖）
-                                          importedData.forEach(history => {
-                                            historyMap.set(history.id, history);
-                                          });
-                                          
-                                          // 转换回数组并按时间戳排序
-                                          mergedHistories = Array.from(historyMap.values())
-                                            .sort((a, b) => b.timestamp - a.timestamp);
-                                        } else {
-                                          mergedHistories = importedData;
-                                        }
-                                        
-                                        // 保存合并后的历史记录
-                                        localStorage.setItem('chat_histories', JSON.stringify(mergedHistories));
-                                        
-                                        // 更新状态
-                                        setHistories(mergedHistories);
-                                        
-                                        alert(`成功导入 ${importedData.length} 条聊天记录`);
-                                        
-                                        // 清空文件输入
-                                        e.target.value = null;
-                                      } catch (error) {
-                                        console.error('导入聊天记录失败:', error);
-                                        alert(`导入失败: ${error.message}`);
-                                      }
-                                    };
-                                    
-                                    reader.readAsText(file);
-                                  }}
+                                  onChange={handleImport}
                                 />
-                                <button
+                                <Button
+                                  intent="secondary"
+                                  size="md"
                                   onClick={() => document.getElementById('chat-history-import').click()}
-                                  className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors shadow-sm hover:shadow-md active:shadow-inner flex items-center justify-center"
+                                  className="w-full"
                                 >
-                                  <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                                  </svg>
+                                  <Icon name="Upload" size={16} className="text-current" />
                                   {t('SettingsPanel.chatHistory.importButton')}
-                                </button>
+                                </Button>
+                                <p className="mt-1.5 text-caption font-serif italic text-ink-500">
+                                  {t('SettingsPanel.chatHistory.importTips')}
+                                </p>
                               </div>
-                              <p className="mt-1.5 text-xs text-slate-500">
-                                {t('SettingsPanel.chatHistory.importTips')}
-                              </p>
+
+                              {/* 危险操作 */}
+                              <div>
+                                <button
+                                  type="button"
+                                  onClick={handleClearAll}
+                                  className={cn(
+                                    'inline-flex h-9 w-full items-center justify-center gap-2 rounded-sm px-4',
+                                    'border border-state-alert/30 bg-state-alert/10 text-small font-medium text-state-alert',
+                                    'transition-colors duration-fast hover:bg-state-alert/15',
+                                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-alert/30',
+                                  )}
+                                >
+                                  <Icon name="Trash2" size={14} className="text-current" />
+                                  {t('SettingsPanel.chatHistory.clearAll')}
+                                </button>
+                                <p className="mt-1.5 text-caption font-serif italic text-ink-500">
+                                  {t('SettingsPanel.chatHistory.clearAllTips')}
+                                </p>
+                              </div>
                             </div>
-                            
-                            {/* 清空聊天记录 */}
-                            <div>
-                              <button
-                                onClick={() => {
-                                  if (confirm('确定要清空所有聊天记录吗？此操作不可恢复。')) {
-                                    // 先导出一份备份
-                                    const chatHistories = localStorage.getItem('chat_histories');
-                                    if (chatHistories) {
-                                      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(chatHistories);
-                                      const downloadAnchorNode = document.createElement('a');
-                                      downloadAnchorNode.setAttribute("href", dataStr);
-                                      downloadAnchorNode.setAttribute("download", `问知轩聊天记录备份_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`);
-                                      document.body.appendChild(downloadAnchorNode);
-                                      downloadAnchorNode.click();
-                                      downloadAnchorNode.remove();
-                                    }
-                                    
-                                    // 清空聊天记录
-                                    localStorage.removeItem('chat_histories');
-                                    setHistories([]);
-                                    
-                                    // 创建新对话
-                                    handleNewChat();
-                                    
-                                    alert('所有聊天记录已清空，并已自动创建了一个新的对话。');
-                                  }
-                                }}
-                                className="w-full px-4 py-2.5 bg-gray-200 text-gray-800 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors shadow-sm hover:shadow-md active:shadow-inner flex items-center justify-center group"
-                              >
-                                <svg className="w-4 h-4 mr-2 text-gray-700 group-hover:text-gray-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                {t('SettingsPanel.chatHistory.clearAll')}
-                              </button>
-                              <p className="mt-1.5 text-xs text-slate-500">
-                                {t('SettingsPanel.chatHistory.clearAllTips')}
-                              </p>
-                            </div>
-                          </div>
+                          </SettingsCard>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {settingsTab === 'model' && (
-                      <div className="space-y-4 pr-2">
-                        <ModelConfigPanel
-                          currentConfig={mainModelConfig}
-                          onConfigChange={handleMainConfigChange}
-                          agentType="main"
-                          developerMode={developerMode}
-                        />
-                        <ModelConfigPanel
-                          currentConfig={optionModelConfig}
-                          onConfigChange={handleOptionConfigChange}
-                          agentType="option"
-                          developerMode={developerMode}
-                        />
-                      </div>
-                    )}
+                      {settingsTab === 'model' && (
+                        <div className="space-y-4">
+                          <ModelConfigPanel
+                            currentConfig={mainModelConfig}
+                            onConfigChange={handleMainConfigChange}
+                            agentType="main"
+                            developerMode={developerMode}
+                          />
+                          <ModelConfigPanel
+                            currentConfig={optionModelConfig}
+                            onConfigChange={handleOptionConfigChange}
+                            agentType="option"
+                            developerMode={developerMode}
+                          />
+                        </div>
+                      )}
 
-                    {settingsTab === 'prompt' && (
-                      <div className="space-y-4 pr-2">
-                        <AgentConfigPanel
-                          currentPrompt={mainPrompt}
-                          onPromptChange={handleMainPromptChange}
-                          agentType="main"
-                        />
-                        <AgentConfigPanel
-                          currentPrompt={optionPrompt}
-                          onPromptChange={handleOptionPromptChange}
-                          agentType="option"
-                        />
-                      </div>
-                    )}
+                      {settingsTab === 'prompt' && (
+                        <div className="space-y-4">
+                          <AgentConfigPanel
+                            currentPrompt={mainPrompt}
+                            onPromptChange={handleMainPromptChange}
+                            agentType="main"
+                          />
+                          <AgentConfigPanel
+                            currentPrompt={optionPrompt}
+                            onPromptChange={handleOptionPromptChange}
+                            agentType="option"
+                          />
+                        </div>
+                      )}
 
-                    {settingsTab === 'about' && (
-                      <div className="space-y-4 pr-2">
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                          <h3 className="text-lg font-medium mb-4 text-gray-800">{t('SettingsPanel.about.title')}</h3>
+                      {settingsTab === 'about' && (
+                        <SettingsCard
+                          icon={<Screwdriver size={16} className="text-sage-700" />}
+                          title={t('SettingsPanel.about.title')}
+                        >
                           <div className="space-y-3">
-                            <div className="flex items-center space-x-2 text-gray-600">
-                              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                              </svg>
-                              <span className="text-sm">{t('SettingsPanel.about.email')}</span>
-                              <a href="mailto:2413250743@qq.com" className="text-blue-600 hover:text-blue-800 transition-colors">
+                            <div className="flex items-center gap-2 text-body text-ink-700">
+                              <Icon name="Mail" size={16} className="shrink-0" />
+                              <span>{t('SettingsPanel.about.email')}</span>
+                              <a
+                                href="mailto:2413250743@qq.com"
+                                className="text-sage-700 transition-colors duration-fast hover:text-sage-900 hover:underline"
+                              >
                                 2413250743@qq.com
                               </a>
                             </div>
-                            <div className="flex items-center space-x-2 text-gray-600">
-                              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
-                              </svg>
-                              <span className="text-sm">{t('SettingsPanel.about.github')}</span>
-                              <a href="https://github.com/TownBoats" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 transition-colors">
+                            <div className="flex items-center gap-2 text-body text-ink-700">
+                              <Icon name="Github" size={16} className="shrink-0" />
+                              <span>{t('SettingsPanel.about.github')}</span>
+                              <a
+                                href="https://github.com/TownBoats"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sage-700 transition-colors duration-fast hover:text-sage-900 hover:underline"
+                              >
                                 TownBoats
                               </a>
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
+                        </SettingsCard>
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="flex-none flex justify-end gap-3 p-4 border-t border-gray-200">
-              <button
-                onClick={() => setShowSettings(false)}
-                className="px-5 py-2.5 rounded-lg text-sm font-medium transition-all text-gray-700 hover:bg-gray-100 border border-gray-300 shadow-sm hover:shadow"
-              >
+            <div className="flex flex-none justify-end gap-2 border-t border-paper-200 bg-paper-50 px-5 py-3">
+              <Button intent="secondary" size="md" onClick={() => setShowSettings(false)}>
                 {t('SettingsPanel.footer.cancel')}
-              </button>
-              <button
-                onClick={handleSaveSettings}
-                className="px-5 py-2.5 rounded-lg text-sm font-medium transition-all bg-gray-800 hover:bg-gray-900 text-white shadow-sm hover:shadow-md active:shadow-inner"
-              >
+              </Button>
+              <Button intent="primary" size="md" onClick={handleSaveSettings}>
                 {t('SettingsPanel.footer.confirm')}
-              </button>
+              </Button>
             </div>
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
   );
+};
+
+SettingsPanel.propTypes = {
+  showSettings: PropTypes.bool,
+  setShowSettings: PropTypes.func.isRequired,
+  mainModelConfig: PropTypes.object,
+  optionModelConfig: PropTypes.object,
+  handleMainConfigChange: PropTypes.func,
+  handleOptionConfigChange: PropTypes.func,
+  mainPrompt: PropTypes.string,
+  optionPrompt: PropTypes.string,
+  handleMainPromptChange: PropTypes.func,
+  handleOptionPromptChange: PropTypes.func,
+  histories: PropTypes.array,
+  setHistories: PropTypes.func,
+  handleNewChat: PropTypes.func,
 };
 
 export default SettingsPanel;
