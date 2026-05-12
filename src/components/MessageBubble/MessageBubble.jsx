@@ -1,8 +1,32 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import MarkdownRenderer from '../MarkdownRenderer/MarkdownRenderer';
 import AnswerMessageCard from '../AnswerMessageCard/AnswerMessageCard';
 import ThinkingBlock from '../ThinkingBlock/ThinkingBlock';
-import { useTranslation } from 'react-i18next';
+import { Button, Icon, BrandLogo, Flag, cn } from '@/components/ui';
+
+/**
+ * MessageBubble — 单条对话气泡（P3a Susan Kare 重设计版）
+ *
+ * 视觉迁移自旧版：
+ *   - 用户气泡：bg-cyan-50 border-cyan-200       → bg-sage-50 (无 border)
+ *   - 助手气泡：bg-[#F5F1EA] border-gray-300     → bg-paper-100
+ *   - 错误气泡：bg-red-50 border-red-200         → bg-paper-100 + Flag + state-warn
+ *   - 助手左侧 32×32 BrandLogo 头像，表情随状态变脸（thinking / error / default）
+ *   - 内联 SVG copy/retry 按钮         → ui/Button + ui/Icon (lucide)
+ *   - amber 三点 loading              → italic serif "let me think..."
+ *
+ * Props 接口与旧版完全兼容，包括 ChatWindow 透传的 `theme` prop（已忽略，
+ * 新设计是单主题，未来暗色模式由 dark: 前缀统一处理）。
+ */
+
+const ASSISTANT_AVATAR_EXPRESSION = (isLoading, isStreaming, isError) => {
+  if (isError) return 'error';
+  if (isLoading || isStreaming) return 'thinking';
+  return 'default';
+};
+
 const MessageBubble = ({
   isUser,
   content = [],
@@ -10,179 +34,115 @@ const MessageBubble = ({
   isLoading = false,
   isStreaming = false,
   status = 'completed',
-  error = null
+  error = null,
+  // theme prop 仅为兼容旧 ChatWindow 透传，新设计不再分主题
+  // eslint-disable-next-line no-unused-vars
+  theme,
 }) => {
   const [showButtons, setShowButtons] = useState(false);
   const [showCopyTip, setShowCopyTip] = useState(false);
   const { t } = useTranslation();
+
   const normalizedContent = Array.isArray(content) ? content : [];
   const isError = status === 'error';
-  const bubbleStyles = {
-    user: normalizedContent[0]?.type === 'answer-card' 
-      ? ''
-      : 'bg-cyan-50 text-slate-700 border border-cyan-200 rounded-xl',
-    assistant: normalizedContent[0]?.type === 'answer-card'
-      ? ''
-      : isError
-        ? 'bg-red-50 rounded-xl text-red-900 border border-red-200'
-        : 'bg-[#F5F1EA] rounded-xl text-gray-700 border border-gray-300'
-  };
+  const isAnswerCard = normalizedContent[0]?.type === 'answer-card';
 
-  const handleCopy = async () => {
-    const text = normalizedContent
-      .map(item => {
-        switch (item.type) {
-          case 'text':
-          case 'math':
-            return item.value;
-          case 'code':
-            return `\`\`\`\n${item.value}\n\`\`\``;
-          case 'question':
-            return Array.isArray(item.value) 
-              ? item.value.join('\n') 
-              : item.value;
-          default:
-            return item.value;
-        }
-      })
-      .join('\n\n');
-    
+  // ── 气泡颜色 ──────────────────────────────────────────────
+  const bubbleClass = isAnswerCard
+    ? 'bg-transparent'
+    : cn(
+        'rounded-md break-words transition-colors duration-base ease-soft',
+        'px-5 py-4',
+        isUser
+          ? 'bg-sage-50 text-ink-900'
+          : 'bg-paper-100 text-ink-900',
+      );
+
+  // ── 复制按钮 ──────────────────────────────────────────────
+  const handleCopy = async (overrideText) => {
+    const text =
+      typeof overrideText === 'string'
+        ? overrideText
+        : normalizedContent
+            .map((item) => {
+              switch (item.type) {
+                case 'text':
+                case 'math':
+                  return item.value;
+                case 'code':
+                  return `\`\`\`\n${item.value}\n\`\`\``;
+                case 'question':
+                  return Array.isArray(item.value)
+                    ? item.value.join('\n')
+                    : item.value;
+                default:
+                  return item.value;
+              }
+            })
+            .join('\n\n');
+
     try {
       await navigator.clipboard.writeText(text);
       setShowCopyTip(true);
-      setTimeout(() => setShowCopyTip(false), 2000);
+      setTimeout(() => setShowCopyTip(false), 1600);
     } catch (err) {
       console.error(t('MessageBubble.copyError'), err);
     }
   };
 
+  // ── 内容渲染 ──────────────────────────────────────────────
   const renderContent = () => {
     return normalizedContent.map((item, index) => {
       switch (item.type) {
         case 'text':
           return (
-            <div key={index} className="mb-2">
+            <div key={index} className="mb-2 last:mb-0">
               <MarkdownRenderer content={item.value} />
             </div>
           );
+
         case 'math':
           return (
-            <div key={index} className="mb-3 font-mono text-base relative bg-slate-50/80 border border-slate-200 rounded-lg shadow-sm overflow-x-auto p-4">
+            <div
+              key={index}
+              className="relative mb-3 overflow-x-auto rounded-md border border-paper-200 bg-paper-50 p-4 font-mono text-base shadow-soft"
+            >
               <button
+                type="button"
                 onClick={() => handleCopy(item.value)}
-                className="absolute top-2 right-2 p-2 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 transition-all"
+                className="absolute right-2 top-2 rounded-sm p-1.5 text-ink-500 transition-colors duration-fast hover:bg-paper-100 hover:text-sage-700"
                 title={t('MessageBubble.copy')}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
+                <Icon name="Copy" size={16} className="text-current" />
               </button>
               <MarkdownRenderer content={item.value} />
             </div>
           );
+
         case 'code':
           return (
-            <div key={index} className="mb-2 relative">
+            <div key={index} className="relative mb-2 last:mb-0">
               <button
+                type="button"
                 onClick={() => handleCopy(item.value)}
-                className="absolute top-2 right-2 p-2 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 transition-all z-10"
+                className="absolute right-2 top-2 z-10 rounded-sm p-1.5 text-ink-500 transition-colors duration-fast hover:bg-paper-100 hover:text-sage-700"
                 title={t('MessageBubble.copy')}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
+                <Icon name="Copy" size={16} className="text-current" />
               </button>
               <MarkdownRenderer content={`\`\`\`\n${item.value}\n\`\`\``} />
             </div>
           );
+
         case 'question':
           return (
-            <div key={index} className="mb-2">
-              {Array.isArray(item.value) ? (
-                <div className="space-y-2">
-                  <div className="flex flex-wrap gap-2">
-                    {item.value.map((question, qIndex) => (
-                      <div 
-                        key={qIndex}
-                        className={`${
-                          question.length > 50 ? 'w-full' : 'max-w-[48%]'
-                        }`}
-                      >
-                        <div className="w-full px-4 py-2.5 rounded-lg font-medium cursor-pointer 
-                          bg-white text-slate-700 hover:bg-slate-50/80
-                          border border-slate-200
-                          transition-all hover:scale-[1.02] shadow-sm 
-                          relative overflow-hidden">
-                          <div className="relative">
-                            <MarkdownRenderer content={question} />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                (() => {
-                  const lines = item.value.split('\n').filter(q => q.trim());
-                  
-                  let questions = [];
-                  if (lines.length === 1) {
-                    const splitByQuestionMark = lines[0].split(/(?<=[\?？])/g).filter(q => q.trim());
-                    
-                    if (splitByQuestionMark.length > 1) {
-                      questions = splitByQuestionMark;
-                    } else {
-                      questions = lines;
-                    }
-                  } else {
-                    for (const line of lines) {
-                      const splitByQuestionMark = line.split(/(?<=[\?？])/g).filter(q => q.trim());
-                      questions = questions.concat(splitByQuestionMark);
-                    }
-                  }
-                  
-                  if (questions.length === 1) {
-                    return (
-                      <div className="px-4 py-2.5 rounded-lg font-medium cursor-pointer 
-                        bg-white text-slate-700 hover:bg-slate-50/80
-                        border border-slate-200
-                        transition-all hover:scale-[1.02] shadow-sm 
-                        relative overflow-hidden">
-                        <div className="relative">
-                          <MarkdownRenderer content={questions[0]} />
-                        </div>
-                      </div>
-                    );
-                  }
-                  
-                  return (
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap gap-2">
-                        {questions.map((question, qIndex) => (
-                          <div 
-                            key={qIndex}
-                            className={`${
-                              question.length > 50 ? 'w-full' : 'max-w-[48%]'
-                            }`}
-                          >
-                            <div className="w-full px-4 py-2.5 rounded-lg font-medium cursor-pointer 
-                              bg-white text-slate-700 hover:bg-slate-50/80
-                              border border-slate-200
-                              transition-all hover:scale-[1.02] shadow-sm 
-                              relative overflow-hidden">
-                              <div className="relative">
-                                <MarkdownRenderer content={question} />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()
-              )}
+            <div key={index} className="mb-2 last:mb-0">
+              {Array.isArray(item.value)
+                ? renderQuestionList(item.value)
+                : renderInlineQuestionString(item.value)}
             </div>
           );
+
         case 'thinking':
           return (
             <ThinkingBlock
@@ -191,9 +151,10 @@ const MessageBubble = ({
               isStreaming={isStreaming && index === 0}
             />
           );
+
         case 'answer-card':
           return (
-            <div key={index} className="mb-2">
+            <div key={index} className="mb-2 last:mb-0">
               <AnswerMessageCard
                 question={item.value.question}
                 level={item.value.level}
@@ -201,9 +162,10 @@ const MessageBubble = ({
               />
             </div>
           );
+
         default:
           return (
-            <div key={index} className="mb-2">
+            <div key={index} className="mb-2 last:mb-0">
               <MarkdownRenderer content={item.value} />
             </div>
           );
@@ -211,83 +173,77 @@ const MessageBubble = ({
     });
   };
 
-  const renderLoading = () => {
-    return (
-      <div className="flex items-center gap-2 py-1">
-        <span className="inline-flex gap-0.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse [animation-delay:200ms]" />
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse [animation-delay:400ms]" />
-        </span>
-        <span className="text-sm text-stone-500 font-medium">{t('MessageBubble.thinking')}</span>
-      </div>
-    );
-  };
+  // ── 加载态：BrandLogo 已表达"思考中"，气泡内只放一句衬线斜体 ──
+  const renderLoading = () => (
+    <div className="text-body italic font-serif text-ink-500">
+      {t('MessageBubble.thinking')}
+    </div>
+  );
 
   return (
-    <div className={`flex items-start gap-3 mb-3 px-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div 
-        className="relative group max-w-[85%]"
+    <div
+      className={cn(
+        'mb-3 flex items-start gap-3 px-4',
+        isUser ? 'justify-end' : 'justify-start',
+      )}
+    >
+      {!isUser && !isAnswerCard && (
+        <BrandLogo
+          size={32}
+          expression={ASSISTANT_AVATAR_EXPRESSION(isLoading, isStreaming, isError)}
+          className={cn('mt-1 shrink-0', isError ? 'text-state-warn' : 'text-ink-700')}
+        />
+      )}
+
+      <div
+        className="group relative max-w-[85%]"
         onMouseEnter={() => setShowButtons(true)}
         onMouseLeave={() => setShowButtons(false)}
       >
-        <div 
-          className={`relative break-words transition-all ${
-            normalizedContent[0]?.type === 'answer-card' ? '' : 'px-5 py-4'
-          } ${
-            isUser ? bubbleStyles.user : bubbleStyles.assistant
-          } ${
-            normalizedContent[0]?.type === 'answer-card' ? 'bg-transparent' : ''
-          }`}
-        >
-          {showButtons && normalizedContent[0]?.type !== 'answer-card' && !isLoading && (
-            <div className="absolute -top-3 right-2 flex gap-1.5">
-              {!isUser && onRetry && (
-                <button
+        <div className={cn('relative', bubbleClass)}>
+          {showButtons && !isAnswerCard && !isLoading && (
+            <div className="absolute -top-3 right-2 z-10 flex gap-1 rounded-sm bg-paper-50 p-0.5 shadow-soft">
+              {onRetry && (
+                <Button
+                  intent="ghost"
+                  size="sm"
+                  iconOnly
                   onClick={onRetry}
-                  className="p-1.5 rounded-lg bg-white/90 hover:bg-white text-blue-600 transition-all hover:scale-105 shadow-sm"
+                  aria-label={t('MessageBubble.retry')}
                   title={t('MessageBubble.retry')}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                </button>
+                  <Icon name="RotateCw" size={14} />
+                </Button>
               )}
-              {isUser && onRetry && (
-                <button
-                  onClick={onRetry}
-                  className="p-1.5 rounded-lg bg-white/90 hover:bg-white text-blue-600 transition-all hover:scale-105 shadow-sm"
-                  title={t('MessageBubble.retry')}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </button>
-              )}
-              <button
-                onClick={handleCopy}
-                className="p-1.5 rounded-lg bg-white/90 hover:bg-white text-blue-600 transition-all hover:scale-105 shadow-sm"
+              <Button
+                intent="ghost"
+                size="sm"
+                iconOnly
+                onClick={() => handleCopy()}
+                aria-label={t('MessageBubble.copy')}
                 title={t('MessageBubble.copy')}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-              </button>
+                <Icon name="Copy" size={14} />
+              </Button>
             </div>
           )}
-          
+
           {showCopyTip && (
-            <div className="absolute -top-8 right-2 px-2.5 py-1 rounded-md text-xs font-medium bg-white text-blue-600 shadow-sm transition-all animate-fade-in-out">
+            <div className="absolute -top-8 right-2 animate-fade-in-out rounded-xs bg-ink-900 px-2 py-1 text-caption font-mono text-paper-50 shadow-lift">
               {t('MessageBubble.copied')}
             </div>
           )}
-          
+
           {isLoading ? renderLoading() : renderContent()}
+
           {isError && !isUser && (
-            <div className="mt-3 flex items-center gap-2 text-xs text-red-700">
-              <span className="inline-flex h-2 w-2 rounded-full bg-red-500" />
+            <div className="mt-3 flex items-center gap-2 rounded-xs bg-sun-300/30 px-3 py-2 text-small font-serif text-ink-700">
+              <Flag size={16} className="shrink-0 text-state-warn" />
               <span>
-                {error?.message || t('MessageBubble.failed', { defaultValue: '请求失败，可点击重试。' })}
+                {error?.message ||
+                  t('MessageBubble.failed', {
+                    defaultValue: '我这边出了点小状况，要不要再试一次？',
+                  })}
               </span>
             </div>
           )}
@@ -297,4 +253,85 @@ const MessageBubble = ({
   );
 };
 
-export default MessageBubble; 
+// ── 子渲染：question 数组形态 ──────────────────────────────
+function renderQuestionList(values) {
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
+        {values.map((question, qIndex) => (
+          <div
+            key={qIndex}
+            className={question.length > 50 ? 'w-full' : 'max-w-[48%]'}
+          >
+            <QuestionChip content={question} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── 子渲染：question 字符串形态（按问号分割） ───────────────
+function renderInlineQuestionString(value) {
+  const lines = value.split('\n').filter((q) => q.trim());
+
+  let questions = [];
+  if (lines.length === 1) {
+    const splitByQuestionMark = lines[0]
+      .split(/(?<=[?？])/g)
+      .filter((q) => q.trim());
+    questions = splitByQuestionMark.length > 1 ? splitByQuestionMark : lines;
+  } else {
+    for (const line of lines) {
+      const splitByQuestionMark = line
+        .split(/(?<=[?？])/g)
+        .filter((q) => q.trim());
+      questions = questions.concat(splitByQuestionMark);
+    }
+  }
+
+  if (questions.length === 1) {
+    return <QuestionChip content={questions[0]} />;
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
+        {questions.map((question, qIndex) => (
+          <div
+            key={qIndex}
+            className={question.length > 50 ? 'w-full' : 'max-w-[48%]'}
+          >
+            <QuestionChip content={question} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── 子组件：单个问题 chip（衬线 + paper 底） ────────────────
+function QuestionChip({ content }) {
+  return (
+    <div className="relative w-full cursor-pointer overflow-hidden rounded-sm border border-paper-200 bg-paper-50 px-4 py-2.5 font-serif text-ink-700 shadow-soft transition-colors duration-fast hover:bg-paper-100 hover:text-ink-900">
+      <MarkdownRenderer content={content} />
+    </div>
+  );
+}
+
+QuestionChip.propTypes = {
+  content: PropTypes.string.isRequired,
+};
+
+MessageBubble.propTypes = {
+  isUser: PropTypes.bool,
+  content: PropTypes.array,
+  onRetry: PropTypes.func,
+  isLoading: PropTypes.bool,
+  isStreaming: PropTypes.bool,
+  status: PropTypes.string,
+  error: PropTypes.shape({ message: PropTypes.string }),
+  theme: PropTypes.string,
+};
+
+export default MessageBubble;
