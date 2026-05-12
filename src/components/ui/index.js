@@ -14,3 +14,6 @@ export { default as Icon } from './Icon';
 export { default as Tag } from './Tag';
 export { default as Tooltip } from './Tooltip';
 export { cn } from './cn';
+
+// 自绘图标层（品牌 logo / 五档生长 / 状态插画）
+export * from './icons';

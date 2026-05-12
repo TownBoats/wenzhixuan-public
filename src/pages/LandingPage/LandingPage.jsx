@@ -2,6 +2,15 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './LandingPage.css';
 
+// ⚠️ P2 过渡注释（docs/REDESIGN_KARE_FEASIBILITY.md）：
+//   本组件当前未被 App.jsx 挂载到路由，处于"孤岛"状态；同时所依赖的
+//   Font Awesome (fas / fa-*) 与 particles.js CDN 已在 P2 阶段从 index.html
+//   移除。视觉将出现 icon 缺失与背景缺粒子，是预期行为。
+//   P4 阶段会重写本页：用 @/components/ui/icons 自绘 SVG 替代 FA、用 5 张
+//   飘叶子 SVG（framer-motion）替代粒子背景，并通过 BrowserRouter 接回 /。
+//
+// 在 P4 之前，LandingPage 处于"代码保留、功能搁置"状态，请勿在生产环境引用。
+
 const LandingPage = () => {
   useEffect(() => {
     // 添加导航栏滚动效果

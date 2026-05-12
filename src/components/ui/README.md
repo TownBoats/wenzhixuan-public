@@ -138,8 +138,47 @@ import { Tooltip, Button, Icon } from '@/components/ui';
 
 ---
 
-## 后续扩展（不在 P1 范围）
+## 自绘图标层 `icons/`
 
-- **复合组件层** (`src/components/ui/composite/` 待建)：把多个原子拼成 `IconButton`、`Field`、`Toolbar` 等
-- **自绘图标层** (`src/components/ui/icons/` 待建)：P2 阶段加入品牌 logo + 五档生长 + 7 张状态插画
+P2 阶段补齐的产品专属插画，与 lucide-react 通道并存：
+
+| 类别 | 组件 | 默认色 | 用途 |
+|---|---|---|---|
+| 品牌 | `<BrandLogo>` | `text-ink-900` | 顶栏 / 助手头像，4 种表情 (default / thinking / error / happy) |
+| 五档生长 | `<LevelSeed>` `<LevelSprout>` `<LevelSapling>` `<LevelTree>` `<LevelForest>` | `text-level-*` | AnswerCard 答案档位 |
+| 五档调度 | `<LevelIcon level="..." />` | 同上 | 按 name 分发；兼容旧 key (`none`/`heard`/`basic`/`familiar`/`expert`) |
+| 状态 | `<CoffeeCup>` | `text-ink-700` | "思考中…" |
+| 状态 | `<Flag>` | `text-state-warn` | 等一下 / 出错 |
+| 状态 | `<Key>` | `text-sun-700` | API Key 相关 |
+| 状态 | `<Hourglass>` | `text-ink-500` | 字数 / 时间临界 |
+| 状态 | `<Screwdriver>` | `text-ink-500` | 设置 / 调试 Tab |
+
+### 使用范例
+
+```jsx
+import { BrandLogo, LevelIcon, CoffeeCup, Key, Flag } from '@/components/ui';
+
+// 助手头像
+<BrandLogo size={32} expression="thinking" />
+
+// 五档答案
+<LevelIcon level="sprout" size={48} />
+<LevelIcon level="heard"  size={48} />  // 旧 key 自动映射为 sprout
+
+// 状态插画
+<CoffeeCup size={20} />
+<Flag size={16} className="text-state-alert" />  // 错误场景换色
+```
+
+### 设计约束
+
+- 所有自绘图标都用 24×24 viewBox + `currentColor`，保证 lucide 与自绘可在同一行无缝混排。
+- 描边宽度统一 `1.5`，比 lucide 默认 `2` 略细，与衬线正文呼应。
+- 体积控制：单个组件 < 60 行 SVG path，gzip 后约 1KB。
+- 后续若有设计师产出更精致的资产，**直接替换同名组件**即可，调用方 0 改动。
+
+## 后续扩展（不在 P2 范围）
+
+- **业务组件迁移** (P3)：`MessageBubble` / `AnswerCard` / `QuestionCard` 改为使用本层
+- **复合组件层** (`src/components/ui/composite/` 待建)：`IconButton` / `Field` / `Toolbar` 等
 - **暗色模式适配**：等 P3 业务组件落地后统一在所有原子组件加 `dark:` 前缀
