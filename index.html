@@ -5,10 +5,12 @@
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>问知轩-会问，才会学；会答，更会想。</title>
-    <!-- 引入Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- 引入粒子效果脚本 -->
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <!--
+      P2 (docs/REDESIGN_KARE_FEASIBILITY.md): Font Awesome 与 particles.js
+      已从 CDN 移除。原仅供 LandingPage（当前未挂载到路由）使用，详见
+      src/pages/LandingPage/LandingPage.jsx 顶部注释；P4 LandingPage 重构
+      时会用本仓库自绘 SVG 替代相关 fas/fa-* 与 particlesJS 调用。
+    -->
   </head>
   <body>
     <div id="root"></div>
