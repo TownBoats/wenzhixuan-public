@@ -52,7 +52,7 @@ const MessageBubble = ({
     ? 'bg-transparent'
     : cn(
         'rounded-md break-words transition-colors duration-base ease-soft',
-        'px-5 py-4',
+        'px-3 py-3 sm:px-5 sm:py-4',
         isUser
           ? 'bg-sage-50 text-ink-900'
           : 'bg-paper-100 text-ink-900',
@@ -183,20 +183,23 @@ const MessageBubble = ({
   return (
     <div
       className={cn(
-        'mb-3 flex items-start gap-3 px-4',
+        'mb-3 flex items-start gap-2 px-2 sm:gap-3 sm:px-4',
         isUser ? 'justify-end' : 'justify-start',
       )}
     >
       {!isUser && !isAnswerCard && (
         <BrandLogo
-          size={32}
+          size={28}
           expression={ASSISTANT_AVATAR_EXPRESSION(isLoading, isStreaming, isError)}
-          className={cn('mt-1 shrink-0', isError ? 'text-state-warn' : 'text-ink-700')}
+          className={cn(
+            'mt-1 shrink-0 sm:!h-8 sm:!w-8',
+            isError ? 'text-state-warn' : 'text-ink-700',
+          )}
         />
       )}
 
       <div
-        className="group relative max-w-[85%]"
+        className="group relative max-w-[85%] sm:max-w-[80%]"
         onMouseEnter={() => setShowButtons(true)}
         onMouseLeave={() => setShowButtons(false)}
       >

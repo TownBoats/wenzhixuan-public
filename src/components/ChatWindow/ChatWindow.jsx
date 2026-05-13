@@ -47,8 +47,8 @@ const ChatWindow = ({
 }) => {
   return (
     <div className="relative flex h-full flex-col bg-paper-50 transition-colors duration-base">
-      <div className="relative flex-1 overflow-y-auto py-6 scrollbar-custom">
-        <div className="mx-auto max-w-[48rem]">
+      <div className="relative flex-1 overflow-y-auto px-2 py-4 sm:px-4 sm:py-6 scrollbar-custom">
+        <div className="mx-auto w-full max-w-[48rem]">
           {messages.map((message, index) => (
             <MessageBubble
               key={message.id || index}

@@ -591,12 +591,12 @@ const ChatPage = ({ className }) => {
       <div className="flex h-screen">
         <div className="flex-1 flex flex-col relative">
           <div
-            className="relative z-10 border-b border-paper-200 bg-paper-50/85 p-4 backdrop-blur-sm transition-colors duration-base"
+            className="relative z-10 border-b border-paper-200 bg-paper-50/85 px-3 py-2 backdrop-blur-sm transition-colors duration-base sm:px-4 sm:py-3 md:p-4"
             onClick={onHeaderClick}
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <h1
-                className="cursor-pointer font-display text-h1 tracking-tight text-ink-900 transition-colors duration-fast hover:text-sage-700"
+                className="cursor-pointer truncate font-display text-h2 tracking-tight text-ink-900 transition-colors duration-fast hover:text-sage-700 md:text-h1"
                 onClick={(event) => {
                   event.stopPropagation();
                   onTitleClick(event);
@@ -667,8 +667,8 @@ const ChatPage = ({ className }) => {
           </div>
 
           {!isInitialLayout && (
-            <div className="border-t transition-colors duration-300 bg-white/80 backdrop-blur-sm relative z-10">
-              <div className="py-4">
+            <div className="relative z-10 border-t border-paper-200 bg-paper-50/85 backdrop-blur-sm transition-colors duration-base">
+              <div className="px-3 py-3 sm:px-4 sm:py-4">
                 <UserInput
                   inputText={inputText}
                   setInputText={setInputText}
