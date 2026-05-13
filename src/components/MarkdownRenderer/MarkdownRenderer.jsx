@@ -1,13 +1,30 @@
-import React, { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import PropTypes from 'prop-types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Icon, cn } from '@/components/ui';
 
-const CodeBlock = ({ language, value, theme }) => {
-  const [copied, setCopied] = React.useState(false);
+/**
+ * MarkdownRenderer — Markdown 内容渲染（设计 token 重写版）
+ *
+ * 视觉迁移自旧版：
+ *   - 链接 text-blue-500             → text-sage-700 + 下划线 hover
+ *   - 内联 code bg-gray-100/text-800 → bg-paper-100 + text-sage-700
+ *   - 代码块顶栏 bg-slate-700        → bg-ink-900 + text-paper-50（与 Tooltip 同色）
+ *   - 复制按钮 bg-slate-700          → ui Icon(Copy/Check) + ghost hover
+ *   - 表格 divide-gray-200           → divide-paper-200
+ *   - 表头 bg-gray-50                → bg-paper-100 + ink-900 + serif
+ *   - tech 主题分支整体删除（新设计单主题；P5 后用 dark: 接管）
+ *
+ * 行为完全保留，包括 KaTeX CSS 注入（已在 P2 注释为待 P3 优化）。
+ */
+
+const CodeBlock = ({ language, value }) => {
+  const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
     try {
@@ -20,22 +37,23 @@ const CodeBlock = ({ language, value, theme }) => {
   };
 
   return (
-    <div className="relative group">
+    <div className="group relative">
       <button
+        type="button"
         onClick={handleCopy}
-        className={`absolute right-2 top-2 px-2 py-1 text-xs rounded transition-all duration-200 ${
-          theme === 'tech'
-            ? 'bg-tech-accent/20 text-tech-highlight hover:bg-tech-accent/30'
-            : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
-        } opacity-0 group-hover:opacity-100`}
+        className={cn(
+          'absolute right-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-sm',
+          'bg-paper-100 text-ink-500 transition-all duration-fast',
+          'opacity-0 group-hover:opacity-100',
+          'hover:bg-paper-200 hover:text-sage-700',
+          'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/30',
+        )}
+        title={copied ? '已复制' : '复制'}
+        aria-label={copied ? '已复制' : '复制'}
       >
-        {copied ? '已复制!' : '复制'}
+        <Icon name={copied ? 'Check' : 'Copy'} size={14} className="text-current" />
       </button>
-      <div className={`text-xs mb-1 px-4 py-1 rounded-t-lg ${
-        theme === 'tech' 
-          ? 'bg-tech-secondary/80 text-tech-text' 
-          : 'bg-slate-700 text-slate-300'
-      }`}>
+      <div className="rounded-t-sm bg-ink-900 px-4 py-1 font-mono text-caption text-paper-50">
         {language || 'plaintext'}
       </div>
       <SyntaxHighlighter
@@ -47,6 +65,8 @@ const CodeBlock = ({ language, value, theme }) => {
           margin: 0,
           borderTopLeftRadius: 0,
           borderTopRightRadius: 0,
+          borderBottomLeftRadius: 8,
+          borderBottomRightRadius: 8,
         }}
       >
         {value}
@@ -55,88 +75,72 @@ const CodeBlock = ({ language, value, theme }) => {
   );
 };
 
-const MarkdownRenderer = ({ content, theme = 'default' }) => {
+CodeBlock.propTypes = {
+  language: PropTypes.string,
+  value: PropTypes.string.isRequired,
+};
+
+const MarkdownRenderer = ({
+  content,
+  // theme 兼容旧调用方（ChatWindow / MessageBubble 内部仍透传），新设计无需主题分叉
+  // eslint-disable-next-line no-unused-vars
+  theme,
+}) => {
   const markdownComponents = useMemo(
     () => ({
-      code({ node, inline, className, children, ...props }) {
-        const match = /language-(\w+)/.exec(className || "");
+      code({ inline, className, children, ...props }) {
+        const match = /language-(\w+)/.exec(className || '');
         const language = match?.[1];
-        const value = String(children).replace(/\n$/, "");
-        
+        const value = String(children).replace(/\n$/, '');
+
         if (!inline && language) {
           return (
             <div className="my-2">
-              <CodeBlock
-                language={language}
-                value={value}
-                theme={theme}
-              />
+              <CodeBlock language={language} value={value} />
             </div>
           );
         }
 
         return (
-          <code 
-            className={`px-1.5 py-0.5 rounded text-sm font-mono ${
-              theme === 'tech' 
-                ? 'bg-tech-secondary/50 text-tech-accent' 
-                : 'bg-gray-100 text-gray-800'
-            }`} 
+          <code
+            className="rounded-xs bg-paper-100 px-1.5 py-0.5 font-mono text-small text-sage-700"
             {...props}
           >
             {children}
           </code>
         );
       },
-      // 链接样式
-      a: ({ node, ...props }) => (
+      a: ({ ...props }) => (
         <a
-          className={`hover:underline ${
-            theme === 'tech' ? 'text-tech-accent' : 'text-blue-500'
-          }`}
+          className="text-sage-700 underline-offset-2 hover:text-sage-900 hover:underline"
           target="_blank"
           rel="noopener noreferrer"
           {...props}
         />
       ),
-      // 列表样式
-      ul: ({ node, ...props }) => (
-        <ul className="list-disc pl-6 my-2 space-y-1" {...props} />
-      ),
-      ol: ({ node, ...props }) => (
-        <ol className="list-decimal pl-6 my-2 space-y-1" {...props} />
-      ),
-      // 添加列表项样式
-      li: ({ node, children, ...props }) => (
+      ul: ({ ...props }) => <ul className="my-2 list-disc space-y-1 pl-6" {...props} />,
+      ol: ({ ...props }) => <ol className="my-2 list-decimal space-y-1 pl-6" {...props} />,
+      li: ({ children, ...props }) => (
         <li className="pl-1" {...props}>
           {children}
         </li>
       ),
-      // 表格样式
-      table: ({ node, ...props }) => (
-        <div className="overflow-x-auto my-4">
-          <table className={`min-w-full divide-y ${
-            theme === 'tech' ? 'divide-tech-text/20' : 'divide-gray-200'
-          }`} {...props} />
+      table: ({ ...props }) => (
+        <div className="my-4 overflow-x-auto">
+          <table className="min-w-full divide-y divide-paper-200" {...props} />
         </div>
       ),
-      th: ({ node, ...props }) => (
+      th: ({ ...props }) => (
         <th
-          className={`px-4 py-2 text-left text-sm font-semibold ${
-            theme === 'tech' 
-              ? 'bg-tech-secondary/50 text-tech-highlight' 
-              : 'bg-gray-50 text-gray-900'
-          }`}
+          className="bg-paper-100 px-4 py-2 text-left font-serif text-small font-semibold text-ink-900"
           {...props}
         />
       ),
-      td: ({ node, ...props }) => (
-        <td className={`px-4 py-2 text-sm ${
-          theme === 'tech' ? 'text-tech-text' : 'text-gray-900'
-        }`} {...props} />
+      td: ({ ...props }) => (
+        <td className="px-4 py-2 text-small text-ink-900" {...props} />
       ),
     }),
-    [theme]
+    [],
   );
 
   return (
@@ -158,4 +162,9 @@ const MarkdownRenderer = ({ content, theme = 'default' }) => {
   );
 };
 
-export default MarkdownRenderer; 
+MarkdownRenderer.propTypes = {
+  content: PropTypes.string,
+  theme: PropTypes.string,
+};
+
+export default MarkdownRenderer;
