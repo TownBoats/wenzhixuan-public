@@ -418,10 +418,21 @@ const DebugPanel = ({
   if (!showDebugPanel) return null;
 
   return (
-    <div
-      className="fixed right-0 top-0 z-50 flex flex-col border-l border-paper-200 bg-paper-50/97 shadow-lift"
-      style={{ width: 420, top: 72, height: 'calc(100% - 72px)' }}
-    >
+    <>
+      {/* 蒙层：仅 mobile，点击关闭 */}
+      <button
+        type="button"
+        aria-label="关闭调试面板"
+        className="fixed inset-0 z-40 bg-ink-900/15 backdrop-blur-[1px] md:hidden"
+        onClick={() => setShowDebugPanel(false)}
+      />
+      <div
+        className={cn(
+          'fixed right-0 top-[56px] z-50 flex h-[calc(100%-56px)] flex-col',
+          'w-full md:top-[72px] md:h-[calc(100%-72px)] md:w-[420px]',
+          'border-l border-paper-200 bg-paper-50/97 shadow-lift',
+        )}
+      >
       {/* 顶栏 */}
       <div className="flex shrink-0 items-center justify-between border-b border-paper-200 px-4 py-3">
         <h2 className="flex items-center gap-2 font-serif text-h2 text-ink-900">
@@ -483,6 +494,7 @@ const DebugPanel = ({
         )}
       </div>
     </div>
+    </>
   );
 };
 

@@ -1,18 +1,18 @@
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import ChatHistory from '../ChatHistory/ChatHistory';
 import { Button, Icon, cn } from '@/components/ui';
 
 /**
- * HistorySidebar — 右侧历史会话抽屉（P3g Susan Kare 重设计版）
+ * HistorySidebar — 右侧历史会话抽屉
  *
- * 视觉迁移自旧版：
- *   - bg-white/80 + slate border-l        → bg-paper-50/85 + paper-200
- *   - 标题字号 sm + slate                  → h2 衬线 + ink-900
- *   - 关闭按钮内联 SVG + slate hover       → ui Button(ghost) + lucide X
- *   - 旧滚动条类（slate-400/20）            → 复用 .scrollbar-custom 工具类
+ * 响应式策略：
+ *   - mobile (< md)   ：100vw 全宽 + 半透明蒙层 + 蒙层 / ESC 关闭
+ *                       从右滑入（这里直接渲染，过渡留给 mount 动画）
+ *   - desktop (≥ md)  ：320px 宽，从顶部 72px 起（避开顶栏）
  *
- * Props 接口与旧版完全一致。
+ * 行为完全保留：propTypes 一致；点击蒙层 / ESC 关闭是新增辅助。
  */
 const HistorySidebar = ({
   showRightSidebar,
@@ -25,20 +25,36 @@ const HistorySidebar = ({
 }) => {
   const { t } = useTranslation();
 
+  useEffect(() => {
+    if (!showRightSidebar) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setShowRightSidebar(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showRightSidebar, setShowRightSidebar]);
+
   if (!showRightSidebar) return null;
 
   return (
-    <div
-      className={cn(
-        'fixed right-0 top-0 h-full',
-        'bg-paper-50/90 backdrop-blur-sm',
-        'border-l border-paper-200 shadow-lift',
-        'transition-all duration-base ease-soft',
-      )}
-      style={{ width: '320px', top: '72px', height: 'calc(100% - 72px)' }}
-    >
-      <div className="flex h-full flex-col">
-        <div className="flex items-center justify-between border-b border-paper-200 px-4 py-3">
+    <>
+      {/* 蒙层（仅 mobile，点击关闭） */}
+      <button
+        type="button"
+        aria-label="关闭历史抽屉"
+        className="fixed inset-0 z-40 bg-ink-900/15 backdrop-blur-[1px] md:hidden"
+        onClick={() => setShowRightSidebar(false)}
+      />
+
+      <div
+        className={cn(
+          'fixed right-0 top-[56px] z-50 flex h-[calc(100%-56px)] flex-col',
+          'w-full md:w-[320px] md:top-[72px] md:h-[calc(100%-72px)]',
+          'border-l border-paper-200 bg-paper-50/95 shadow-lift backdrop-blur-sm',
+          'transition-transform duration-base ease-soft',
+        )}
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-paper-200 px-4 py-3">
           <h2 className="text-h2 font-serif text-ink-900">
             {t('HistorySidebar.title')}
           </h2>
@@ -58,14 +74,20 @@ const HistorySidebar = ({
             <ChatHistory
               histories={histories}
               currentChatId={currentChatId}
-              onSelectHistory={handleSelectHistory}
+              onSelectHistory={(id) => {
+                handleSelectHistory(id);
+                // 移动端选完自动关掉抽屉，让用户看到选中的会话
+                if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                  setShowRightSidebar(false);
+                }
+              }}
               onDeleteHistory={handleDeleteHistory}
               onUpdateTitle={handleUpdateTitle}
             />
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
