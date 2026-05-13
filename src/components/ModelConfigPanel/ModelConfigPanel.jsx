@@ -1,15 +1,36 @@
-import React, { useState } from 'react';
-// 预设已移除，使用纯自定义模式
+import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import ConfigManager from '../../utils/ConfigManager';
+import {
+  Button,
+  Input,
+  Icon,
+  Tag,
+  cn,
+} from '@/components/ui';
 
-// 预设相关 UI 已移除
-
-const ModelConfigPanel = ({ 
+/**
+ * ModelConfigPanel — BYOK 模型配置面板（设计 token 重写版）
+ *
+ * 视觉迁移自旧版：
+ *   - bg-white + gray-200 卡片              → bg-paper-50 + paper-200 + shadow-soft
+ *   - 内部分组小标题 gray-500 SPSEMI         → text-caption font-mono text-ink-500
+ *   - 旧 input：gray-300 + blue-500 focus    → ui/Input atom (sage 聚焦环)
+ *   - 旧 button：blue-600 / gray-800        → ui/Button(primary/secondary)
+ *   - 测试结果 green-50 / red-50 双色块     → state-good/15 + state-alert/10 +
+ *                                               Icon Check / AlertCircle
+ *   - 弱分隔线 gray-100                      → border-paper-200
+ *   - 开发者 URL 调试区 violet-600 + gray-500 → font-mono ink-500（保留 sage 强调）
+ *
+ * 行为完全保留：handleChange / handleURLModeChange / buildRequestURL /
+ * buildEffectiveUrl / handleLoadDefault / handleTestConnection 全部一致。
+ */
+const ModelConfigPanel = ({
   currentConfig,
   onConfigChange,
   agentType = 'main',
-  developerMode = false
+  developerMode = false,
 }) => {
   const { t } = useTranslation();
   const [useCustomURL, setUseCustomURL] = useState(currentConfig?.useCustomURL || false);
@@ -18,35 +39,24 @@ const ModelConfigPanel = ({
     customEndpoint: currentConfig?.customEndpoint || '',
     apiKey: currentConfig?.apiKey || '',
     model: currentConfig?.model || '',
-    fullURL: currentConfig?.fullURL || ''
+    fullURL: currentConfig?.fullURL || '',
   });
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const newConfig = {
-      ...config,
-      [name]: value
-    };
+    const newConfig = { ...config, [name]: value };
     setConfig(newConfig);
-    onConfigChange({...newConfig, useCustomURL});
+    onConfigChange({ ...newConfig, useCustomURL });
   };
 
-  // 预设选择逻辑已移除
-
-  // 处理 URL 模式切换
   const handleURLModeChange = (e) => {
     const newUseCustomURL = e.target.checked;
     setUseCustomURL(newUseCustomURL);
-    onConfigChange({...config, useCustomURL: newUseCustomURL});
+    onConfigChange({ ...config, useCustomURL: newUseCustomURL });
   };
 
-  // 预设显示名逻辑已移除
-
-  // 预设列表已移除
-
-  // 构建请求 URL（与 AgentModel 保持一致）
   const buildRequestURL = (cfg) => {
     const url = ConfigManager.buildEndpointUrl(cfg);
     if (!url) return '';
@@ -55,10 +65,6 @@ const ModelConfigPanel = ({
     return `${window.location.origin}/${url}`;
   };
 
-  /**
-   * 将完整端点 URL 转换为 AI SDK 使用的 baseURL（与 AgentModel._buildAiSdkBaseUrl 保持一致）。
-   * 用于在设置面板展示实际生效的请求地址。
-   */
   const buildEffectiveUrl = (cfg) => {
     const full = buildRequestURL(cfg);
     if (!full) return '';
@@ -73,7 +79,7 @@ const ModelConfigPanel = ({
       apiKey: '',
       model: 'glm-4.5',
       fullURL: '',
-      useCustomURL: false
+      useCustomURL: false,
     };
     setConfig(defaultConfig);
     onConfigChange(defaultConfig);
@@ -93,11 +99,8 @@ const ModelConfigPanel = ({
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
       const headers = { 'Content-Type': 'application/json' };
-      if (config.apiKey) {
-        headers['Authorization'] = `Bearer ${config.apiKey}`;
-      }
+      if (config.apiKey) headers['Authorization'] = `Bearer ${config.apiKey}`;
 
-      // 使用 stream: true + 完整参数，与实际对话路径保持一致
       const res = await fetch(endpoint, {
         method: 'POST',
         signal: controller.signal,
@@ -111,20 +114,25 @@ const ModelConfigPanel = ({
           top_p: 1,
           frequency_penalty: 0,
           presence_penalty: 0,
-        })
+        }),
       });
       clearTimeout(timeoutId);
 
       if (!res.ok) {
         let errText = '';
-        try { errText = await res.text(); } catch {}
-        // 尝试解析 JSON 以获取更清晰的错误消息
+        try {
+          errText = await res.text();
+        } catch {
+          /* noop */
+        }
         let errDetail = errText.slice(0, 400);
         try {
           const parsed = JSON.parse(errText);
           const msg = parsed?.error?.message || parsed?.message;
           if (msg) errDetail = msg;
-        } catch {}
+        } catch {
+          /* noop */
+        }
         setTestResult({
           ok: false,
           statusCode: res.status,
@@ -134,7 +142,6 @@ const ModelConfigPanel = ({
         return;
       }
 
-      // 读取至少一个 chunk，验证流式响应正常
       const reader = res.body.getReader();
       try {
         const { value } = await reader.read();
@@ -144,194 +151,195 @@ const ModelConfigPanel = ({
         reader.cancel();
       }
     } catch (e) {
-      setTestResult({ ok: false, message: e.name === 'AbortError' ? '连接超时 (15s)' : e.message });
+      setTestResult({
+        ok: false,
+        message: e.name === 'AbortError' ? '连接超时 (15s)' : e.message,
+      });
     } finally {
       setTesting(false);
     }
   };
 
   return (
-    <div className="p-4 md:p-5 rounded-xl shadow-sm bg-white border border-gray-200">
-      <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4 text-gray-800 tracking-tight">
+    <div className="rounded-md border border-paper-200 bg-paper-50 p-4 shadow-soft md:p-5">
+      <h3 className="mb-3 flex items-center gap-2 text-h2 font-serif text-ink-900 md:mb-4">
         {agentType === 'main' ? t('ModelConfigPanel.mainModel') : t('ModelConfigPanel.optionModel')}
-        {developerMode && <span className="ml-2 text-xs text-blue-500 opacity-70">{t('SettingsPanel.developerMode')}</span>}
+        {developerMode && (
+          <Tag variant="active">{t('SettingsPanel.developerMode')}</Tag>
+        )}
       </h3>
-      
-      
-      {/* 添加模型推荐提示 */}
-      <div className="mb-3 md:mb-4 text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-        {agentType === 'main' 
-          ? <p>{t('ModelConfigPanel.mainModelTip')}</p>
-          : <p>{t('ModelConfigPanel.optionModelTip')}</p>
-        }
-      </div>
-      
-      {/* 分组标题：连接设置 */}
-      <div className="mb-2 md:mb-3">
-        <div className="text-[11px] md:text-xs font-semibold tracking-wide text-gray-500">连接设置</div>
+
+      <div className="mb-4 rounded-sm border border-paper-200 bg-paper-100 px-3 py-2 text-small font-serif italic text-ink-700">
+        {agentType === 'main'
+          ? t('ModelConfigPanel.mainModelTip')
+          : t('ModelConfigPanel.optionModelTip')}
       </div>
 
-      {/* 表单区域：12 栅格 + 基线节奏 */}
+      <p className="mb-2 text-caption font-mono uppercase tracking-wide text-ink-500">
+        连接设置
+      </p>
+
       <div className="grid grid-cols-12 gap-x-4 gap-y-3 md:gap-y-4">
-        {/* URL 模式选择 - 所有模式下都显示 */}
         <div className="col-span-12">
-          <label className="inline-flex items-center gap-2 text-gray-700 select-none">
+          <label className="inline-flex cursor-pointer select-none items-center gap-2 text-ink-700">
             <input
               type="checkbox"
               checked={useCustomURL}
               onChange={handleURLModeChange}
-              className="form-checkbox h-4 w-4 accent-black transition-colors"
+              className="form-checkbox h-4 w-4 rounded-sm accent-sage-500 transition-colors"
             />
-            <span className="text-sm font-medium">{t('ModelConfigPanel.useCustomFullURL')}</span>
+            <span className="text-small font-medium">
+              {t('ModelConfigPanel.useCustomFullURL')}
+            </span>
           </label>
         </div>
 
-        {/* 根据模式显示不同的输入框 */}
         {useCustomURL ? (
-          <div className="col-span-12 transition-all duration-200 ease-out">
-            <label className="block text-[13px] font-medium mb-1 text-gray-700">
+          <div className="col-span-12 transition-all duration-base ease-soft">
+            <label className="mb-1 block text-small font-medium text-ink-700">
               {t('ModelConfigPanel.fullURLLabel')}
             </label>
-            <input
+            <Input
               type="text"
               name="fullURL"
               value={config.fullURL}
               onChange={handleChange}
               placeholder="https://open.bigmodel.cn/api/paas/v4/chat/completions"
-              className="w-full h-10 px-3 rounded-lg border bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-shadow"
+              className="font-mono"
             />
           </div>
         ) : (
           <>
-            {/* 预设选择已移除 */}
-
-            {/* 所有模式下都显示高级配置 */}
             <div className="col-span-12 md:col-span-6">
-              <label className="block text-[13px] font-medium mb-1 text-gray-700">
+              <label className="mb-1 block text-small font-medium text-ink-700">
                 {t('ModelConfigPanel.baseURLLabel')}
               </label>
-              <input
+              <Input
                 type="text"
                 name="baseURL"
                 value={config.baseURL}
                 onChange={handleChange}
                 placeholder="https://open.bigmodel.cn"
-                className="w-full h-10 px-3 rounded-lg border bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-shadow"
+                className="font-mono"
               />
             </div>
 
             <div className="col-span-12 md:col-span-6">
-              <label className="block text-[13px] font-medium mb-1 text-gray-700">
+              <label className="mb-1 block text-small font-medium text-ink-700">
                 {t('ModelConfigPanel.endpointLabel')}
               </label>
-              <input
+              <Input
                 type="text"
                 name="customEndpoint"
                 value={config.customEndpoint}
                 onChange={handleChange}
                 placeholder="/api/paas/v4/chat/completions"
-                className="w-full h-10 px-3 rounded-lg border bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-shadow"
+                className="font-mono"
               />
             </div>
           </>
         )}
 
-        {/* 分隔线（弱分隔） */}
         <div className="col-span-12">
-          <div className="border-t border-gray-100" />
+          <div className="border-t border-paper-200" />
         </div>
 
-        {/* 分组标题：认证与模型 */}
         <div className="col-span-12 -mt-1">
-          <div className="text-[11px] md:text-xs font-semibold tracking-wide text-gray-500">认证与模型</div>
+          <p className="text-caption font-mono uppercase tracking-wide text-ink-500">
+            认证与模型
+          </p>
         </div>
 
-        {/* API 密钥 */}
         <div className="col-span-12 md:col-span-6">
-          <label className="block text-[13px] font-medium mb-1 text-gray-700">
+          <label className="mb-1 block text-small font-medium text-ink-700">
             {t('ModelConfigPanel.apiKeyLabel')}
           </label>
-          <input
+          <Input
             type="password"
             name="apiKey"
             value={config.apiKey}
             onChange={handleChange}
-            placeholder="输入 API 密钥"
+            placeholder="把 API Key 给我看一眼"
             autoComplete="off"
-            className="w-full h-10 px-3 rounded-lg border bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-shadow"
+            className="font-mono"
           />
         </div>
 
-        {/* 模型名称 - 所有模式下都可编辑 */}
         <div className="col-span-12 md:col-span-6">
-          <label className="block text-[13px] font-medium mb-1 text-gray-700">
+          <label className="mb-1 block text-small font-medium text-ink-700">
             {t('ModelConfigPanel.modelLabel')}
           </label>
-          <input
+          <Input
             type="text"
             name="model"
             value={config.model}
             onChange={handleChange}
             placeholder="输入模型名称"
-            className="w-full h-10 px-3 rounded-lg border bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-shadow"
+            className="font-mono"
           />
         </div>
       </div>
 
-      {/* 按钮区域 */}
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <div className="flex gap-2">
-          <button
-            onClick={handleLoadDefault}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md active:shadow-inner"
-          >
-            {t('ModelConfigPanel.loadDefault')}
-          </button>
-          <button
-            onClick={handleTestConnection}
-            disabled={testing}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-gray-800 hover:bg-gray-900 text-white disabled:opacity-60 disabled:cursor-not-allowed shadow-sm hover:shadow-md active:shadow-inner"
-          >
-            {testing ? t('ModelConfigPanel.testing') : t('ModelConfigPanel.testConnection')}
-          </button>
-        </div>
+      <div className="mt-4 flex items-center gap-2">
+        <Button intent="primary" size="md" onClick={handleLoadDefault}>
+          {t('ModelConfigPanel.loadDefault')}
+        </Button>
+        <Button intent="secondary" size="md" onClick={handleTestConnection} disabled={testing}>
+          {testing ? (
+            <>
+              <Icon name="Loader2" size={14} className="text-current animate-spin" />
+              {t('ModelConfigPanel.testing')}
+            </>
+          ) : (
+            <>
+              <Icon name="Wifi" size={14} className="text-current" />
+              {t('ModelConfigPanel.testConnection')}
+            </>
+          )}
+        </Button>
       </div>
 
-      {/* 测试结果区域 */}
       {testResult && (
-        <div className={`mt-3 rounded-lg border text-xs p-3 ${
-          testResult.ok
-            ? 'bg-green-50 border-green-200 text-green-800'
-            : 'bg-red-50 border-red-200 text-red-800'
-        }`}>
+        <div
+          className={cn(
+            'mt-3 rounded-sm border p-3 text-small',
+            testResult.ok
+              ? 'border-state-good/30 bg-state-good/10 text-sage-700'
+              : 'border-state-alert/30 bg-state-alert/10 text-state-alert',
+          )}
+        >
           <div className="flex items-center gap-2 font-medium">
-            {testResult.ok ? (
-              <svg className="w-4 h-4 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            ) : (
-              <svg className="w-4 h-4 text-red-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            )}
+            <Icon
+              name={testResult.ok ? 'Check' : 'X'}
+              size={16}
+              className="text-current shrink-0"
+            />
             {testResult.statusCode && (
-              <span className={`font-mono font-bold px-1.5 py-0.5 rounded ${
-                testResult.ok ? 'bg-green-100' : 'bg-red-100'
-              }`}>
+              <span
+                className={cn(
+                  'rounded-xs px-1.5 py-0.5 font-mono font-bold',
+                  testResult.ok ? 'bg-state-good/20' : 'bg-state-alert/20',
+                )}
+              >
                 {testResult.statusCode}
               </span>
             )}
             <span>{testResult.message}</span>
           </div>
           {testResult.detail && (
-            <pre className={`mt-2 text-[11px] font-mono whitespace-pre-wrap break-all p-2 rounded ${
-              testResult.ok ? 'bg-green-100/50 text-green-700' : 'bg-red-100/50 text-red-700'
-            }`}>
+            <pre
+              className={cn(
+                'mt-2 whitespace-pre-wrap break-all rounded-xs p-2 text-caption font-mono',
+                testResult.ok
+                  ? 'bg-state-good/10 text-sage-700'
+                  : 'bg-state-alert/10 text-state-alert',
+              )}
+            >
               {testResult.ok ? `首个响应数据: ${testResult.detail}` : testResult.detail}
             </pre>
           )}
           {!testResult.ok && (
-            <p className="mt-1.5 text-[11px] text-red-600 opacity-80">
+            <p className="mt-1.5 text-caption font-serif italic opacity-80">
               测试使用 stream: true 与实际对话相同，404 通常表示模型名称无效。
             </p>
           )}
@@ -339,15 +347,29 @@ const ModelConfigPanel = ({
       )}
 
       {developerMode && (
-        <div className="mt-2 space-y-1 text-[11px] text-gray-500 break-all">
+        <div className="mt-2 space-y-1 break-all text-caption font-mono text-ink-500">
           <div>配置 URL: {buildRequestURL({ ...config, useCustomURL })}</div>
-          <div className="text-violet-600">
+          <div className="text-sage-700">
             实际 URL (AI SDK): {buildEffectiveUrl({ ...config, useCustomURL })}
           </div>
         </div>
       )}
     </div>
   );
+};
+
+ModelConfigPanel.propTypes = {
+  currentConfig: PropTypes.shape({
+    baseURL: PropTypes.string,
+    customEndpoint: PropTypes.string,
+    apiKey: PropTypes.string,
+    model: PropTypes.string,
+    fullURL: PropTypes.string,
+    useCustomURL: PropTypes.bool,
+  }),
+  onConfigChange: PropTypes.func.isRequired,
+  agentType: PropTypes.oneOf(['main', 'option']),
+  developerMode: PropTypes.bool,
 };
 
 export default ModelConfigPanel;
