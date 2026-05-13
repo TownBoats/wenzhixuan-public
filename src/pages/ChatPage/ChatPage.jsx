@@ -591,12 +591,12 @@ const ChatPage = ({ className }) => {
       <div className="flex h-screen">
         <div className="flex-1 flex flex-col relative">
           <div
-            className="p-4 transition-colors duration-300 bg-white/80 border-b border-slate-200/60 relative z-10"
+            className="relative z-10 border-b border-paper-200 bg-paper-50/85 p-4 backdrop-blur-sm transition-colors duration-base"
             onClick={onHeaderClick}
           >
             <div className="flex items-center justify-between">
               <h1
-                className="text-xl font-medium tracking-tight font-['PingFang SC'] text-slate-800 hover:text-cyan-600 transition-colors duration-300 cursor-pointer"
+                className="cursor-pointer font-display text-h1 tracking-tight text-ink-900 transition-colors duration-fast hover:text-sage-700"
                 onClick={(event) => {
                   event.stopPropagation();
                   onTitleClick(event);
@@ -606,7 +606,7 @@ const ChatPage = ({ className }) => {
               >
                 {t("ChatPage.title")}
                 {developerMode && (
-                  <span className="ml-1 text-xs text-blue-500 opacity-50">
+                  <span className="ml-2 font-mono text-caption text-sage-700 opacity-70">
                     Dev
                   </span>
                 )}
