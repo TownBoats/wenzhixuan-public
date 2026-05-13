@@ -5,6 +5,7 @@ import { Resizable } from 'react-resizable';
 import 'react-resizable/css/styles.css';
 import { useTranslation } from 'react-i18next';
 import MarkdownRenderer from '../MarkdownRenderer/MarkdownRenderer';
+import useMediaQuery, { BREAKPOINTS } from '../../hooks/useMediaQuery';
 import { Button, Icon, BrandLogo, LevelIcon, cn } from '@/components/ui';
 
 // 旧 ContentParser key → tailwind level-* token class（必须写出完整类名才能被 Tailwind 提取）
@@ -43,6 +44,7 @@ const AnswerCard = ({
   theme,
 }) => {
   const { t } = useTranslation();
+  const isDesktop = useMediaQuery(BREAKPOINTS.md);
   const [customAnswer, setCustomAnswer] = useState('');
   const [localAnswers, setLocalAnswers] = useState(question?.answer || {});
   const [revealedCards, setRevealedCards] = useState({});
@@ -176,54 +178,39 @@ const AnswerCard = ({
     }
   };
 
-  return (
-    <Draggable
-      nodeRef={nodeRef}
-      handle=".drag-handle"
-      position={position}
-      onStart={handleDragStart}
-      onStop={handleDragStop}
-      bounds="parent"
-    >
-      <Resizable
-        width={size.width}
-        height={size.height}
-        onResize={(e, { size: next }) => setSize({ width: next.width, height: next.height })}
-        onResizeStop={(e, { size: next }) => {
-          localStorage.setItem(
-            'answerCardSize',
-            JSON.stringify({ width: next.width, height: next.height }),
-          );
-        }}
-        minConstraints={[450, 350]}
-        maxConstraints={[1200, window.innerHeight * 0.9]}
-        resizeHandles={['se']}
-      >
+  // ── Card body：mobile / desktop 共用 ──
+  const cardBody = (
         <div
           ref={nodeRef}
           className={cn(
-            'pointer-events-auto absolute z-[10000] overflow-hidden',
-            'rounded-lg border border-paper-200 bg-paper-50 shadow-float',
-            'transition-all duration-fast',
+            'pointer-events-auto overflow-hidden',
+            'border border-paper-200 bg-paper-50 shadow-float',
+            isDesktop
+              ? 'absolute z-[10000] rounded-lg transition-all duration-fast'
+              : 'fixed inset-0 z-[10000] flex flex-col',
           )}
-          style={{
-            width: isCollapsed ? '300px' : `${size.width}px`,
-            height: isCollapsed ? 'auto' : `${size.height}px`,
-            transition: 'width 0.15s ease',
-          }}
+          style={
+            isDesktop
+              ? {
+                  width: isCollapsed ? '300px' : `${size.width}px`,
+                  height: isCollapsed ? 'auto' : `${size.height}px`,
+                  transition: 'width 0.15s ease',
+                }
+              : undefined
+          }
         >
           <div className="flex h-full flex-col">
             {/* ── 拖拽手柄 / 标题栏 ── */}
             <div
               className={cn(
                 'drag-handle flex items-center justify-between border-b border-paper-200',
-                'bg-paper-100 px-4 py-3',
-                isDragging ? 'cursor-grabbing' : 'cursor-grab',
+                'bg-paper-100 px-3 py-2.5 md:px-4 md:py-3',
+                isDesktop && (isDragging ? 'cursor-grabbing' : 'cursor-grab'),
               )}
             >
               <div className="mr-2 flex min-w-0 items-center gap-2 text-ink-900">
                 <BrandLogo size={20} expression="default" className="shrink-0 text-sage-700" />
-                <span className="truncate font-serif text-body">
+                <span className="truncate font-serif text-small md:text-body">
                   {isCollapsed
                     ? question.question.length > 30
                       ? question.question.substring(0, 30) + '...'
@@ -233,7 +220,7 @@ const AnswerCard = ({
               </div>
 
               {isCountingDown && !isCollapsed && (
-                <div className="mx-4 flex flex-1 items-center justify-center gap-1.5 rounded-pill bg-sun-300/40 px-3 py-1">
+                <div className="mx-2 hidden flex-1 items-center justify-center gap-1.5 rounded-pill bg-sun-300/40 px-3 py-1 md:flex md:mx-4">
                   <Icon name="Hourglass" size={14} className="text-sun-700" />
                   <span className="font-serif text-small text-sun-700">
                     {t('AnswerCard.tips1')}
@@ -246,16 +233,26 @@ const AnswerCard = ({
               )}
 
               <div className="flex items-center gap-1">
-                <Button
-                  intent="ghost"
-                  size="sm"
-                  iconOnly
-                  onClick={toggleCollapse}
-                  className="collapse-button"
-                  aria-label={isCollapsed ? '展开' : '折叠'}
-                >
-                  <Icon name={isCollapsed ? 'Maximize2' : 'Minimize2'} size={14} />
-                </Button>
+                {/* mobile 倒计时简化为右侧小徽章 */}
+                {isCountingDown && !isCollapsed && !isDesktop && (
+                  <span className="inline-flex items-center gap-1 rounded-pill bg-sun-300/40 px-2 py-0.5 font-mono text-caption font-bold text-sun-700">
+                    <Icon name="Hourglass" size={12} className="text-current" />
+                    {countdowns.global}
+                  </span>
+                )}
+                {/* 折叠按钮：仅 desktop（mobile 全屏不需要折叠） */}
+                {isDesktop && (
+                  <Button
+                    intent="ghost"
+                    size="sm"
+                    iconOnly
+                    onClick={toggleCollapse}
+                    className="collapse-button"
+                    aria-label={isCollapsed ? '展开' : '折叠'}
+                  >
+                    <Icon name={isCollapsed ? 'Maximize2' : 'Minimize2'} size={14} />
+                  </Button>
+                )}
                 <Button intent="ghost" size="sm" iconOnly onClick={onClose} aria-label="关闭">
                   <Icon name="X" size={14} />
                 </Button>
@@ -265,20 +262,20 @@ const AnswerCard = ({
             {/* ── 主区 ── */}
             {!isCollapsed && (
               <div className="card-content flex-1 overflow-hidden">
-                <div className="flex h-full flex-col p-4">
-                  <div className="flex-1 overflow-hidden rounded-md border border-paper-200 bg-paper-50">
+                <div className="flex h-full flex-col p-3 md:p-4">
+                  <div className="flex flex-1 flex-col overflow-hidden rounded-md border border-paper-200 bg-paper-50">
                     {/* 问题 */}
-                    <div className="border-b border-paper-200 p-4">
-                      <p className="mb-2 font-mono text-caption text-ink-500">
+                    <div className="shrink-0 border-b border-paper-200 p-3 md:p-4">
+                      <p className="mb-1 font-mono text-caption text-ink-500 md:mb-2">
                         {t('AnswerCard.questionDetails')}
                       </p>
-                      <div className="font-serif text-h2 text-ink-900">
+                      <div className="font-serif text-body text-ink-900 md:text-h2">
                         <MarkdownRenderer content={question.question} />
                       </div>
                     </div>
 
                     {/* 答案档位列 */}
-                    <div className="h-full overflow-y-auto p-3 scrollbar-custom">
+                    <div className="min-h-0 flex-1 overflow-y-auto p-2 md:p-3 scrollbar-custom">
                       <div className="flex h-full flex-col space-y-2">
                         {isLoading ? (
                           <LoadingPanel t={t} />
@@ -332,16 +329,50 @@ const AnswerCard = ({
               </div>
             )}
 
-            {/* ── 缩放手柄 ── */}
-            <div className="absolute bottom-0 right-0 h-4 w-4 cursor-se-resize text-sage-500">
-              <Icon
-                name="GripHorizontal"
-                size={14}
-                className="rotate-45 text-current opacity-50 hover:opacity-100 transition-opacity"
-              />
-            </div>
+            {/* ── 缩放手柄（仅 desktop） ── */}
+            {isDesktop && (
+              <div className="absolute bottom-0 right-0 h-4 w-4 cursor-se-resize text-sage-500">
+                <Icon
+                  name="GripHorizontal"
+                  size={14}
+                  className="rotate-45 text-current opacity-50 hover:opacity-100 transition-opacity"
+                />
+              </div>
+            )}
           </div>
         </div>
+  );
+
+  if (!isDesktop) {
+    // ── Mobile: 全屏 modal，无拖拽 / 无缩放 / 无折叠 ──
+    return cardBody;
+  }
+
+  // ── Desktop: 拖拽 + 缩放 ──
+  return (
+    <Draggable
+      nodeRef={nodeRef}
+      handle=".drag-handle"
+      position={position}
+      onStart={handleDragStart}
+      onStop={handleDragStop}
+      bounds="parent"
+    >
+      <Resizable
+        width={size.width}
+        height={size.height}
+        onResize={(e, { size: next }) => setSize({ width: next.width, height: next.height })}
+        onResizeStop={(e, { size: next }) => {
+          localStorage.setItem(
+            'answerCardSize',
+            JSON.stringify({ width: next.width, height: next.height }),
+          );
+        }}
+        minConstraints={[450, 350]}
+        maxConstraints={[1200, window.innerHeight * 0.9]}
+        resizeHandles={['se']}
+      >
+        {cardBody}
       </Resizable>
     </Draggable>
   );
