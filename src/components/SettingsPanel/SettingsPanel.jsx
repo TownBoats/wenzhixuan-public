@@ -302,7 +302,7 @@ const SettingsPanel = ({
     <AnimatePresence>
       {showSettings && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/15 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-stretch justify-center bg-ink-900/15 backdrop-blur-sm md:items-center md:p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -311,8 +311,9 @@ const SettingsPanel = ({
         >
           <motion.div
             className={cn(
-              'flex h-[78vh] w-full max-w-3xl flex-col overflow-hidden',
-              'rounded-lg border border-paper-200 bg-paper-50 shadow-float',
+              'flex w-full flex-col overflow-hidden bg-paper-50 shadow-float',
+              'h-full max-h-full md:h-[78vh] md:max-h-[78vh] md:max-w-3xl',
+              'border border-paper-200 md:rounded-lg',
             )}
             initial={{ scale: 0.96, y: 20 }}
             animate={{ scale: 1, y: 0 }}
@@ -321,10 +322,10 @@ const SettingsPanel = ({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex flex-none items-center justify-between border-b border-paper-200 bg-paper-100 px-5 py-3">
-              <div className="flex items-center gap-3">
-                <BrandLogo size={28} className="text-sage-700" />
-                <h2 className="font-display text-h1 text-ink-900">
+            <div className="flex flex-none items-center justify-between border-b border-paper-200 bg-paper-100 px-4 py-3 md:px-5">
+              <div className="flex items-center gap-2 md:gap-3">
+                <BrandLogo size={24} className="text-sage-700 md:!h-7 md:!w-7" />
+                <h2 className="font-display text-h2 text-ink-900 md:text-h1">
                   {t('SettingsPanel.title')}
                 </h2>
                 {developerMode && (
@@ -342,10 +343,32 @@ const SettingsPanel = ({
               </Button>
             </div>
 
-            {/* Body: sidebar + content */}
+            {/* Mobile 顶部横向 Tab */}
+            <nav className="flex shrink-0 gap-1 overflow-x-auto border-b border-paper-200 bg-paper-50/60 px-3 py-2 scrollbar-none md:hidden">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setSettingsTab(tab.id)}
+                  className={cn(
+                    'flex shrink-0 items-center gap-1.5 rounded-pill px-3 py-1.5',
+                    'text-small font-medium transition-colors duration-fast',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/30',
+                    settingsTab === tab.id
+                      ? 'bg-paper-50 text-ink-900 shadow-soft'
+                      : 'text-ink-500 hover:bg-paper-100 hover:text-ink-700',
+                  )}
+                >
+                  <span className="shrink-0">{tab.icon}</span>
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </nav>
+
+            {/* Body: sidebar + content（mobile 仅 content） */}
             <div className="flex min-h-0 flex-1">
-              {/* Sidebar */}
-              <nav className="flex w-[200px] shrink-0 flex-col gap-1 border-r border-paper-200 bg-paper-50/60 p-3">
+              {/* Desktop 左侧 sidebar */}
+              <nav className="hidden w-[200px] shrink-0 flex-col gap-1 border-r border-paper-200 bg-paper-50/60 p-3 md:flex">
                 {tabs.map((tab) => (
                   <SidebarTab
                     key={tab.id}
@@ -359,7 +382,7 @@ const SettingsPanel = ({
 
               {/* Content */}
               <div className="flex-1 overflow-y-auto scrollbar-custom">
-                <div className="p-5">
+                <div className="p-4 md:p-5">
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={settingsTab}
@@ -587,11 +610,11 @@ const SettingsPanel = ({
             </div>
 
             {/* Footer */}
-            <div className="flex flex-none justify-end gap-2 border-t border-paper-200 bg-paper-50 px-5 py-3">
-              <Button intent="secondary" size="md" onClick={() => setShowSettings(false)}>
+            <div className="flex flex-none justify-end gap-2 border-t border-paper-200 bg-paper-50 px-4 py-3 md:px-5">
+              <Button intent="secondary" size="md" onClick={() => setShowSettings(false)} className="flex-1 md:flex-none">
                 {t('SettingsPanel.footer.cancel')}
               </Button>
-              <Button intent="primary" size="md" onClick={handleSaveSettings}>
+              <Button intent="primary" size="md" onClick={handleSaveSettings} className="flex-1 md:flex-none">
                 {t('SettingsPanel.footer.confirm')}
               </Button>
             </div>
