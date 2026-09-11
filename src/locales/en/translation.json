@@ -139,7 +139,8 @@
       "answered": "answered"
     },
     "ChatWindow": {
-      "thinking": "Thinking"
+      "thinking": "Thinking",
+      "scrollToBottom": "Back to latest"
     },
     "ThinkingBlock": {
       "thinking": "Thinking",

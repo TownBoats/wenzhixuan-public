@@ -139,7 +139,8 @@
       "answered": " 已回答"
     },
     "ChatWindow": {
-      "thinking": "正在思考"
+      "thinking": "正在思考",
+      "scrollToBottom": "回到最新"
     },
     "ThinkingBlock": {
       "thinking": "正在思考",

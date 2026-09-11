@@ -662,6 +662,7 @@ const ChatPage = ({ className }) => {
                 onCloseAnswer={handleCloseAnswer}
                 currResponse={currResponse}
                 currThinking={currThinking}
+                conversationKey={currentChatId}
               />
             )}
           </div>

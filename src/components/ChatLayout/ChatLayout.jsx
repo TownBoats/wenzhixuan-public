@@ -31,6 +31,7 @@ const ChatLayout = ({
   onCloseAnswer,
   currResponse,
   currThinking,
+  conversationKey,
 }) => {
   const { t } = useTranslation();
   const hasQuestions = singleTurnQuestion && singleTurnQuestion.length > 0;
@@ -48,155 +49,142 @@ const ChatLayout = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [showQuestionCards, setShowQuestionCards]);
 
-  if (!hasQuestions) {
-    // 没有问题时只渲染消息区（保持父布局不抖动）
-    return (
-      <div className="absolute inset-0 overflow-y-auto scrollbar-none">
-        <ChatWindow
-          messages={uiMessages}
-          isLoading={isLoading}
-          questions={singleTurnQuestion}
-          onQuestionClick={handleQuestionClick}
-          onRetryMessage={onRetryMessage}
-          onRetryUserMessage={onRetryUserMessage}
-          selectedQuestion={selectedQuestion}
-          onLevelSelect={onLevelSelect}
-          onCloseAnswer={onCloseAnswer}
-          currResponse={currResponse}
-          currThinking={currThinking}
-        />
-      </div>
-    );
-  }
-
   const summaryLabel = `${t('ChatLayout.totalQuestions')} ${totalCount} ${t(
     'ChatLayout.questions',
   )} · ${answeredCount} ${t('ChatLayout.answered')}`;
 
+  // 关键：无论是否有待答问题，这里始终返回同一棵 Fragment 树（固定的子节点位），
+  // 只对问题面板做条件渲染。否则 hasQuestions 翻转时根节点类型改变，
+  // React 会卸载并重建 ChatWindow，滚动位置归零（表现为"跳回最开始的消息"）。
   return (
     <>
       {/* ── Mobile 顶部 chip：< md 显示 ── */}
-      <div className="absolute left-3 right-3 top-3 z-20 md:hidden">
-        <button
-          type="button"
-          onClick={() => setShowQuestionCards(!showQuestionCards)}
-          className={cn(
-            'flex w-full items-center justify-between gap-2 rounded-md border border-paper-200',
-            'bg-paper-50/90 px-3 py-2 shadow-soft backdrop-blur-sm',
-            'transition-colors duration-fast hover:bg-paper-100',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/30',
-          )}
-          aria-expanded={showQuestionCards}
-        >
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <Icon name="ListChecks" size={16} className="text-sage-700 shrink-0" />
-            <div className="min-w-0 text-left">
-              <p className="truncate font-sans text-small text-ink-900">
-                {t('ChatLayout.pendingQuestions')}
-              </p>
-              <p className="truncate font-sans tabular-nums text-caption text-ink-500">
-                {summaryLabel}
-              </p>
-            </div>
-          </div>
-          <Icon
-            name="ChevronDown"
-            size={16}
+      {hasQuestions && (
+        <div className="absolute left-3 right-3 top-3 z-20 md:hidden">
+          <button
+            type="button"
+            onClick={() => setShowQuestionCards(!showQuestionCards)}
             className={cn(
-              'shrink-0 text-ink-500 transition-transform duration-base ease-soft',
-              showQuestionCards && 'rotate-180',
+              'flex w-full items-center justify-between gap-2 rounded-md border border-paper-200',
+              'bg-paper-50/90 px-3 py-2 shadow-soft backdrop-blur-sm',
+              'transition-colors duration-fast hover:bg-paper-100',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/30',
             )}
-          />
-        </button>
-
-        {/* Mobile 抽屉 + 蒙层 */}
-        {showQuestionCards && (
-          <>
-            <button
-              type="button"
-              aria-label="关闭问题列表"
-              className="fixed inset-0 z-[-1] bg-ink-900/15 backdrop-blur-[1px]"
-              onClick={() => setShowQuestionCards(false)}
+            aria-expanded={showQuestionCards}
+          >
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <Icon name="ListChecks" size={16} className="text-sage-700 shrink-0" />
+              <div className="min-w-0 text-left">
+                <p className="truncate font-sans text-small text-ink-900">
+                  {t('ChatLayout.pendingQuestions')}
+                </p>
+                <p className="truncate font-sans tabular-nums text-caption text-ink-500">
+                  {summaryLabel}
+                </p>
+              </div>
+            </div>
+            <Icon
+              name="ChevronDown"
+              size={16}
+              className={cn(
+                'shrink-0 text-ink-500 transition-transform duration-base ease-soft',
+                showQuestionCards && 'rotate-180',
+              )}
             />
-            <div className="mt-2 max-h-[60vh] overflow-hidden rounded-md border border-paper-200 bg-paper-50 shadow-lift">
-              <div className="max-h-[calc(60vh-1rem)] space-y-3 overflow-y-auto p-3 scrollbar-custom">
+          </button>
+
+          {/* Mobile 抽屉 + 蒙层 */}
+          {showQuestionCards && (
+            <>
+              <button
+                type="button"
+                aria-label="关闭问题列表"
+                className="fixed inset-0 z-[-1] bg-ink-900/15 backdrop-blur-[1px]"
+                onClick={() => setShowQuestionCards(false)}
+              />
+              <div className="mt-2 max-h-[60vh] overflow-hidden rounded-md border border-paper-200 bg-paper-50 shadow-lift">
+                <div className="max-h-[calc(60vh-1rem)] space-y-3 overflow-y-auto p-3 scrollbar-custom">
+                  {singleTurnQuestion.map((questionObj) => (
+                    <QuestionCard
+                      key={questionObj.id}
+                      question={questionObj}
+                      onClick={(q) => {
+                        handleQuestionClick(q);
+                        setShowQuestionCards(false);
+                      }}
+                      onCancel={handleCancelQuestion}
+                      width="100%"
+                    />
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── Desktop 左侧浮窗：≥ md 显示 ── */}
+      {hasQuestions && (
+        <div className="absolute left-4 top-4 z-10 hidden w-64 space-y-4 md:block lg:left-8 lg:top-6">
+          <div className="rounded-md border border-paper-200 bg-paper-50/85 shadow-soft backdrop-blur-sm transition-all duration-base ease-soft">
+            <div
+              className="flex cursor-pointer items-center justify-between p-4"
+              onClick={() => setShowQuestionCards(!showQuestionCards)}
+            >
+              <div>
+                <h2 className="font-sans text-body text-ink-900">
+                  {t('ChatLayout.pendingQuestions')}
+                </h2>
+                <div className="mt-1 font-sans tabular-nums text-caption text-ink-500">
+                  {summaryLabel}
+                </div>
+              </div>
+              <Button
+                intent="ghost"
+                size="sm"
+                iconOnly
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowQuestionCards(!showQuestionCards);
+                }}
+                aria-label={showQuestionCards ? '折叠' : '展开'}
+                aria-expanded={showQuestionCards}
+              >
+                <Icon
+                  name="ChevronDown"
+                  size={16}
+                  className={cn(
+                    'transition-transform duration-base ease-soft',
+                    showQuestionCards && 'rotate-180',
+                  )}
+                />
+              </Button>
+            </div>
+
+            <div
+              className={cn(
+                'overflow-hidden transition-all duration-base ease-soft',
+                showQuestionCards ? 'max-h-[60vh]' : 'max-h-0',
+              )}
+            >
+              <div className="max-h-[calc(60vh-4rem)] space-y-4 overflow-y-auto p-4 pt-0 scrollbar-custom">
                 {singleTurnQuestion.map((questionObj) => (
                   <QuestionCard
                     key={questionObj.id}
                     question={questionObj}
-                    onClick={(q) => {
-                      handleQuestionClick(q);
-                      setShowQuestionCards(false);
-                    }}
+                    onClick={handleQuestionClick}
                     onCancel={handleCancelQuestion}
                     width="100%"
                   />
                 ))}
               </div>
             </div>
-          </>
-        )}
-      </div>
-
-      {/* ── Desktop 左侧浮窗：≥ md 显示 ── */}
-      <div className="absolute left-4 top-4 z-10 hidden w-64 space-y-4 md:block lg:left-8 lg:top-6">
-        <div className="rounded-md border border-paper-200 bg-paper-50/85 shadow-soft backdrop-blur-sm transition-all duration-base ease-soft">
-          <div
-            className="flex cursor-pointer items-center justify-between p-4"
-            onClick={() => setShowQuestionCards(!showQuestionCards)}
-          >
-            <div>
-              <h2 className="font-sans text-body text-ink-900">
-                {t('ChatLayout.pendingQuestions')}
-              </h2>
-              <div className="mt-1 font-sans tabular-nums text-caption text-ink-500">
-                {summaryLabel}
-              </div>
-            </div>
-            <Button
-              intent="ghost"
-              size="sm"
-              iconOnly
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowQuestionCards(!showQuestionCards);
-              }}
-              aria-label={showQuestionCards ? '折叠' : '展开'}
-              aria-expanded={showQuestionCards}
-            >
-              <Icon
-                name="ChevronDown"
-                size={16}
-                className={cn(
-                  'transition-transform duration-base ease-soft',
-                  showQuestionCards && 'rotate-180',
-                )}
-              />
-            </Button>
-          </div>
-
-          <div
-            className={cn(
-              'overflow-hidden transition-all duration-base ease-soft',
-              showQuestionCards ? 'max-h-[60vh]' : 'max-h-0',
-            )}
-          >
-            <div className="max-h-[calc(60vh-4rem)] space-y-4 overflow-y-auto p-4 pt-0 scrollbar-custom">
-              {singleTurnQuestion.map((questionObj) => (
-                <QuestionCard
-                  key={questionObj.id}
-                  question={questionObj}
-                  onClick={handleQuestionClick}
-                  onCancel={handleCancelQuestion}
-                  width="100%"
-                />
-              ))}
-            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="absolute inset-0 overflow-y-auto scrollbar-none">
+      {/* 消息区：滚动交由 ChatWindow 内部容器统一负责，外层只做定位 */}
+      <div className="absolute inset-0 overflow-hidden">
         <ChatWindow
           messages={uiMessages}
           isLoading={isLoading}
@@ -209,6 +197,7 @@ const ChatLayout = ({
           onCloseAnswer={onCloseAnswer}
           currResponse={currResponse}
           currThinking={currThinking}
+          conversationKey={conversationKey}
         />
       </div>
     </>
@@ -230,6 +219,7 @@ ChatLayout.propTypes = {
   onCloseAnswer: PropTypes.func,
   currResponse: PropTypes.array,
   currThinking: PropTypes.string,
+  conversationKey: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
 export default ChatLayout;
