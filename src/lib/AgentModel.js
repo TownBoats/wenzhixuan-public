@@ -1,6 +1,69 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 
+/**
+ * 零宽空格：用于"开闸"事件，正文里会被过滤掉，不会进入 UI / 历史。
+ */
+const GATE_MARKER = '\u200B';
+const GATE_MARKER_RE = /\u200B/g;
+
+/**
+ * 让 @ai-sdk/openai 立刻开始转发流数据（否则思考阶段的内容会被整体扣住）。
+ *
+ * 背景（见 node_modules/@ai-sdk/openai/dist/index.mjs）：
+ *   chat provider 在把流交给 streamText 之前，会先执行
+ *   throwIfOpenAIStreamErrorBeforeOutput —— 用 tee() 复制一份流，
+ *   一直读到"首个输出 chunk"才返回给消费者；而 isOpenAIChatOutputChunk
+ *   只认 delta.content / tool_calls / annotations。
+ *
+ * DeepSeek R1 / Qwen QwQ 的 delta.reasoning_content 不算"输出 chunk"，
+ * 于是整个思考阶段的数据都积压在 tee 分支里，直到首个正文 token 到达才一次性放行：
+ * 表现就是"思考时看不到思考过程，只能看到一个正在思考"，思考内容在正文开始时
+ * 才整段闪现。
+ *
+ * 这里在响应体最前面补一个带零宽空格的 content 事件，让探测立刻放行，
+ * 后续的 reasoning_content 就能实时到达（该零宽空格在 _streamOnce 中被过滤）。
+ */
+const createStreamGateFetch = (baseFetch) => async (input, init) => {
+  const response = await baseFetch(input, init);
+  const contentType = response.headers?.get?.('content-type') || '';
+
+  if (!response.ok || !response.body || !contentType.includes('text/event-stream')) {
+    return response;
+  }
+
+  const gateEvent = `data: ${JSON.stringify({
+    id: 'gate-opener',
+    object: 'chat.completion.chunk',
+    created: Math.floor(Date.now() / 1000),
+    model: 'gate-opener',
+    choices: [
+      { index: 0, delta: { content: GATE_MARKER }, finish_reason: null },
+    ],
+  })}\n\n`;
+
+  const encoder = new TextEncoder();
+  let gateSent = false;
+
+  const stream = response.body.pipeThrough(
+    new TransformStream({
+      transform(chunk, controller) {
+        if (!gateSent) {
+          gateSent = true;
+          controller.enqueue(encoder.encode(gateEvent));
+        }
+        controller.enqueue(chunk);
+      },
+    }),
+  );
+
+  return new Response(stream, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  });
+};
+
 export class AgentModel {
   constructor(config = {}) {
     this.settings = {
@@ -26,6 +89,8 @@ export class AgentModel {
 
     this.API_URL = config.customEndpoint || '';
     this.API_KEY = config.apiKey || '';
+    // 可注入自定义 fetch（测试 / 中间件用），默认用全局 fetch
+    this._baseFetch = config.fetch || ((...args) => globalThis.fetch(...args));
   }
 
   updateSettings(newSettings) {
@@ -60,6 +125,8 @@ export class AgentModel {
       baseURL,
       apiKey: this.API_KEY || 'placeholder',
       compatibility: 'compatible',
+      // 见 createStreamGateFetch 注释：让思考内容实时到达，而不是等正文开始才整段放行
+      fetch: createStreamGateFetch(this._baseFetch),
     });
   }
 
@@ -162,6 +229,8 @@ export class AgentModel {
       });
 
       let responseStarted = false;
+      // provider 自己给出 reasoning 事件时，就不再从 raw chunk 里重复提取同一份内容
+      let sawProviderReasoning = false;
       const delay = (ms) => new Promise((r) => setTimeout(r, ms));
       const chunkSize = 10;
       const chunkDelay = 10;
@@ -169,21 +238,24 @@ export class AgentModel {
       for await (const part of result.fullStream) {
         if (part.type === 'reasoning-delta') {
           // Anthropic / OpenAI Responses API 的 reasoning
+          sawProviderReasoning = true;
           onReasoning?.(part.text ?? '');
         } else if (part.type === 'raw') {
           // 从原始 chunk 提取 reasoning_content（DeepSeek R1 / Qwen QwQ 等）
-          const reasoningChunk =
-            part.rawValue?.choices?.[0]?.delta?.reasoning_content;
+          const reasoningChunk = sawProviderReasoning
+            ? null
+            : part.rawValue?.choices?.[0]?.delta?.reasoning_content;
           if (reasoningChunk) {
             onReasoning?.(reasoningChunk);
           }
         } else if (part.type === 'text-delta') {
+          // 过滤掉"开闸"用的零宽空格（见 createStreamGateFetch）
+          const text = (part.text ?? '').replace(GATE_MARKER_RE, '');
+          if (!text) continue;
           if (!responseStarted) {
             this.callbacks.onResponseStart();
             responseStarted = true;
           }
-          const text = part.text ?? '';
-          if (!text) continue;
           if (this.settings.typewriterDelay) {
             for (let i = 0; i < text.length; i += chunkSize) {
               await delay(chunkDelay);
