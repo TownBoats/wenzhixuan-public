@@ -9,7 +9,7 @@ import { cn } from './cn';
  *   - 默认：bg-paper-50 + 1px paper-200 描边
  *   - 聚焦：sage-500 描边 + sage 半透光环；光标颜色 = sage-500
  *   - 错误：state-alert 描边 + 半透光环
- *   - placeholder 用 italic + ink-300，与正文有视觉差
+ *   - placeholder 用 + ink-300，与正文有视觉差
  *
  * @example
  *   <Input value={v} onChange={...} placeholder="把 API Key 给我看一眼" />
@@ -27,7 +27,7 @@ const Input = forwardRef(function Input(
       className={cn(
         'h-10 w-full rounded-sm border bg-paper-50 px-4 py-2',
         'text-body text-ink-900 caret-sage-500',
-        'placeholder:italic placeholder:text-ink-300',
+        'placeholder:font-normal placeholder:text-ink-500',
         'transition-colors duration-fast ease-soft',
         'focus:outline-none focus:ring-2',
         'disabled:bg-paper-100 disabled:text-ink-500 disabled:cursor-not-allowed',

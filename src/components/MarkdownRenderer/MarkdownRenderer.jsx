@@ -132,7 +132,7 @@ const MarkdownRenderer = ({
       ),
       th: ({ ...props }) => (
         <th
-          className="bg-paper-100 px-4 py-2 text-left font-serif text-small font-semibold text-ink-900"
+          className="bg-paper-100 px-4 py-2 text-left font-sans text-small font-semibold text-ink-900"
           {...props}
         />
       ),

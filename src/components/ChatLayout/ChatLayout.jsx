@@ -91,10 +91,10 @@ const ChatLayout = ({
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <Icon name="ListChecks" size={16} className="text-sage-700 shrink-0" />
             <div className="min-w-0 text-left">
-              <p className="truncate font-serif text-small text-ink-900">
+              <p className="truncate font-sans text-small text-ink-900">
                 {t('ChatLayout.pendingQuestions')}
               </p>
-              <p className="truncate font-mono text-caption text-ink-500">
+              <p className="truncate font-sans tabular-nums text-caption text-ink-500">
                 {summaryLabel}
               </p>
             </div>
@@ -146,10 +146,10 @@ const ChatLayout = ({
             onClick={() => setShowQuestionCards(!showQuestionCards)}
           >
             <div>
-              <h2 className="font-serif text-body text-ink-900">
+              <h2 className="font-sans text-body text-ink-900">
                 {t('ChatLayout.pendingQuestions')}
               </h2>
-              <div className="mt-1 font-mono text-caption text-ink-500">
+              <div className="mt-1 font-sans tabular-nums text-caption text-ink-500">
                 {summaryLabel}
               </div>
             </div>

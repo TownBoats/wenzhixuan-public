@@ -102,8 +102,8 @@ const WelcomeScreen = ({
                 <Key size={12} className="text-current" />
                 {setupGuideTitle}
               </div>
-              <p className="text-body font-serif text-ink-900">{setupGuide}</p>
-              <p className="mt-2 text-small font-serif text-ink-500">{setupGuideSub}</p>
+              <p className="text-body font-sans text-ink-900">{setupGuide}</p>
+              <p className="mt-2 text-small font-sans text-ink-500">{setupGuideSub}</p>
               <div className="mt-5 flex justify-end gap-2">
                 <Button intent="secondary" size="sm" onClick={dismissSetupGuide}>
                   {closeGuide}
@@ -124,11 +124,11 @@ const WelcomeScreen = ({
       <div className="mx-auto w-full max-w-2xl space-y-8 px-4 transition-all duration-slow ease-soft">
         <div className="flex flex-col items-center text-center">
           <BrandLogo size={64} expression="happy" className="mb-4" />
-          <h1 className="text-display font-display text-ink-900">
+          <h1 className="text-display font-sans font-semibold text-ink-900">
             {t('WelcomeScreen.welcome')}
             <span className="font-bold">{t('WelcomeScreen.title')}</span>
           </h1>
-          <p className="mt-2 text-body font-serif text-ink-500">
+          <p className="mt-2 text-body font-sans text-ink-500">
             {t('WelcomeScreen.description')}
           </p>
         </div>
@@ -145,14 +145,14 @@ const WelcomeScreen = ({
 
         {showQuickPrompts && (
           <div className="mt-8 transition-all duration-base ease-soft">
-            <h2 className="mb-4 text-center text-h2 font-serif text-ink-700">
+            <h2 className="mb-4 text-center text-h2 font-sans text-ink-700">
               {t('WelcomeScreen.quickStart')}
             </h2>
             <QuickPrompts onSelect={handleQuickPromptSelect} />
           </div>
         )}
 
-        <p className="pt-2 text-center text-caption font-mono text-ink-300">
+        <p className="pt-2 text-center text-caption font-sans tabular-nums text-ink-300">
           你的对话只保存在浏览器里。
         </p>
       </div>

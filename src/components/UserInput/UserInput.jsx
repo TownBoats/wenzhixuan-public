@@ -59,19 +59,19 @@ const UserInput = ({
             'min-h-[56px] max-h-32',
             'px-4 pt-3 pb-2',
             'text-body text-ink-900 caret-sage-500',
-            'placeholder:italic placeholder:text-ink-300',
+            'placeholder:font-normal placeholder:text-ink-500',
             'outline-none border-0 ring-0 focus:ring-0 focus:outline-none',
           )}
         />
 
         <div className="flex items-center justify-between gap-3 border-t border-paper-200 px-3 py-2">
-          <span className="hidden sm:inline text-caption font-mono text-ink-300">
+          <span className="hidden sm:inline text-caption font-sans tabular-nums text-ink-300">
             <kbd className="rounded-xs border border-paper-200 bg-paper-100 px-1.5 py-0.5 text-ink-500">↵</kbd>
             {' '}发送 ·{' '}
             <kbd className="rounded-xs border border-paper-200 bg-paper-100 px-1.5 py-0.5 text-ink-500">⇧↵</kbd>
             {' '}换行
           </span>
-          <span className="sm:hidden text-caption font-mono text-ink-300">↵ 发送</span>
+          <span className="sm:hidden text-caption font-sans tabular-nums text-ink-300">↵ 发送</span>
 
           <button
             type="button"

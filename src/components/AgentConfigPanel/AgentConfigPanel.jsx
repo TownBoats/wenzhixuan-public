@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { SYSTEM_PROMPTS } from '../../services/prompts';
 import { Icon, cn } from '@/components/ui';
+import SettingsSection from '../SettingsPanel/SettingsSection';
 
 /**
  * AgentConfigPanel — Agent 提示词模式选择（设计 token 重写版）
@@ -11,7 +12,7 @@ import { Icon, cn } from '@/components/ui';
  *   - bg-white + gray-200 卡片        → bg-paper-50 + paper-200 + shadow-soft
  *   - select gray border + 灰色 focus  → paper-200 + sage-500 focus ring + caret
  *   - 模式描述 bg-gray-100 矩形         → bg-paper-100 + ChevronRight 提示
- *   - 标题 text-lg gray-800            → text-h2 font-serif text-ink-900
+ *   - 标题 text-lg gray-800            → text-h2 font-sans text-ink-900
  *
  * 行为完全保留：language-changed 事件 / localStorage 同步 / 模式映射。
  */
@@ -123,24 +124,24 @@ const AgentConfigPanel = ({ currentPrompt, onPromptChange, agentType = 'main' })
   };
 
   return (
-    <div className="rounded-md border border-paper-200 bg-paper-50 p-4 shadow-soft">
-      <h3 className="mb-3 text-h2 font-serif text-ink-900">
-        {agentType === 'main'
+    <SettingsSection
+      title={agentType === 'main'
           ? t('AgentConfigPanel.mainAgent')
           : t('AgentConfigPanel.optionAgent')}
-      </h3>
+    >
 
       <div className="space-y-4">
         <div>
-          <label className="mb-2 block text-small font-medium text-ink-700">
+          <label htmlFor={`${agentType}-agent-mode`} className="mb-2 block text-small font-medium text-ink-700">
             {t('AgentConfigPanel.selectMode')}
           </label>
           <div className="relative">
             <select
+              id={`${agentType}-agent-mode`}
               value={selectedMode}
               onChange={handleModeSelect}
               className={cn(
-                'w-full appearance-none rounded-sm border border-paper-200 bg-paper-50 py-2 pl-3 pr-10',
+                'h-10 w-full appearance-none rounded-sm border border-paper-200 bg-paper-50 py-2 pl-3 pr-10',
                 'text-body text-ink-900 caret-sage-500',
                 'transition-colors duration-fast outline-none',
                 'focus:border-sage-500 focus:ring-2 focus:ring-sage-500/20',
@@ -162,18 +163,18 @@ const AgentConfigPanel = ({ currentPrompt, onPromptChange, agentType = 'main' })
         </div>
 
         {selectedMode && (
-          <div className="rounded-sm border border-paper-200 bg-paper-100 p-3">
-            <h4 className="mb-1 flex items-center gap-1.5 font-serif text-body text-ink-900">
-              <Icon name="ChevronRight" size={14} className="text-sage-700" />
+          <div className="border-t border-paper-200 pt-4">
+            <h4 className="mb-1 flex items-center gap-1.5 text-small font-medium text-sage-700">
+              <Icon name="Info" size={14} className="text-sage-700" />
               {AGENT_MODES[selectedMode].name}
             </h4>
-            <p className="font-serif text-small italic text-ink-700">
+            <p className="text-small leading-relaxed text-ink-500">
               {AGENT_MODES[selectedMode].description}
             </p>
           </div>
         )}
       </div>
-    </div>
+    </SettingsSection>
   );
 };
 

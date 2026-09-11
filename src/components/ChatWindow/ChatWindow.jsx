@@ -7,7 +7,7 @@ import { CoffeeCup } from '@/components/ui';
  * ChatWindow — 主聊天画布（设计 token 重写版）
  *
  * 视觉迁移自旧版：
- *   - LoadingIndicator amber 三点 + stone 文 → CoffeeCup + sage 三点 + serif italic
+ *   - LoadingIndicator amber 三点 + stone 文 → CoffeeCup + sage 三点 + serif
  *     （与新 ThinkingBlock 同语言）
  *   - bg-gradient slate-50/50 to white/50    → bg-paper-50（暖中性纸感）
  *   - 旧 tech 主题分支整体删除
@@ -26,7 +26,7 @@ const LoadingIndicator = () => {
           <span className="h-1.5 w-1.5 rounded-pill bg-sage-300 animate-pulse [animation-delay:200ms]" />
           <span className="h-1.5 w-1.5 rounded-pill bg-sage-300 animate-pulse [animation-delay:400ms]" />
         </span>
-        <span className="text-small font-serif italic text-ink-500">
+        <span className="text-small font-sans text-ink-500">
           {t('ChatWindow.thinking')}
         </span>
       </div>

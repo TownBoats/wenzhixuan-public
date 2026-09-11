@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import ModelConfigPanel from '../ModelConfigPanel/ModelConfigPanel';
 import AgentConfigPanel from '../AgentConfigPanel/AgentConfigPanel';
+import SettingsSection from './SettingsSection';
 import {
   Button,
   Icon,
@@ -61,20 +62,7 @@ StyledCheckbox.propTypes = {
 };
 
 // ── 子组件：设置区块卡片 ─────────────────────────────────
-const SettingsCard = ({ icon, title, children }) => (
-  <div className="rounded-md border border-paper-200 bg-paper-50 p-4 shadow-soft">
-    <h3 className="mb-3 flex items-center gap-2 text-h2 font-serif text-ink-900">
-      {icon}
-      {title}
-    </h3>
-    {children}
-  </div>
-);
-SettingsCard.propTypes = {
-  icon: PropTypes.node,
-  title: PropTypes.string.isRequired,
-  children: PropTypes.node,
-};
+const SettingsCard = SettingsSection;
 
 // ── 子组件：左侧 Tab 项 ─────────────────────────────────
 const SidebarTab = ({ active, icon, label, onClick }) => (
@@ -312,7 +300,7 @@ const SettingsPanel = ({
           <motion.div
             className={cn(
               'flex w-full flex-col overflow-hidden bg-paper-50 shadow-float',
-              'h-full max-h-full md:h-[78vh] md:max-h-[78vh] md:max-w-3xl',
+              'h-full max-h-full md:h-[84vh] md:max-h-[900px] md:max-w-4xl',
               'border border-paper-200 md:rounded-lg',
             )}
             initial={{ scale: 0.96, y: 20 }}
@@ -325,7 +313,7 @@ const SettingsPanel = ({
             <div className="flex flex-none items-center justify-between border-b border-paper-200 bg-paper-100 px-4 py-3 md:px-5">
               <div className="flex items-center gap-2 md:gap-3">
                 <BrandLogo size={24} className="text-sage-700 md:!h-7 md:!w-7" />
-                <h2 className="font-display text-h2 text-ink-900 md:text-h1">
+                <h2 className="font-sans font-semibold text-h2 text-ink-900 md:text-h1">
                   {t('SettingsPanel.title')}
                 </h2>
                 {developerMode && (
@@ -381,7 +369,7 @@ const SettingsPanel = ({
               </nav>
 
               {/* Content */}
-              <div className="flex-1 overflow-y-auto scrollbar-custom">
+              <div className="min-w-0 flex-1 overflow-y-auto bg-paper-100/40 scrollbar-custom">
                 <div className="p-4 md:p-5">
                   <AnimatePresence mode="wait">
                     <motion.div
@@ -447,7 +435,7 @@ const SettingsPanel = ({
                                   {t('SettingsPanel.seconds')})
                                 </label>
                                 <div className="flex items-center gap-3">
-                                  <span className="text-caption font-mono text-ink-500">0</span>
+                                  <span className="text-caption font-sans tabular-nums text-ink-500">0</span>
                                   <input
                                     type="range"
                                     min="0"
@@ -456,17 +444,17 @@ const SettingsPanel = ({
                                     onChange={(e) => handleWaitTimeChange(e.target.value)}
                                     className="h-1.5 flex-1 rounded-pill bg-paper-200 accent-sage-500"
                                   />
-                                  <span className="text-caption font-mono text-ink-500">30</span>
+                                  <span className="text-caption font-sans tabular-nums text-ink-500">30</span>
                                   <input
                                     type="number"
                                     min="0"
                                     max="30"
                                     value={waitTime}
                                     onChange={(e) => handleWaitTimeChange(e.target.value)}
-                                    className="h-8 w-12 rounded-sm border border-paper-200 bg-paper-50 px-2 text-center font-mono text-small text-ink-900 caret-sage-500 outline-none focus:border-sage-500 focus:ring-2 focus:ring-sage-500/20"
+                                    className="h-8 w-12 rounded-sm border border-paper-200 bg-paper-50 px-2 text-center font-sans tabular-nums text-small text-ink-900 caret-sage-500 outline-none focus:border-sage-500 focus:ring-2 focus:ring-sage-500/20"
                                   />
                                 </div>
-                                <p className="mt-2 text-caption font-serif italic text-ink-500">
+                                <p className="mt-2 text-caption font-sans text-ink-500">
                                   {waitTime === 0
                                     ? t('SettingsPanel.currentSettingOff')
                                     : t('SettingsPanel.currentSettingOn', { seconds: waitTime })}
@@ -511,7 +499,7 @@ const SettingsPanel = ({
                                   <Icon name="Upload" size={16} className="text-current" />
                                   {t('SettingsPanel.chatHistory.importButton')}
                                 </Button>
-                                <p className="mt-1.5 text-caption font-serif italic text-ink-500">
+                                <p className="mt-1.5 text-caption font-sans text-ink-500">
                                   {t('SettingsPanel.chatHistory.importTips')}
                                 </p>
                               </div>
@@ -531,7 +519,7 @@ const SettingsPanel = ({
                                   <Icon name="Trash2" size={14} className="text-current" />
                                   {t('SettingsPanel.chatHistory.clearAll')}
                                 </button>
-                                <p className="mt-1.5 text-caption font-serif italic text-ink-500">
+                                <p className="mt-1.5 text-caption font-sans text-ink-500">
                                   {t('SettingsPanel.chatHistory.clearAllTips')}
                                 </p>
                               </div>

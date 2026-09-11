@@ -76,13 +76,10 @@ module.exports = {
         'caption': ['11px', { lineHeight: '16px' }],
       },
 
-      // ─── 新 fontFamily（仅声明 stack，字体文件 P0 不引入）──
-      // 实际字体文件加载延后到 P3 阶段（避免在 P0 引入 ~150KB 网络资产）。
+      // 界面采用同一套中英文无衬线字体；仅代码与调试数据使用等宽。
       fontFamily: {
-        sans:    ['"Inter Variable"', '"PingFang SC"', '"HarmonyOS Sans"', 'system-ui', 'sans-serif'],
-        serif:   ['"Source Serif Variable"', '"Noto Serif SC"', 'Georgia', 'serif'],
-        mono:    ['"JetBrains Mono Variable"', 'Menlo', 'Consolas', 'monospace'],
-        display: ['"Fraunces"', '"Noto Serif SC"', 'serif'],
+        sans: ['var(--font-ui)'],
+        mono: ['ui-monospace', '"Cascadia Code"', 'Menlo', 'Consolas', 'monospace'],
       },
 
       // ─── E2·圆角四档 + pill ────────────────────────────────────

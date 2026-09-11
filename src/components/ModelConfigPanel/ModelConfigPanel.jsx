@@ -2,6 +2,7 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import ConfigManager from '../../utils/ConfigManager';
+import SettingsSection from '../SettingsPanel/SettingsSection';
 import {
   Button,
   Input,
@@ -82,6 +83,7 @@ const ModelConfigPanel = ({
       useCustomURL: false,
     };
     setConfig(defaultConfig);
+    setUseCustomURL(false);
     onConfigChange(defaultConfig);
   };
 
@@ -161,21 +163,19 @@ const ModelConfigPanel = ({
   };
 
   return (
-    <div className="rounded-md border border-paper-200 bg-paper-50 p-4 shadow-soft md:p-5">
-      <h3 className="mb-3 flex items-center gap-2 text-h2 font-serif text-ink-900 md:mb-4">
+    <SettingsSection
+      title={<>
         {agentType === 'main' ? t('ModelConfigPanel.mainModel') : t('ModelConfigPanel.optionModel')}
         {developerMode && (
           <Tag variant="active">{t('SettingsPanel.developerMode')}</Tag>
         )}
-      </h3>
-
-      <div className="mb-4 rounded-sm border border-paper-200 bg-paper-100 px-3 py-2 text-small font-serif italic text-ink-700">
-        {agentType === 'main'
+      </>}
+      description={agentType === 'main'
           ? t('ModelConfigPanel.mainModelTip')
           : t('ModelConfigPanel.optionModelTip')}
-      </div>
+    >
 
-      <p className="mb-2 text-caption font-mono uppercase tracking-wide text-ink-500">
+      <p className="mb-3 text-small font-medium text-ink-700">
         连接设置
       </p>
 
@@ -196,45 +196,48 @@ const ModelConfigPanel = ({
 
         {useCustomURL ? (
           <div className="col-span-12 transition-all duration-base ease-soft">
-            <label className="mb-1 block text-small font-medium text-ink-700">
+            <label htmlFor={`${agentType}-fullURL`} className="mb-1 block text-small font-medium text-ink-700">
               {t('ModelConfigPanel.fullURLLabel')}
             </label>
             <Input
               type="text"
+              id={`${agentType}-fullURL`}
               name="fullURL"
               value={config.fullURL}
               onChange={handleChange}
               placeholder="https://open.bigmodel.cn/api/paas/v4/chat/completions"
-              className="font-mono"
+              className="min-w-0 font-sans"
             />
           </div>
         ) : (
           <>
             <div className="col-span-12 md:col-span-6">
-              <label className="mb-1 block text-small font-medium text-ink-700">
+              <label htmlFor={`${agentType}-baseURL`} className="mb-1 block text-small font-medium text-ink-700">
                 {t('ModelConfigPanel.baseURLLabel')}
               </label>
               <Input
                 type="text"
+                id={`${agentType}-baseURL`}
                 name="baseURL"
                 value={config.baseURL}
                 onChange={handleChange}
                 placeholder="https://open.bigmodel.cn"
-                className="font-mono"
+                className="min-w-0 font-sans"
               />
             </div>
 
             <div className="col-span-12 md:col-span-6">
-              <label className="mb-1 block text-small font-medium text-ink-700">
+              <label htmlFor={`${agentType}-customEndpoint`} className="mb-1 block text-small font-medium text-ink-700">
                 {t('ModelConfigPanel.endpointLabel')}
               </label>
               <Input
                 type="text"
+                id={`${agentType}-customEndpoint`}
                 name="customEndpoint"
                 value={config.customEndpoint}
                 onChange={handleChange}
                 placeholder="/api/paas/v4/chat/completions"
-                className="font-mono"
+                className="min-w-0 font-sans"
               />
             </div>
           </>
@@ -245,46 +248,48 @@ const ModelConfigPanel = ({
         </div>
 
         <div className="col-span-12 -mt-1">
-          <p className="text-caption font-mono uppercase tracking-wide text-ink-500">
+          <p className="text-small font-medium text-ink-700">
             认证与模型
           </p>
         </div>
 
         <div className="col-span-12 md:col-span-6">
-          <label className="mb-1 block text-small font-medium text-ink-700">
+          <label htmlFor={`${agentType}-apiKey`} className="mb-1 block text-small font-medium text-ink-700">
             {t('ModelConfigPanel.apiKeyLabel')}
           </label>
           <Input
             type="password"
+            id={`${agentType}-apiKey`}
             name="apiKey"
             value={config.apiKey}
             onChange={handleChange}
             placeholder="把 API Key 给我看一眼"
             autoComplete="off"
-            className="font-mono"
+            className="min-w-0 font-sans"
           />
         </div>
 
         <div className="col-span-12 md:col-span-6">
-          <label className="mb-1 block text-small font-medium text-ink-700">
+          <label htmlFor={`${agentType}-model`} className="mb-1 block text-small font-medium text-ink-700">
             {t('ModelConfigPanel.modelLabel')}
           </label>
           <Input
             type="text"
+            id={`${agentType}-model`}
             name="model"
             value={config.model}
             onChange={handleChange}
             placeholder="输入模型名称"
-            className="font-mono"
+            className="min-w-0 font-sans"
           />
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-2">
-        <Button intent="primary" size="md" onClick={handleLoadDefault}>
+      <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-paper-200 pt-4">
+        <Button intent="secondary" size="md" onClick={handleLoadDefault}>
           {t('ModelConfigPanel.loadDefault')}
         </Button>
-        <Button intent="secondary" size="md" onClick={handleTestConnection} disabled={testing}>
+        <Button intent="primary" size="md" onClick={handleTestConnection} disabled={testing}>
           {testing ? (
             <>
               <Icon name="Loader2" size={14} className="text-current animate-spin" />
@@ -339,7 +344,7 @@ const ModelConfigPanel = ({
             </pre>
           )}
           {!testResult.ok && (
-            <p className="mt-1.5 text-caption font-serif italic opacity-80">
+            <p className="mt-1.5 text-caption font-sans opacity-80">
               测试使用 stream: true 与实际对话相同，404 通常表示模型名称无效。
             </p>
           )}
@@ -354,7 +359,7 @@ const ModelConfigPanel = ({
           </div>
         </div>
       )}
-    </div>
+    </SettingsSection>
   );
 };
 

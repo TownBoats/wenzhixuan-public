@@ -23,7 +23,7 @@ const Textarea = forwardRef(function Textarea(
       className={cn(
         'w-full rounded-sm border bg-paper-50 px-4 py-2',
         'text-body text-ink-900 caret-sage-500 leading-6',
-        'placeholder:italic placeholder:text-ink-300',
+        'placeholder:font-normal placeholder:text-ink-500',
         'transition-colors duration-fast ease-soft resize-none',
         'focus:outline-none focus:ring-2',
         'disabled:bg-paper-100 disabled:text-ink-500 disabled:cursor-not-allowed',

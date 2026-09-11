@@ -102,12 +102,12 @@ const QuestionCard = ({ question, onClick, onCancel, width }) => {
           : 'cursor-pointer hover:-translate-y-px hover:shadow-lift',
       )}
     >
-      <div className="mb-2 text-small font-mono text-ink-500">
+      <div className="mb-2 text-small font-sans tabular-nums text-ink-500">
         {t('QuestionCard.exploreQuestion')}{' '}
         {question.hasFetchedAnswer && t('QuestionCard.answered')}
       </div>
 
-      <div className="flex items-start gap-2 text-body font-serif leading-relaxed text-ink-900">
+      <div className="flex items-start gap-2 text-body font-sans leading-relaxed text-ink-900">
         <div className="flex-1 min-w-0">
           <MarkdownRenderer content={question.question} />
         </div>

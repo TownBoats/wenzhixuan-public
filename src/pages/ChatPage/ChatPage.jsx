@@ -596,7 +596,7 @@ const ChatPage = ({ className }) => {
           >
             <div className="flex items-center justify-between gap-2">
               <h1
-                className="cursor-pointer truncate font-display text-h2 tracking-tight text-ink-900 transition-colors duration-fast hover:text-sage-700 md:text-h1"
+                className="cursor-pointer truncate font-sans font-semibold text-h2 tracking-tight text-ink-900 transition-colors duration-fast hover:text-sage-700 md:text-h1"
                 onClick={(event) => {
                   event.stopPropagation();
                   onTitleClick(event);
@@ -606,7 +606,7 @@ const ChatPage = ({ className }) => {
               >
                 {t("ChatPage.title")}
                 {developerMode && (
-                  <span className="ml-2 font-mono text-caption text-sage-700 opacity-70">
+                  <span className="ml-2 font-sans tabular-nums text-caption text-sage-700 opacity-70">
                     Dev
                   </span>
                 )}

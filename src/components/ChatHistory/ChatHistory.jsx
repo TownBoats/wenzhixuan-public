@@ -102,16 +102,16 @@ const ChatHistory = ({
                   />
                 ) : (
                   <>
-                    <h4 className="truncate text-body font-serif text-ink-900">
+                    <h4 className="truncate text-body font-sans text-ink-900">
                       {history.title || '未命名对话'}
                     </h4>
-                    <p className="mt-1 text-caption font-mono text-ink-500">
+                    <p className="mt-1 text-caption font-sans tabular-nums text-ink-500">
                       {formatDistanceToNow(new Date(history.timestamp), {
                         addSuffix: true,
                         locale: zhCN,
                       })}
                     </p>
-                    <p className="mt-1 truncate text-small font-serif text-ink-500">
+                    <p className="mt-1 truncate text-small font-sans text-ink-500">
                       {getMessagePreview(history.uiMessages)}
                     </p>
                   </>

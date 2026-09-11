@@ -35,7 +35,7 @@ const QuickPrompts = ({ onSelect }) => {
             onClick={() => onSelect(prompt.text)}
             className={cn(
               'max-w-full rounded-md px-4 py-2',
-              'bg-paper-50 text-small font-serif text-ink-700',
+              'bg-paper-50 text-small font-sans text-ink-700',
               'border border-paper-200',
               'transition-all duration-fast ease-snap',
               'hover:bg-paper-100 hover:border-sage-500 hover:text-ink-900 hover:-translate-y-px hover:shadow-soft',

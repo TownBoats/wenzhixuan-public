@@ -15,7 +15,7 @@ import { Icon, CoffeeCup, cn } from '@/components/ui';
  *   - 内联 SVG 灯泡 + amber 三点 pulse → CoffeeCup 自绘插画 +
  *                                       sage-300 三点 pulse
  *   - amber 闪烁光标                  → sage-500 闪烁光标
- *   - 摘要行普通 sans                 → 衬线 italic（"内心独白"语气）
+ *   - 摘要行普通 sans                 → 衬线（"内心独白"语气）
  *
  * 三态保持不变：streaming / collapsed / expanded。
  */
@@ -38,20 +38,23 @@ const ThinkingBlock = ({ content = '', isStreaming = false }) => {
             <span className="h-1.5 w-1.5 rounded-pill bg-sage-300 animate-pulse [animation-delay:200ms]" />
             <span className="h-1.5 w-1.5 rounded-pill bg-sage-300 animate-pulse [animation-delay:400ms]" />
           </span>
-          <span className="text-small font-serif italic text-ink-500">
+          <span className="text-small font-sans text-ink-500">
             {t('ThinkingBlock.thinking', { defaultValue: '让我想一下…' })}
           </span>
         </div>
 
         {content && (
+          // 思考内容从下往上堆叠（justify-end + 顶部渐隐遮罩）：
+          // 超出 max-h-32 时裁掉的是旧内容，始终能看到最新写出来的那几行
           <div
-            className="relative max-h-32 overflow-hidden"
+            className="flex max-h-32 flex-col justify-end overflow-hidden"
             style={{
               maskImage: 'linear-gradient(to bottom, transparent 0%, black 30%)',
               WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 30%)',
             }}
           >
-            <div className="text-small font-serif italic leading-relaxed text-ink-500">
+            {/* shrink-0：内容超过 max-h 时不要被压缩，而是整体上移、由容器裁掉顶部 */}
+            <div className="shrink-0 text-small font-sans leading-relaxed text-ink-500">
               <MarkdownRenderer content={streamingContent} />
             </div>
           </div>
@@ -75,11 +78,11 @@ const ThinkingBlock = ({ content = '', isStreaming = false }) => {
         )}
       >
         <CoffeeCup size={16} className="text-sage-500 shrink-0" />
-        <span className="font-medium font-serif italic">
+        <span className="font-medium font-sans">
           {t('ThinkingBlock.done', { defaultValue: '想清楚了' })}
         </span>
         {charCount > 0 && (
-          <span className="text-ink-300 font-mono text-caption">
+          <span className="text-ink-300 font-sans tabular-nums text-caption">
             · {t('ThinkingBlock.charCount', { count: charLabel, defaultValue: `${charLabel} 字` })}
           </span>
         )}
@@ -103,7 +106,7 @@ const ThinkingBlock = ({ content = '', isStreaming = false }) => {
             className="overflow-hidden"
           >
             <div className="border-t border-paper-200 px-3 py-2">
-              <div className="text-small font-serif italic leading-relaxed text-ink-700">
+              <div className="text-small font-sans leading-relaxed text-ink-700">
                 <MarkdownRenderer content={content} />
               </div>
             </div>

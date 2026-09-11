@@ -15,7 +15,7 @@ import { Button, Icon, BrandLogo, Flag, cn } from '@/components/ui';
  *   - 错误气泡：bg-red-50 border-red-200         → bg-paper-100 + Flag + state-warn
  *   - 助手左侧 32×32 BrandLogo 头像，表情随状态变脸（thinking / error / default）
  *   - 内联 SVG copy/retry 按钮         → ui/Button + ui/Icon (lucide)
- *   - amber 三点 loading              → italic serif "let me think..."
+ *   - amber 三点 loading              → serif "let me think..."
  *
  * Props 接口与旧版完全兼容，包括 ChatWindow 透传的 `theme` prop（已忽略，
  * 新设计是单主题，未来暗色模式由 dark: 前缀统一处理）。
@@ -105,7 +105,7 @@ const MessageBubble = ({
           return (
             <div
               key={index}
-              className="relative mb-3 overflow-x-auto rounded-md border border-paper-200 bg-paper-50 p-4 font-mono text-base shadow-soft"
+              className="relative mb-3 overflow-x-auto rounded-md border border-paper-200 bg-paper-50 p-4 font-sans tabular-nums text-base shadow-soft"
             >
               <button
                 type="button"
@@ -175,7 +175,7 @@ const MessageBubble = ({
 
   // ── 加载态：BrandLogo 已表达"思考中"，气泡内只放一句衬线斜体 ──
   const renderLoading = () => (
-    <div className="text-body italic font-serif text-ink-500">
+    <div className="text-body font-sans text-ink-500">
       {t('MessageBubble.thinking')}
     </div>
   );
@@ -232,7 +232,7 @@ const MessageBubble = ({
           )}
 
           {showCopyTip && (
-            <div className="absolute -top-8 right-2 animate-fade-in-out rounded-xs bg-ink-900 px-2 py-1 text-caption font-mono text-paper-50 shadow-lift">
+            <div className="absolute -top-8 right-2 animate-fade-in-out rounded-xs bg-ink-900 px-2 py-1 text-caption font-sans tabular-nums text-paper-50 shadow-lift">
               {t('MessageBubble.copied')}
             </div>
           )}
@@ -240,7 +240,7 @@ const MessageBubble = ({
           {isLoading ? renderLoading() : renderContent()}
 
           {isError && !isUser && (
-            <div className="mt-3 flex items-center gap-2 rounded-xs bg-sun-300/30 px-3 py-2 text-small font-serif text-ink-700">
+            <div className="mt-3 flex items-center gap-2 rounded-xs bg-sun-300/30 px-3 py-2 text-small font-sans text-ink-700">
               <Flag size={16} className="shrink-0 text-state-warn" />
               <span>
                 {error?.message ||
@@ -316,7 +316,7 @@ function renderInlineQuestionString(value) {
 // ── 子组件：单个问题 chip（衬线 + paper 底） ────────────────
 function QuestionChip({ content }) {
   return (
-    <div className="relative w-full cursor-pointer overflow-hidden rounded-sm border border-paper-200 bg-paper-50 px-4 py-2.5 font-serif text-ink-700 shadow-soft transition-colors duration-fast hover:bg-paper-100 hover:text-ink-900">
+    <div className="relative w-full cursor-pointer overflow-hidden rounded-sm border border-paper-200 bg-paper-50 px-4 py-2.5 font-sans text-ink-700 shadow-soft transition-colors duration-fast hover:bg-paper-100 hover:text-ink-900">
       <MarkdownRenderer content={content} />
     </div>
   );

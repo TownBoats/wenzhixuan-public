@@ -35,9 +35,9 @@ function Section({ id, title, description, children }) {
   return (
     <section id={id} className="space-y-6">
       <header className="space-y-1 border-b border-paper-200 pb-3">
-        <h2 className="text-h1 font-display text-ink-900">{title}</h2>
+        <h2 className="text-h1 font-sans font-semibold text-ink-900">{title}</h2>
         {description ? (
-          <p className="text-body text-ink-500 font-serif">{description}</p>
+          <p className="text-body text-ink-500 font-sans">{description}</p>
         ) : null}
       </header>
       {children}
@@ -86,7 +86,7 @@ function GrowthStep({ level, label, hint }) {
     <div className="flex-1 min-w-0 flex flex-col items-center gap-2 text-center">
       <LevelIcon level={level} size={56} />
       <div className="space-y-0.5">
-        <p className="text-body font-serif text-ink-900">{label}</p>
+        <p className="text-body font-sans text-ink-900">{label}</p>
         <p className="text-caption font-sans text-ink-500">{hint}</p>
       </div>
     </div>
@@ -104,7 +104,7 @@ function StatusCard({ icon, name, usage }) {
       <div className="shrink-0 rounded-sm bg-paper-100 p-2">{icon}</div>
       <div className="space-y-0.5 min-w-0">
         <p className="text-body font-medium text-ink-900">{name}</p>
-        <p className="text-small font-serif text-ink-500">{usage}</p>
+        <p className="text-small font-sans text-ink-500">{usage}</p>
       </div>
     </div>
   );
@@ -201,22 +201,22 @@ function TypographySection() {
     >
       <div className="space-y-4 rounded-md border border-paper-200 bg-paper-50 p-6">
         <div>
-          <p className="text-display font-display text-ink-900">问知轩 · WisClick</p>
-          <p className="text-caption font-mono text-ink-500 mt-1">display · 28/36 · font-display</p>
+          <p className="text-display font-sans font-semibold text-ink-900">问知轩 · WisClick</p>
+          <p className="text-caption font-mono text-ink-500 mt-1">display · 28/36 · font-sans font-semibold</p>
         </div>
         <div>
-          <p className="text-h1 font-serif text-ink-900">用提问陪你思考</p>
-          <p className="text-caption font-mono text-ink-500 mt-1">h1 · 22/30 · font-serif</p>
+          <p className="text-h1 font-sans text-ink-900">用提问陪你思考</p>
+          <p className="text-caption font-mono text-ink-500 mt-1">h1 · 22/30 · font-sans</p>
         </div>
         <div>
           <p className="text-h2 font-sans font-medium text-ink-900">设置 · 模型配置</p>
           <p className="text-caption font-mono text-ink-500 mt-1">h2 · 18/26 · font-sans</p>
         </div>
         <div>
-          <p className="text-body font-serif text-ink-700">
+          <p className="text-body font-sans text-ink-700">
             正文用衬线，让「问题」有「被认真问出」的分量感。这一段是 body 字号下的真实阅读体验。
           </p>
-          <p className="text-caption font-mono text-ink-500 mt-1">body · 15/24 · font-serif</p>
+          <p className="text-caption font-mono text-ink-500 mt-1">body · 15/24 · font-sans</p>
         </div>
         <div>
           <p className="text-small font-sans text-ink-700">small：辅助说明、按钮内文字、Tab 项</p>
@@ -339,7 +339,7 @@ function InputSection() {
     <Section
       id="inputs"
       title="05 · Input & Textarea"
-      description="placeholder 用 italic ink-300；聚焦 sage 描边 + 同色光标。"
+      description="placeholder 用 ink-300；聚焦 sage 描边 + 同色光标。"
     >
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-3">
@@ -427,7 +427,7 @@ function BrandSection() {
           >
             <BrandLogo size={64} expression={expr} />
             <div className="text-center">
-              <p className="text-body font-serif text-ink-900">{label}</p>
+              <p className="text-body font-sans text-ink-900">{label}</p>
               <p className="text-caption font-mono text-ink-500">{`expression="${expr}"`}</p>
             </div>
           </div>
@@ -464,7 +464,7 @@ function GrowthChainSection() {
           <GrowthStep level="forest" label="森林" hint="可以教别人" />
         </div>
       </div>
-      <p className="text-small text-ink-500 font-serif">
+      <p className="text-small text-ink-500 font-sans">
         P3 阶段会把 AnswerCard 的横向五卡片替换为这条生长链。
       </p>
     </Section>
@@ -534,7 +534,7 @@ function DesignPreview() {
           <div className="flex items-center gap-3">
             <BrandLogo size={32} expression="happy" />
             <div>
-              <p className="text-h2 font-display text-ink-900 leading-tight">问知轩 · 设计预览</p>
+              <p className="text-h2 font-sans font-semibold text-ink-900 leading-tight">问知轩 · 设计预览</p>
               <p className="text-caption font-mono text-ink-500">Susan Kare 风重设计 v1 · P0/P1/P2 集成展示</p>
             </div>
           </div>
@@ -560,7 +560,7 @@ function DesignPreview() {
 
       <main className="mx-auto max-w-5xl space-y-16 px-8 py-12">
         <div className="rounded-md border border-paper-200 bg-paper-100 p-6">
-          <p className="text-body font-serif text-ink-700">
+          <p className="text-body font-sans text-ink-700">
             这一页把 P0（设计 token）、P1（原子组件）、P2（自绘图标）
             的所有产出集中渲染。<strong className="text-ink-900">主应用 ChatPage 不受影响</strong>，
             访问根路径 <code className="font-mono text-small">/</code> 还能看到原版。
@@ -580,7 +580,7 @@ function DesignPreview() {
         <StatusIconsSection />
 
         <footer className="border-t border-paper-200 pt-8 text-center">
-          <p className="text-small font-serif text-ink-500">
+          <p className="text-small font-sans text-ink-500">
             如果这一页看起来「对了」，下一步就是 P3：把 ChatPage 里的业务组件逐个迁过来。
           </p>
         </footer>

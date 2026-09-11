@@ -75,7 +75,7 @@ const AnswerMessageCard = ({
         <div className="flex h-[72px] w-[72px] items-center justify-center">
           <div className={cn('flex flex-col items-center gap-1', accentClass)}>
             {renderLevelIcon(28)}
-            <span className="whitespace-nowrap text-caption font-serif">{description}</span>
+            <span className="whitespace-nowrap text-caption font-sans">{description}</span>
           </div>
         </div>
       ) : (
@@ -84,18 +84,18 @@ const AnswerMessageCard = ({
           <div className="flex min-w-0 flex-col">
             <div>
               <div className={cn('mb-1.5 flex items-center gap-2', accentClass)}>
-                <span className="text-caption font-medium uppercase tracking-wide font-mono">
+                <span className="text-caption font-medium uppercase tracking-wide font-sans tabular-nums">
                   {t('AnswerMessageCard.questionAnswer')}
                 </span>
                 <span className="h-px flex-1 bg-current opacity-15" />
               </div>
-              <div className="font-serif text-body text-ink-900">
+              <div className="font-sans text-body text-ink-900">
                 <MarkdownRenderer content={question} />
               </div>
             </div>
 
             <div className="mt-3">
-              <div className="font-serif text-small leading-relaxed text-ink-700">
+              <div className="font-sans text-small leading-relaxed text-ink-700">
                 <MarkdownRenderer content={answer} />
               </div>
             </div>
@@ -104,7 +104,7 @@ const AnswerMessageCard = ({
           <div className="flex items-start">
             <div className={cn('flex flex-col items-center gap-1 rounded-sm border bg-paper-100 px-2.5 py-2', accentClass, isCustom ? 'border-sun-500/30' : 'border-paper-200')}>
               {renderLevelIcon(20)}
-              <span className="whitespace-nowrap text-caption font-medium font-serif">
+              <span className="whitespace-nowrap text-caption font-medium font-sans">
                 {description}
               </span>
             </div>

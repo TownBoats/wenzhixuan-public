@@ -107,7 +107,7 @@ const HeaderButtons = ({
         onClick={() => setShowSettings(true)}
         className={cn(
           'inline-flex h-7 items-center gap-1 rounded-pill px-2',
-          'bg-paper-100 text-caption font-mono text-ink-700',
+          'bg-paper-100 text-caption font-sans tabular-nums text-ink-700',
           'border border-paper-200',
           'transition-colors duration-fast hover:bg-paper-200',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/30',

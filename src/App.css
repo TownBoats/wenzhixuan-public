@@ -2,4 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --font-ui: "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-family: var(--font-ui);
+    color: theme('colors.ink.900');
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply font-sans text-body;
+  }
+
+  h1, h2, h3, h4 {
+    font-weight: 600;
+  }
+
+  button, input, textarea, select {
+    font-family: inherit;
+  }
+}
+
 

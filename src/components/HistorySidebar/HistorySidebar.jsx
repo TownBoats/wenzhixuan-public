@@ -55,7 +55,7 @@ const HistorySidebar = ({
         )}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-paper-200 px-4 py-3">
-          <h2 className="text-h2 font-serif text-ink-900">
+          <h2 className="text-h2 font-sans text-ink-900">
             {t('HistorySidebar.title')}
           </h2>
           <Button

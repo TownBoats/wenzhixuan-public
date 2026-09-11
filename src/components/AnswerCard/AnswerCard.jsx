@@ -10,9 +10,9 @@ import { Button, Icon, BrandLogo, LevelIcon, cn } from '@/components/ui';
 
 // 旧 ContentParser key → tailwind level-* token class（必须写出完整类名才能被 Tailwind 提取）
 const LEVEL_TEXT_CLASS = {
-  none:     'text-level-seed',
-  heard:    'text-level-sprout',
-  basic:    'text-level-sapling',
+  none:     'text-ink-500',
+  heard:    'text-sage-700',
+  basic:    'text-sage-700',
   familiar: 'text-level-tree',
   expert:   'text-level-forest',
 };
@@ -86,10 +86,10 @@ const AnswerCard = ({
       Math.max(700, viewportWidth * 0.65),
       viewportWidth * 0.75,
     );
-    const targetHeight = initialWidth * 0.5625;
+    const targetHeight = initialWidth * 0.7;
     const initialHeight = Math.min(
-      Math.max(450, targetHeight),
-      viewportHeight * 0.8,
+      Math.max(560, targetHeight),
+      viewportHeight * 0.84,
     );
     return { width: initialWidth, height: initialHeight };
   });
@@ -163,7 +163,7 @@ const AnswerCard = ({
 
   const handleCustomSubmit = (e) => {
     if (e && e.type === 'keydown') {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent?.isComposing && e.keyCode !== 229) {
         e.preventDefault();
         if (customAnswer.trim()) {
           onLevelSelect?.('custom', customAnswer.trim());
@@ -199,18 +199,18 @@ const AnswerCard = ({
               : undefined
           }
         >
-          <div className="flex h-full flex-col">
+          <div className="flex h-full min-h-0 flex-col">
             {/* ── 拖拽手柄 / 标题栏 ── */}
             <div
               className={cn(
-                'drag-handle flex items-center justify-between border-b border-paper-200',
+                'drag-handle flex shrink-0 items-center justify-between border-b border-paper-200',
                 'bg-paper-100 px-3 py-2.5 md:px-4 md:py-3',
                 isDesktop && (isDragging ? 'cursor-grabbing' : 'cursor-grab'),
               )}
             >
               <div className="mr-2 flex min-w-0 items-center gap-2 text-ink-900">
                 <BrandLogo size={20} expression="default" className="shrink-0 text-sage-700" />
-                <span className="truncate font-serif text-small md:text-body">
+                <span className="truncate font-sans text-small md:text-body">
                   {isCollapsed
                     ? question.question.length > 30
                       ? question.question.substring(0, 30) + '...'
@@ -222,11 +222,11 @@ const AnswerCard = ({
               {isCountingDown && !isCollapsed && (
                 <div className="mx-2 hidden flex-1 items-center justify-center gap-1.5 rounded-pill bg-sun-300/40 px-3 py-1 md:flex md:mx-4">
                   <Icon name="Hourglass" size={14} className="text-sun-700" />
-                  <span className="font-serif text-small text-sun-700">
+                  <span className="font-sans text-small text-sun-700">
                     {t('AnswerCard.tips1')}
                   </span>
-                  <span className="font-mono font-bold text-sun-700">{countdowns.global}</span>
-                  <span className="font-serif text-small text-sun-700">
+                  <span className="font-sans tabular-nums font-bold text-sun-700">{countdowns.global}</span>
+                  <span className="font-sans text-small text-sun-700">
                     {t('AnswerCard.tips2')}
                   </span>
                 </div>
@@ -235,7 +235,7 @@ const AnswerCard = ({
               <div className="flex items-center gap-1">
                 {/* mobile 倒计时简化为右侧小徽章 */}
                 {isCountingDown && !isCollapsed && !isDesktop && (
-                  <span className="inline-flex items-center gap-1 rounded-pill bg-sun-300/40 px-2 py-0.5 font-mono text-caption font-bold text-sun-700">
+                  <span className="inline-flex items-center gap-1 rounded-pill bg-sun-300/40 px-2 py-0.5 font-sans tabular-nums text-caption font-bold text-sun-700">
                     <Icon name="Hourglass" size={12} className="text-current" />
                     {countdowns.global}
                   </span>
@@ -261,22 +261,19 @@ const AnswerCard = ({
 
             {/* ── 主区 ── */}
             {!isCollapsed && (
-              <div className="card-content flex-1 overflow-hidden">
-                <div className="flex h-full flex-col p-3 md:p-4">
-                  <div className="flex flex-1 flex-col overflow-hidden rounded-md border border-paper-200 bg-paper-50">
+              <div className="card-content min-h-0 flex-1 overflow-hidden">
+                <div className="flex h-full min-h-0 flex-col">
+                  <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-paper-50">
                     {/* 问题 */}
-                    <div className="shrink-0 border-b border-paper-200 p-3 md:p-4">
-                      <p className="mb-1 font-mono text-caption text-ink-500 md:mb-2">
-                        {t('AnswerCard.questionDetails')}
-                      </p>
-                      <div className="font-serif text-body text-ink-900 md:text-h2">
+                    <div className="max-h-[30%] shrink-0 overflow-y-auto border-b border-paper-200 p-3 md:px-4">
+                      <div className="font-sans text-body font-medium leading-relaxed text-ink-900">
                         <MarkdownRenderer content={question.question} />
                       </div>
                     </div>
 
                     {/* 答案档位列 */}
                     <div className="min-h-0 flex-1 overflow-y-auto p-2 md:p-3 scrollbar-custom">
-                      <div className="flex h-full flex-col space-y-2">
+                      <div className="flex flex-col gap-2">
                         {isLoading ? (
                           <LoadingPanel t={t} />
                         ) : (
@@ -307,8 +304,15 @@ const AnswerCard = ({
                               );
                             })}
 
-                            {/* 自定义回答 */}
-                            <CustomOption
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 输入独立于选项滚动区，缩放和长答案不会挤走输入框。 */}
+                    {!isLoading && (
+                      <div className="shrink-0 border-t border-paper-200 bg-paper-100/50 p-3 md:px-4">
+                        <CustomOption
                               value={customAnswer}
                               onChange={setCustomAnswer}
                               onKeyDown={handleCustomSubmit}
@@ -319,11 +323,9 @@ const AnswerCard = ({
                               label={t('AnswerCard.customAnswer')}
                               placeholder={t('AnswerCard.placeholder')}
                               sendTitle={t('AnswerCard.send')}
-                            />
-                          </>
-                        )}
+                        />
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -394,8 +396,8 @@ function LoadingPanel({ t }) {
     <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-md border border-paper-200 bg-paper-100 p-6">
       <BrandLogo size={56} expression="thinking" className="text-sage-700" />
       <div className="text-center">
-        <p className="font-serif text-h2 text-ink-900">{t('AnswerCard.aiError')}</p>
-        <p className="mt-1 font-serif italic text-body text-ink-500">
+        <p className="font-sans text-h2 text-ink-900">{t('AnswerCard.aiError')}</p>
+        <p className="mt-1 font-sans text-body text-ink-500">
           {t('AnswerCard.aiErrorTips')}
         </p>
       </div>
@@ -419,30 +421,43 @@ function LevelOption({
   return (
     <div
       className={cn(
-        'group rounded-md border bg-paper-50 p-3 transition-all duration-base ease-soft',
-        isHovered ? 'border-sage-500 bg-paper-100 shadow-lift' : 'border-paper-200',
+        'group rounded-sm border bg-paper-50 px-3 py-2.5 transition-colors duration-fast',
+        'outline-none focus-visible:border-sage-500 focus-visible:ring-2 focus-visible:ring-sage-500/30',
+        isHovered ? 'border-sage-500 bg-sage-50' : 'border-paper-200',
         isCountingDown ? 'cursor-not-allowed opacity-80' : 'cursor-pointer',
       )}
       onClick={onClick}
+      role="button"
+      tabIndex={isCountingDown ? -1 : 0}
+      aria-disabled={isCountingDown}
+      onFocus={onMouseEnter}
+      onBlur={onMouseLeave}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onClick();
+        }
+      }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
       <div className="flex items-start gap-3">
         {/* 左：生长插画 + 档位文字 */}
-        <div className="flex shrink-0 flex-col items-center gap-1">
+        <div className="flex w-20 shrink-0 items-center gap-2 pt-0.5">
           <LevelIcon
             level={level}
-            size={36}
+            size={22}
             className={cn(
               'transition-transform duration-base ease-snap',
               isHovered && !isCountingDown && 'scale-110',
             )}
           />
-          <span className={cn('font-serif text-caption', LEVEL_TEXT_CLASS[level])}>{label}</span>
+          <span className={cn('text-small font-medium', LEVEL_TEXT_CLASS[level])}>{label}</span>
         </div>
 
         {/* 右：内容 / reveal 提示 */}
-        <div className="min-w-0 flex-1 font-serif text-small leading-[1.45] text-ink-700">
+        <div className="min-w-0 flex-1 break-words font-sans text-small leading-relaxed text-ink-700">
           <div className="relative">
             <div
               className={cn(
@@ -450,7 +465,7 @@ function LevelOption({
                 isRevealed ? 'opacity-100' : 'opacity-0',
               )}
             >
-              <div className="max-h-[5.6rem] overflow-hidden transition-[max-height] duration-base ease-soft group-hover:max-h-[24rem]">
+              <div>
                 <MarkdownRenderer content={answer} />
               </div>
             </div>
@@ -467,7 +482,7 @@ function LevelOption({
                   }}
                 />
                 <div className="z-10 px-3 py-1.5 text-center text-sage-700">
-                  <span className="inline-block border-b border-current pb-0.5 font-serif text-body italic tracking-[0.03em]">
+                  <span className="inline-block border-b border-current pb-0.5 font-sans text-body tracking-[0.03em]">
                     {tipText}
                   </span>
                 </div>
@@ -509,28 +524,30 @@ function CustomOption({
   return (
     <div
       className={cn(
-        'group rounded-md border bg-paper-50 p-3 transition-all duration-base ease-soft',
-        isHovered ? 'border-sun-500 bg-paper-100 shadow-lift' : 'border-paper-200',
+        'group transition-colors duration-fast',
+        isHovered && 'text-ink-900',
       )}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <div className="flex items-start gap-3">
-        <div className="flex shrink-0 flex-col items-center gap-1">
-          <Icon name="Pencil" size={28} className="text-sun-700" />
-          <span className="font-serif text-caption text-sun-700">{label}</span>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <Icon name="Pencil" size={16} className="text-sage-700" />
+          <label htmlFor="custom-answer" className="text-small font-medium text-ink-700">{label}</label>
         </div>
         <div className="min-w-0 flex-1">
           <div className="relative">
             <textarea
+              id="custom-answer"
+              rows={2}
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={onKeyDown}
               placeholder={placeholder}
               className={cn(
-                'min-h-[56px] w-full rounded-sm border border-paper-200 bg-paper-50 p-3 pr-10',
-                'font-serif text-small leading-[1.45] text-ink-900 caret-sage-500',
-                'placeholder:italic placeholder:text-ink-300 resize-none',
+                'block h-[72px] w-full rounded-sm border border-paper-200 bg-paper-50 px-3 py-2 pr-12',
+                'font-sans text-small leading-[1.45] text-ink-900 caret-sage-500',
+                'placeholder:font-normal placeholder:text-ink-500 resize-none',
                 'transition-colors duration-fast outline-none',
                 'focus:border-sage-500 focus:ring-2 focus:ring-sage-500/20',
               )}

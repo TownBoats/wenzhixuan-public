@@ -435,7 +435,7 @@ const DebugPanel = ({
       >
       {/* 顶栏 */}
       <div className="flex shrink-0 items-center justify-between border-b border-paper-200 px-4 py-3">
-        <h2 className="flex items-center gap-2 font-serif text-h2 text-ink-900">
+        <h2 className="flex items-center gap-2 font-sans text-h2 text-ink-900">
           <Icon name="Bug" size={16} className="text-sage-700" />
           调试面板
         </h2>
