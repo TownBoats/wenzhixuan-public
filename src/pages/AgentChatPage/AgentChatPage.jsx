@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import MODES from '../../agent/modePrompts';
@@ -12,7 +12,7 @@ import {
 } from '../../utils/promptMigration';
 import AnswerCard from '../../components/AnswerCard/AnswerCard';
 import MessageContent from '../../components/MessageContent/MessageContent';
-import { Button, Icon, Textarea } from '@/components/ui';
+import { BrandLogo, Button, Icon, Textarea, cn } from '@/components/ui';
 import QuestionGroup from './QuestionGroup';
 import HistoryDrawer from './HistoryDrawer';
 import ConfigPanel from './ConfigPanel';
@@ -64,6 +64,16 @@ function readConfigSnapshot() {
  */
 const RETRYABLE_TURN_STATUSES = new Set(['failed', 'cancelled', 'interrupted']);
 
+/**
+ * 空态推荐主题（G2）：点一下填进输入框并聚焦，不自动发送——
+ * 自动发送会让「误触一下就开始烧 token」，填词更符合「先改一改再问」的习惯。
+ */
+const SUGGESTION_KEYS = [
+  'AgentChat.page.suggest.closure',
+  'AgentChat.page.suggest.eventLoop',
+  'AgentChat.page.suggest.prototype',
+];
+
 /** D6 迁移判定的比对源：中英两份内置提示词原文（D-页面与模式.md 2.2）。 */
 const BUILT_IN_MAIN_PROMPTS = [
   zhTranslation?.SystemPrompts?.learningMode,
@@ -76,16 +86,19 @@ const BUILT_IN_MAIN_PROMPTS = [
  */
 function HistoryNotice({ text, onDismiss, dismissLabel }) {
   return (
-    <div className="flex items-center justify-between gap-2 border-b border-paper-200 bg-sun-300/15 px-4 py-2 text-small text-ink-700">
-      <span>{text}</span>
-      <button
-        type="button"
-        onClick={onDismiss}
-        className="shrink-0 rounded-sm p-1 text-ink-500 transition-colors duration-fast hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/20"
-        aria-label={dismissLabel}
-      >
-        <Icon name="X" size={14} />
-      </button>
+    <div className="border-b border-sun-300/40 bg-sun-300/12">
+      <div className="mx-auto flex w-full max-w-3xl items-start gap-2 px-4 py-2 text-small text-ink-700 sm:px-6">
+        <Icon name="Info" size={14} className="mt-0.5 shrink-0 text-sun-700" />
+        <span className="min-w-0 flex-1">{text}</span>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="shrink-0 rounded-sm p-1 text-ink-500 transition-colors duration-fast hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/20"
+          aria-label={dismissLabel}
+        >
+          <Icon name="X" size={14} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -99,6 +112,7 @@ HistoryNotice.propTypes = {
 function AgentChatPage() {
   const { t } = useTranslation();
   const [inputText, setInputText] = useState('');
+  const inputRef = useRef(null);
   const [openQuestionId, setOpenQuestionId] = useState(null);
   const [optionHintDismissed, setOptionHintDismissed] = useState(false);
 
@@ -193,6 +207,11 @@ function AgentChatPage() {
     }
   };
 
+  const applySuggestion = (text) => {
+    setInputText(text);
+    inputRef.current?.focus();
+  };
+
   const handleLevelSelect = (level, content) => {
     if (!openQuestion) return;
     session.submitAnswer(levelSelectToSubmission(openQuestion.id, level, content));
@@ -231,27 +250,39 @@ function AgentChatPage() {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-paper-100">
-      <header className="flex items-center justify-between border-b border-paper-200 bg-paper-50 px-4 py-2">
-        <span className="text-small text-ink-500">{t('AgentChat.page.title')}</span>
-        <div className="flex items-center gap-1">
-          <Button intent="ghost" size="sm" onClick={() => setConfigOpen(true)}>
-            <Icon name="SlidersHorizontal" size={14} className="text-current" />
-            {t('AgentChat.page.settings')}
-          </Button>
-          <Button intent="ghost" size="sm" onClick={openHistory}>
-            {t('AgentChat.history.openHistory')}
-          </Button>
-          {/* 新会话同样会中止当前运行并清空状态（F1 决策 2B），运行中不可点 */}
-          <Button
-            intent="ghost"
-            size="sm"
-            onClick={session.newConversation}
-            disabled={session.isRunning}
-            title={session.isRunning ? t('AgentChat.history.runningHint') : undefined}
-          >
-            {t('AgentChat.page.newConversation')}
-          </Button>
+    <div className="flex h-dvh flex-col bg-paper-100">
+      <header className="sticky top-0 z-20 border-b border-paper-200/70 bg-paper-50/85 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <BrandLogo size={24} />
+            <div className="min-w-0 leading-tight">
+              <p className="truncate text-small font-semibold text-ink-900">
+                {t('AgentChat.page.title')}
+              </p>
+              <p className="truncate text-caption text-ink-500">{t('AgentChat.page.tagline')}</p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button intent="ghost" size="sm" onClick={() => setConfigOpen(true)}>
+              <Icon name="SlidersHorizontal" size={14} className="text-current" />
+              <span className="hidden sm:inline">{t('AgentChat.page.settings')}</span>
+            </Button>
+            <Button intent="ghost" size="sm" onClick={openHistory}>
+              <Icon name="History" size={14} className="text-current" />
+              <span className="hidden sm:inline">{t('AgentChat.history.openHistory')}</span>
+            </Button>
+            {/* 新会话同样会中止当前运行并清空状态（F1 决策 2B），运行中不可点 */}
+            <Button
+              intent="secondary"
+              size="sm"
+              onClick={session.newConversation}
+              disabled={session.isRunning}
+              title={session.isRunning ? t('AgentChat.history.runningHint') : undefined}
+            >
+              <Icon name="Plus" size={14} className="text-current" />
+              <span className="hidden sm:inline">{t('AgentChat.page.newConversation')}</span>
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -280,55 +311,104 @@ function AgentChatPage() {
       )}
 
       {!configReady && (
-        <div className="border-b border-paper-200 bg-sun-300/15 px-4 py-2 text-small text-ink-700">
-          {t('AgentChat.config.mainModelMissing')}
+        <div className="border-b border-sun-300/40 bg-sun-300/12">
+          <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-x-2 gap-y-1 px-4 py-2 text-small text-ink-700 sm:px-6">
+            <Icon name="Info" size={14} className="shrink-0 text-sun-700" />
+            <span className="min-w-0 flex-1">{t('AgentChat.config.mainModelMissing')}</span>
+            <Button
+              intent="secondary"
+              size="sm"
+              className="shrink-0"
+              onClick={() => setConfigOpen(true)}
+            >
+              <Icon name="SlidersHorizontal" size={14} className="text-current" />
+              {t('AgentChat.page.settings')}
+            </Button>
+          </div>
         </div>
       )}
 
       {configReady && !optionReady && !optionHintDismissed && (
-        <div className="flex items-center justify-between gap-2 border-b border-paper-200 bg-paper-50 px-4 py-2 text-small text-ink-700">
-          <span>{t('AgentChat.config.optionModelMissing')}</span>
-          <button
-            type="button"
-            onClick={() => setOptionHintDismissed(true)}
-            className="shrink-0 rounded-sm p-1 text-ink-500 transition-colors duration-fast hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/20"
-            aria-label={t('AgentChat.page.dismissHint')}
-          >
-            <Icon name="X" size={14} />
-          </button>
+        <div className="border-b border-paper-200 bg-paper-50">
+          <div className="mx-auto flex w-full max-w-3xl items-start gap-2 px-4 py-2 text-small text-ink-700 sm:px-6">
+            <Icon name="Info" size={14} className="mt-0.5 shrink-0 text-ink-300" />
+            <span className="min-w-0 flex-1">{t('AgentChat.config.optionModelMissing')}</span>
+            <button
+              type="button"
+              onClick={() => setOptionHintDismissed(true)}
+              className="shrink-0 rounded-sm p-1 text-ink-500 transition-colors duration-fast hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/20"
+              aria-label={t('AgentChat.page.dismissHint')}
+            >
+              <Icon name="X" size={14} />
+            </button>
+          </div>
         </div>
       )}
 
       {showMigrationNotice && (
-        <div className="flex items-center justify-between gap-2 border-b border-paper-200 bg-paper-50 px-4 py-2 text-small text-ink-700">
-          <span>{t('AgentChat.config.migrationNotice')}</span>
-          <button
-            type="button"
-            onClick={dismissMigrationNotice}
-            className="shrink-0 rounded-sm p-1 text-ink-500 transition-colors duration-fast hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/20"
-            aria-label={t('AgentChat.page.dismissHint')}
-          >
-            <Icon name="X" size={14} />
-          </button>
+        <div className="border-b border-paper-200 bg-paper-50">
+          <div className="mx-auto flex w-full max-w-3xl items-start gap-2 px-4 py-2 text-small text-ink-700 sm:px-6">
+            <Icon name="ScrollText" size={14} className="mt-0.5 shrink-0 text-ink-300" />
+            <span className="min-w-0 flex-1">{t('AgentChat.config.migrationNotice')}</span>
+            <button
+              type="button"
+              onClick={dismissMigrationNotice}
+              className="shrink-0 rounded-sm p-1 text-ink-500 transition-colors duration-fast hover:bg-paper-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/20"
+              aria-label={t('AgentChat.page.dismissHint')}
+            >
+              <Icon name="X" size={14} />
+            </button>
+          </div>
         </div>
       )}
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-2xl space-y-6 p-4">
+      <main className="flex-1 overflow-y-auto scrollbar-custom">
+        <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
           {/* 恢复完成前不显示空态，避免「历史里明明有会话」却先闪一下空提示 */}
           {history.ready && renderedTurns.length === 0 && (
-            <p className="pt-16 text-center text-body text-ink-500">
-              {t('AgentChat.page.emptyState')}
-            </p>
+            <div className="flex min-h-[58vh] flex-col items-center justify-center gap-6 pb-10 text-center">
+              <div className="rounded-lg bg-paper-50 p-3 shadow-soft ring-1 ring-paper-200">
+                <BrandLogo size={40} />
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-h1 font-semibold text-ink-900">
+                  {t('AgentChat.page.emptyTitle')}
+                </h1>
+                <p className="mx-auto max-w-sm text-small leading-relaxed text-ink-500">
+                  {t('AgentChat.page.emptyState')}
+                </p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                {SUGGESTION_KEYS.map((key) => {
+                  const label = t(key);
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => applySuggestion(label)}
+                      className={cn(
+                        'rounded-pill border border-paper-200 bg-paper-50 px-3.5 py-1.5 text-small text-ink-700',
+                        'transition-all duration-base ease-soft hover:-translate-y-0.5',
+                        'hover:border-sage-300 hover:text-sage-900 hover:shadow-soft',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/30',
+                      )}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           )}
 
-          {renderedTurns.map((turn, index) => {
+          <div className="space-y-10">
+            {renderedTurns.map((turn, index) => {
             const errorInfo = classifyTurnError(turn);
             return (
             <div key={turn.id} className="space-y-3">
               {turn.userText && (
                 <div className="flex justify-end">
-                  <p className="max-w-[80%] whitespace-pre-wrap rounded-md bg-sage-50 px-3 py-2 text-body text-ink-900">
+                  <p className="max-w-[85%] whitespace-pre-wrap rounded-lg rounded-br-xs bg-sage-50 px-4 py-2.5 text-body leading-relaxed text-ink-900 shadow-soft ring-1 ring-sage-300/25">
                     {turn.userText}
                   </p>
                 </div>
@@ -338,8 +418,9 @@ function AgentChatPage() {
 
               {/* 刷新时没跑完的那一轮：内容保留、明确告知、不自动重放（E3） */}
               {turn.status === 'interrupted' && (
-                <div className="rounded-sm border border-paper-200 bg-paper-50 px-3 py-2 text-small text-ink-500">
-                  {t('AgentChat.history.interrupted')}
+                <div className="flex items-start gap-2 rounded-md border border-paper-200 bg-paper-50/70 px-3 py-2 text-small text-ink-500">
+                  <Icon name="Clock" size={14} className="mt-0.5 shrink-0 text-ink-300" />
+                  <span>{t('AgentChat.history.interrupted')}</span>
                 </div>
               )}
 
@@ -350,13 +431,14 @@ function AgentChatPage() {
               />
 
               {turn.error && (
-                <div className="rounded-sm border border-state-alert/40 bg-sun-300/15 px-3 py-2">
-                  <p className="text-small font-medium text-ink-900">
+                <div className="rounded-md border border-state-alert/35 bg-state-alert/[0.06] px-3.5 py-3">
+                  <p className="flex items-center gap-2 text-small font-semibold text-ink-900">
+                    <Icon name="TriangleAlert" size={14} className="text-state-alert" />
                     {t('AgentChat.page.errorTitle')}
                   </p>
                   {/* 分类文案（F3）：类别由运行层 endedBy 决定，见 errorAdapter */}
                   {errorInfo.kind === 'tool_unsupported' && (
-                    <p className="mt-0.5 text-small text-ink-700">
+                    <p className="mt-1.5 text-small leading-relaxed text-ink-700">
                       {t('AgentChat.page.toolUnsupported', {
                         endpoint: config.endpoint || t('AgentChat.config.notFilled'),
                         model: config.model || t('AgentChat.config.notFilled'),
@@ -364,9 +446,13 @@ function AgentChatPage() {
                     </p>
                   )}
                   {errorInfo.textKey && (
-                    <p className="mt-0.5 text-small text-ink-700">{t(errorInfo.textKey)}</p>
+                    <p className="mt-1.5 text-small leading-relaxed text-ink-700">
+                      {t(errorInfo.textKey)}
+                    </p>
                   )}
-                  <p className="mt-0.5 whitespace-pre-wrap text-small text-ink-500">{turn.error}</p>
+                  <p className="mt-1.5 whitespace-pre-wrap break-words rounded-sm bg-paper-50/60 px-2 py-1 font-mono text-caption text-ink-500">
+                    {turn.error}
+                  </p>
                 </div>
               )}
 
@@ -378,6 +464,7 @@ function AgentChatPage() {
                   onClick={session.retryLastTurn}
                   className="shrink-0 whitespace-nowrap"
                 >
+                  <Icon name="RefreshCw" size={14} className="text-current" />
                   {t('AgentChat.page.retry')}
                 </Button>
               )}
@@ -385,51 +472,72 @@ function AgentChatPage() {
             );
           })}
 
-          {session.isRunning && (
-            <p className="flex items-center gap-2 text-small text-ink-500">
-              <Icon name="LoaderCircle" size={14} className="animate-spin" />
-              {isRegenerating ? t('AgentChat.page.regenerating') : t('AgentChat.page.generating')}
-            </p>
-          )}
+            {session.isRunning && (
+              <div className="flex items-center gap-2.5 text-small text-ink-500">
+                <span className="flex items-center gap-1">
+                  {[0, 1, 2].map((dot) => (
+                    <span
+                      key={dot}
+                      className="h-1.5 w-1.5 animate-pulse rounded-full bg-sage-300"
+                      style={{ animationDelay: `${dot * 160}ms` }}
+                    />
+                  ))}
+                </span>
+                {isRegenerating ? t('AgentChat.page.regenerating') : t('AgentChat.page.generating')}
+              </div>
+            )}
+          </div>
         </div>
       </main>
 
-      <footer className="border-t border-paper-200 bg-paper-50 p-4">
-        <div className="mx-auto flex max-w-2xl items-end gap-2">
-          <Textarea
-            rows={2}
-            value={inputText}
-            onChange={(event) => setInputText(event.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={
-              session.isAwaitingUser
-                ? t('AgentChat.page.placeholderAwaiting')
-                : t('AgentChat.page.placeholderSend')
-            }
-            disabled={!configReady}
-            aria-label={t('AgentChat.page.inputAriaLabel')}
-          />
-          {/* shrink-0 + nowrap：窄屏下按钮被压缩会让「发送」两字折行（D8 走查发现） */}
-          {session.canCancel ? (
-            <Button
-              intent="secondary"
-              size="md"
-              className="shrink-0 whitespace-nowrap"
-              onClick={session.cancelRun}
-            >
-              {t('AgentChat.page.cancel')}
-            </Button>
-          ) : (
-            <Button
-              intent="primary"
-              size="md"
-              className="shrink-0 whitespace-nowrap"
-              onClick={handleSend}
-              disabled={!canSend}
-            >
-              {t('AgentChat.page.send')}
-            </Button>
-          )}
+      <footer className="border-t border-paper-200/70 bg-paper-50/85 backdrop-blur">
+        <div className="mx-auto w-full max-w-3xl px-4 py-4 sm:px-6">
+          <div
+            className={cn(
+              'flex items-end gap-2 rounded-lg border border-paper-200 bg-paper-50 p-2 shadow-soft',
+              'transition-all duration-base ease-soft',
+              'focus-within:border-sage-300 focus-within:shadow-lift',
+            )}
+          >
+            <Textarea
+              ref={inputRef}
+              rows={2}
+              value={inputText}
+              onChange={(event) => setInputText(event.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={
+                session.isAwaitingUser
+                  ? t('AgentChat.page.placeholderAwaiting')
+                  : t('AgentChat.page.placeholderSend')
+              }
+              disabled={!configReady}
+              aria-label={t('AgentChat.page.inputAriaLabel')}
+              className="border-0 bg-transparent px-2 py-1.5 focus:ring-0"
+            />
+            {/* shrink-0 + nowrap：窄屏下按钮被压缩会让「发送」两字折行（D8 走查发现） */}
+            {session.canCancel ? (
+              <Button
+                intent="secondary"
+                size="md"
+                className="shrink-0 whitespace-nowrap"
+                onClick={session.cancelRun}
+              >
+                <Icon name="Square" size={14} className="text-current" />
+                {t('AgentChat.page.cancel')}
+              </Button>
+            ) : (
+              <Button
+                intent="primary"
+                size="md"
+                className="shrink-0 whitespace-nowrap"
+                onClick={handleSend}
+                disabled={!canSend}
+              >
+                <Icon name="ArrowUp" size={14} strokeWidth={2.25} className="text-current" />
+                {t('AgentChat.page.send')}
+              </Button>
+            )}
+          </div>
         </div>
       </footer>
 

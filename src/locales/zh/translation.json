@@ -94,7 +94,14 @@
         "title": "问知轩",
         "settings": "设置",
         "newConversation": "新会话",
+        "tagline": "提问带动理解",
+        "emptyTitle": "从一个问题开始",
         "emptyState": "输入一个想学的主题，比如：闭包",
+        "suggest": {
+          "closure": "闭包",
+          "eventLoop": "事件循环",
+          "prototype": "原型链"
+        },
         "generating": "正在生成…",
         "regenerating": "重新生成中…",
         "retry": "重试这一轮",
@@ -151,7 +158,10 @@
       },
       "messageContent": {
         "thinking": "思考过程",
-        "charCount": "{{count}} 字"
+        "charCount": "{{count}} 字",
+        "copy": "复制代码",
+        "copied": "已复制",
+        "plainText": "纯文本"
       },
       "toolCard": {
         "toolLabels": {
@@ -184,6 +194,15 @@
       },
       "questionGroup": {
         "title": "本轮 {{count}} 个问题",
+        "hint": "点开任一题作答，答完这轮才会继续",
+        "pending": "待作答",
+        "answered": "已回答",
+        "skipped": "已跳过",
+        "optionsReady": "{{count}} 档候选",
+        "manual": "手动作答",
+        "open": "作答",
+        "openAria": "打开这道题作答",
+        "yourAnswer": "你的回答：{{answer}}",
         "skip": "跳过此题"
       }
     },

@@ -94,7 +94,14 @@
         "title": "Wenzhixuan",
         "settings": "Settings",
         "newConversation": "New conversation",
+        "tagline": "Understanding through questions",
+        "emptyTitle": "Start with a question",
         "emptyState": "Enter a topic you want to learn, e.g. closures",
+        "suggest": {
+          "closure": "Closures",
+          "eventLoop": "Event loop",
+          "prototype": "Prototype chain"
+        },
         "generating": "Generating…",
         "regenerating": "Regenerating…",
         "retry": "Retry this turn",
@@ -151,7 +158,10 @@
       },
       "messageContent": {
         "thinking": "Thinking",
-        "charCount": "{{count}} chars"
+        "charCount": "{{count}} chars",
+        "copy": "Copy code",
+        "copied": "Copied",
+        "plainText": "text"
       },
       "toolCard": {
         "toolLabels": {
@@ -184,6 +194,15 @@
       },
       "questionGroup": {
         "title": "{{count}} question(s) in this turn",
+        "hint": "Open any question to answer; this turn continues once all are answered",
+        "pending": "To answer",
+        "answered": "Answered",
+        "skipped": "Skipped",
+        "optionsReady": "{{count}} options",
+        "manual": "Answer manually",
+        "open": "Answer",
+        "openAria": "Open this question to answer",
+        "yourAnswer": "Your answer: {{answer}}",
         "skip": "Skip this question"
       }
     },
