@@ -30,3 +30,11 @@ yarn.lock
 *.sw?
 
 /external-content
+
+# docs
+docs
+.agent
+.codebuddy
+
+# generated probe outputs
+scripts/*.output.json
