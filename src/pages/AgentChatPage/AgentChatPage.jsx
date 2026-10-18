@@ -15,6 +15,7 @@ import MessageContent from '../../components/MessageContent/MessageContent';
 import { Button, Icon, Textarea } from '@/components/ui';
 import QuestionGroup from './QuestionGroup';
 import HistoryDrawer from './HistoryDrawer';
+import ConfigPanel from './ConfigPanel';
 import useConversationHistory from './useConversationHistory';
 import { classifyTurnError } from './errorAdapter';
 import { levelSelectToSubmission, toAnswerCardModel } from './questionAdapter';
@@ -37,6 +38,21 @@ function toRunnerConfig(stored) {
     endpoint: ConfigManager.buildEndpointUrl(stored),
     apiKey: stored?.apiKey ?? '',
     model: stored?.model ?? '',
+  };
+}
+
+/**
+ * 配置快照（与旧路径同源：localStorage 的 `mainAgentConfig` / `optionAgentConfig` /
+ * `optionAgentPrompt`）。页面挂载时读一次，配置面板每次改动后重读。
+ *
+ * 之所以要「重读」而不是直接拿面板回传的值：面板回传的是 ModelConfigPanel 拼出的形状，
+ * 落盘还要经过 ConfigManager（含 URL 拼接规则），重读一次保证页面看到的与下次启动一致。
+ */
+function readConfigSnapshot() {
+  return {
+    main: ConfigManager.getMainModelConfig(),
+    option: ConfigManager.getOptionModelConfig(),
+    optionPrompt: ConfigManager.getOptionPrompt(),
   };
 }
 
@@ -99,17 +115,32 @@ function AgentChatPage() {
 
   // 配置快照：与旧路径同源（localStorage）。苏格拉底模式只校验主模型；
   // 缺副模型不阻断——候选答案由运行层降级为「不可用」，问题仍可手动作答（B-6 / D-3）。
+  const [configSnapshot, setConfigSnapshot] = useState(readConfigSnapshot);
   const { configReady, optionReady, config, optionConfig, optionSystemPrompt } = useMemo(() => {
-    const main = ConfigManager.getMainModelConfig();
-    const option = ConfigManager.getOptionModelConfig();
+    const { main, option, optionPrompt } = configSnapshot;
     return {
       configReady: ConfigManager.isModelConfigured(main),
       optionReady: ConfigManager.isModelConfigured(option),
       config: toRunnerConfig(main),
       optionConfig: toRunnerConfig(option),
-      optionSystemPrompt: ConfigManager.getOptionPrompt(),
+      optionSystemPrompt: optionPrompt,
     };
-  }, []);
+  }, [configSnapshot]);
+
+  // 配置面板（模态）。保存即生效：`useChatSession` 的 `sendMessage` 依赖 config，
+  // 换掉快照后下一次运行就用新配置，不需要刷新页面。
+  const [configOpen, setConfigOpen] = useState(false);
+
+  // 合并而不是整体覆盖：面板不管理 `enableThinking` / `thinkingBudget` 等旧路径字段，
+  // 直接覆盖会把它们重置成默认值（旧路径仍在读同一份存储）。
+  const handleMainConfigChange = (next) => {
+    ConfigManager.saveMainModelConfig({ ...ConfigManager.getMainModelConfig(), ...next });
+    setConfigSnapshot(readConfigSnapshot());
+  };
+  const handleOptionConfigChange = (next) => {
+    ConfigManager.saveOptionModelConfig({ ...ConfigManager.getOptionModelConfig(), ...next });
+    setConfigSnapshot(readConfigSnapshot());
+  };
 
   const session = useChatSession({ modes: MODES, config, optionConfig, optionSystemPrompt });
   // E3：载入 / 保存 / 提示。页面只读它的结果，不自己解析存储。
@@ -204,6 +235,10 @@ function AgentChatPage() {
       <header className="flex items-center justify-between border-b border-paper-200 bg-paper-50 px-4 py-2">
         <span className="text-small text-ink-500">{t('AgentChat.page.title')}</span>
         <div className="flex items-center gap-1">
+          <Button intent="ghost" size="sm" onClick={() => setConfigOpen(true)}>
+            <Icon name="SlidersHorizontal" size={14} className="text-current" />
+            {t('AgentChat.page.settings')}
+          </Button>
           <Button intent="ghost" size="sm" onClick={openHistory}>
             {t('AgentChat.history.openHistory')}
           </Button>
@@ -416,6 +451,15 @@ function AgentChatPage() {
           />
         </div>
       )}
+
+      <ConfigPanel
+        open={configOpen}
+        onClose={() => setConfigOpen(false)}
+        mainConfig={configSnapshot.main}
+        optionConfig={configSnapshot.option}
+        onMainConfigChange={handleMainConfigChange}
+        onOptionConfigChange={handleOptionConfigChange}
+      />
 
       <HistoryDrawer
         open={historyOpen}

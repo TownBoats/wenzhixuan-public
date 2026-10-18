@@ -91,7 +91,8 @@
     },
     "AgentChat": {
       "page": {
-        "title": "Wenzhixuan · Agent Runtime (in development)",
+        "title": "Wenzhixuan",
+        "settings": "Settings",
         "newConversation": "New conversation",
         "emptyState": "Enter a topic you want to learn, e.g. closures",
         "generating": "Generating…",
@@ -111,6 +112,13 @@
         "optionsUnavailableHint": "Answer options are temporarily unavailable; you can type your own answer."
       },
       "config": {
+        "title": "Settings",
+        "closeLabel": "Close settings",
+        "done": "Done",
+        "description": "Fill in the main model's endpoint, API key and model name to start. Leave the option model empty and you can still answer questions manually. Settings are stored in this browser only.",
+        "profileTitle": "My profile",
+        "profileEmail": "Email:",
+        "profileGithub": "GitHub:",
         "notFilled": "not set",
         "mainModelMissing": "The main model is not configured yet. Fill in the endpoint, API key and model name in settings first (recommended: endpoint https://api.deepseek.com, model deepseek-flash; the new and old paths share the same settings).",
         "optionModelMissing": "The option model is not configured, so answer options will be unavailable; you can still answer the questions manually. Configure the option model in settings if you need options (recommended: deepseek-flash).",

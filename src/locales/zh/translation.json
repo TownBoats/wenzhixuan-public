@@ -91,7 +91,8 @@
     },
     "AgentChat": {
       "page": {
-        "title": "问知轩 · Agent 运行时（开发中）",
+        "title": "问知轩",
+        "settings": "设置",
         "newConversation": "新会话",
         "emptyState": "输入一个想学的主题，比如：闭包",
         "generating": "正在生成…",
@@ -111,6 +112,13 @@
         "optionsUnavailableHint": "候选答案暂时不可用，可以直接输入你自己的回答。"
       },
       "config": {
+        "title": "配置",
+        "closeLabel": "关闭配置",
+        "done": "完成",
+        "description": "填写主模型的接口地址、密钥和模型名后即可开始对话。候选答案模型留空时，问题仍可手动作答。配置保存在本机浏览器，不会上传。",
+        "profileTitle": "我的个人信息",
+        "profileEmail": "邮箱：",
+        "profileGithub": "GitHub：",
         "notFilled": "未填写",
         "mainModelMissing": "主模型还没配置好。请到设置里填好接口地址、密钥和模型名后再开始（推荐：接口地址 https://api.deepseek.com，模型 deepseek-flash；新路径与旧路径读同一份设置）。",
         "optionModelMissing": "副模型未配置，候选答案将不可用；问题仍可手动作答。需要候选答案的话，请到设置里配置副模型（推荐 deepseek-flash）。",
