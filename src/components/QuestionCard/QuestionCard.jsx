@@ -19,8 +19,9 @@ import { Icon, Tag, cn } from '@/components/ui';
  *
  * Props 接口完全保持不变。
  */
-const QuestionCard = ({ question, onClick, onCancel, width }) => {
+const QuestionCard = ({ question, onClick, onCancel, width, cancelLabel }) => {
   const { t } = useTranslation();
+  const effectiveCancelLabel = cancelLabel ?? t('QuestionCard.deleteQuestion');
 
   // ── 容器配色 ──
   const containerByState = (() => {
@@ -30,6 +31,7 @@ const QuestionCard = ({ question, onClick, onCancel, width }) => {
       case 'responding':
         return 'border-sage-300 bg-sage-50/60';
       case 'completed':
+      case 'unavailable':
         return 'border-sage-300 bg-sage-50';
       case 'error':
         return 'border-state-alert/40 bg-sun-300/15';
@@ -68,6 +70,14 @@ const QuestionCard = ({ question, onClick, onCancel, width }) => {
           <Tag variant="active">
             <Icon name="Check" size={14} className="text-current" />
             {t('QuestionCard.AICompleted')}
+          </Tag>
+        );
+      // 候选答案不可用：不用警告色、不说「失败」，只说明这题现在可以自己作答（D-6）
+      case 'unavailable':
+        return (
+          <Tag variant="neutral">
+            <Icon name="Pencil" size={14} className="text-current" />
+            {t('QuestionCard.canAnswer')}
           </Tag>
         );
       case 'error':
@@ -134,8 +144,8 @@ const QuestionCard = ({ question, onClick, onCancel, width }) => {
               'transition-colors duration-fast hover:bg-state-alert/10 hover:text-state-alert',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-state-alert/30',
             )}
-            title={t('QuestionCard.deleteQuestion')}
-            aria-label={t('QuestionCard.deleteQuestion')}
+            title={effectiveCancelLabel}
+            aria-label={effectiveCancelLabel}
           >
             <Icon name="Trash2" size={14} className="text-current" />
           </button>
@@ -157,6 +167,7 @@ QuestionCard.propTypes = {
   onClick: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
   width: PropTypes.string,
+  cancelLabel: PropTypes.string,
 };
 
 export default QuestionCard;

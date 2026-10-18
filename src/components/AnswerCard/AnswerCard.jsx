@@ -40,6 +40,8 @@ const AnswerCard = ({
   question,
   onLevelSelect,
   onClose,
+  // 可选：调用方声明「这一轮已结束」（新路径传入）。不传时保持旧路径原有行为（D-5）
+  answerSettled,
   // eslint-disable-next-line no-unused-vars
   theme,
 }) => {
@@ -138,6 +140,11 @@ const AnswerCard = ({
   if (!question.question || !question.answer) return null;
 
   const isLoading = Object.values(localAnswers).every((value) => value === '');
+  // 旧路径不传 answerSettled → 下面两个派生值等于原来的 `isLoading` / `!isLoading`，行为不变。
+  // 新路径在候选答案为空时（`answer` 为 `{}`）仍要把自定义输入放出来，否则学生无法作答（D-5）。
+  const hasAnswerOptions = Object.keys(localAnswers).length > 0;
+  const showFailurePanel = isLoading || (Boolean(answerSettled) && !hasAnswerOptions);
+  const showAnswerInput = !isLoading || Boolean(answerSettled);
   const isCountingDown = countdowns.global > 0;
 
   // ── 拖拽 ──
@@ -274,7 +281,7 @@ const AnswerCard = ({
                     {/* 答案档位列 */}
                     <div className="min-h-0 flex-1 overflow-y-auto p-2 md:p-3 scrollbar-custom">
                       <div className="flex flex-col gap-2">
-                        {isLoading ? (
+                        {showFailurePanel ? (
                           <LoadingPanel t={t} />
                         ) : (
                           <>
@@ -310,7 +317,7 @@ const AnswerCard = ({
                     </div>
 
                     {/* 输入独立于选项滚动区，缩放和长答案不会挤走输入框。 */}
-                    {!isLoading && (
+                    {showAnswerInput && (
                       <div className="shrink-0 border-t border-paper-200 bg-paper-100/50 p-3 md:px-4">
                         <CustomOption
                               value={customAnswer}
@@ -384,6 +391,7 @@ AnswerCard.propTypes = {
   question: PropTypes.object,
   onLevelSelect: PropTypes.func,
   onClose: PropTypes.func,
+  answerSettled: PropTypes.bool,
   theme: PropTypes.string,
 };
 

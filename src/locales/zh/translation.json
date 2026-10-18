@@ -89,6 +89,96 @@
       "selectMode": "选择智能体模式",
       "optionDefault": "请选择模式"
     },
+    "AgentChat": {
+      "page": {
+        "title": "问知轩 · Agent 运行时（开发中）",
+        "newConversation": "新会话",
+        "emptyState": "输入一个想学的主题，比如：闭包",
+        "generating": "正在生成…",
+        "regenerating": "重新生成中…",
+        "retry": "重试这一轮",
+        "send": "发送",
+        "cancel": "取消",
+        "dismissHint": "关闭提示",
+        "inputAriaLabel": "消息输入框",
+        "placeholderSend": "输入想学的主题，Enter 发送，Shift+Enter 换行",
+        "placeholderAwaiting": "先回答上面的问题，这一轮才会继续",
+        "errorTitle": "这一轮没有完成，可以重发一次。",
+        "errorTimeout": "请求超时：模型没有在规定时间内返回。",
+        "errorNetwork": "网络连接失败，请检查网络或端点地址后重发。",
+        "errorFailed": "请求没有成功，具体原因见下方。",
+        "toolUnsupported": "如果重发仍然失败，可能是当前端点不支持工具调用（端点：{{endpoint}}，模型：{{model}}）。请更换支持工具的端点或模型（推荐 deepseek-flash）。",
+        "optionsUnavailableHint": "候选答案暂时不可用，可以直接输入你自己的回答。"
+      },
+      "config": {
+        "notFilled": "未填写",
+        "mainModelMissing": "主模型还没配置好。请到设置里填好接口地址、密钥和模型名后再开始（推荐：接口地址 https://api.deepseek.com，模型 deepseek-flash；新路径与旧路径读同一份设置）。",
+        "optionModelMissing": "副模型未配置，候选答案将不可用；问题仍可手动作答。需要候选答案的话，请到设置里配置副模型（推荐 deepseek-flash）。",
+        "migrationNotice": "检测到你之前自定义过教学提示词。新架构下系统提示词由教学模式统一管理，自定义内容不会生效；原文仍保存在旧路径的设置里。"
+      },
+      "history": {
+        "openHistory": "历史",
+        "title": "会话历史",
+        "untitled": "未命名会话",
+        "empty": "还没有会话。",
+        "runningHint": "当前这一轮还在生成。先点「取消」或等它完成，再切换会话。",
+        "close": "关闭",
+        "rename": "重命名",
+        "delete": "删除",
+        "confirmDelete": "确认删除",
+        "saveRename": "保存",
+        "cancelRename": "取消",
+        "actionFailedQuota": "本地存储空间不足，操作没有完成。可以先删掉一些旧会话再试。",
+        "actionFailedCorrupt": "本地历史数据已损坏，操作没有完成。",
+        "actionFailedNotFound": "这条会话已经不在了，列表已刷新。",
+        "actionFailedUnknown": "操作没有成功，请稍后重试。",
+        "interrupted": "这一轮没有完成，上面是已经收到的内容；不会自动重发。",
+        "corrupt": "有 {{count}} 条历史数据读不出来，已跳过。",
+        "loadFailed": "历史数据读取失败，已按新会话开始。",
+        "saveFailedQuota": "本地存储空间已满，这一轮没有保存；本次对话只保留在内存里，可以先删掉一些旧会话再试。",
+        "saveFailedCorrupt": "本地历史数据已损坏，这一轮没有写入，以免覆盖已有记录。",
+        "saveFailedInvalid": "这一轮的会话标识不完整，没有保存。",
+        "saveFailedUnavailable": "浏览器存储不可用，这一轮没有保存；本次对话只保留在内存里。",
+        "saveFailedUnknown": "这一轮没有保存成功，本次对话只保留在内存里。"
+      },
+      "messageContent": {
+        "thinking": "思考过程",
+        "charCount": "{{count}} 字"
+      },
+      "toolCard": {
+        "toolLabels": {
+          "ask_question": "提问",
+          "fallback": "工具"
+        },
+        "states": {
+          "running": "正在准备问题…",
+          "completed": "已完成",
+          "unavailable": "候选答案不可用",
+          "rejected": "提问被拒绝",
+          "failed": "执行失败"
+        },
+        "fields": {
+          "tool": "工具",
+          "inputQuestion": "输入的问题",
+          "inputContext": "附带的上下文",
+          "result": "结果",
+          "pendingResult": "尚未返回",
+          "failureReason": "失败原因",
+          "toolFailedFallback": "工具执行失败",
+          "degradeReason": "降级原因",
+          "degradeDetail": "{{errorCode}} （候选答案未生成，问题仍可手动作答）",
+          "rejectReason": "拒绝原因",
+          "rejectDetail": "{{reason}}：{{message}}",
+          "generatedQuestion": "生成的问题",
+          "options": "候选答案",
+          "optionsCount": "{{count}} 条"
+        }
+      },
+      "questionGroup": {
+        "title": "本轮 {{count}} 个问题",
+        "skip": "跳过此题"
+      }
+    },
     "PromptConfigPanel": {
       "mainAgent": "主模型智能体设置",
       "optionAgent": "回答模型智能体设置",
@@ -185,6 +275,7 @@
       "AICompleted": "AI 回答完毕！",
       "AIError": "AI 回答失败",
       "AIErrorTips": "你可以在右侧手动给出自定义答案",
+      "canAnswer": "可以点击回答",
       "deleteQuestion": "删除问题"
     },
     "AnswerMessageCard": {

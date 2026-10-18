@@ -89,6 +89,96 @@
       "selectMode": "Select Agent Mode",
       "optionDefault": "Please select a mode"
     },
+    "AgentChat": {
+      "page": {
+        "title": "Wenzhixuan · Agent Runtime (in development)",
+        "newConversation": "New conversation",
+        "emptyState": "Enter a topic you want to learn, e.g. closures",
+        "generating": "Generating…",
+        "regenerating": "Regenerating…",
+        "retry": "Retry this turn",
+        "send": "Send",
+        "cancel": "Cancel",
+        "dismissHint": "Dismiss",
+        "inputAriaLabel": "Message input",
+        "placeholderSend": "Enter a topic to learn, Enter to send, Shift+Enter for a new line",
+        "placeholderAwaiting": "Answer the questions above to continue this turn",
+        "errorTitle": "This turn did not finish. You can send it again.",
+        "errorTimeout": "The request timed out: the model did not respond in time.",
+        "errorNetwork": "The network connection failed. Check your network or endpoint, then send again.",
+        "errorFailed": "The request failed. See the details below.",
+        "toolUnsupported": "If it keeps failing, the current endpoint may not support tool calls (endpoint: {{endpoint}}, model: {{model}}). Please switch to an endpoint or model that supports tools (recommended: deepseek-flash).",
+        "optionsUnavailableHint": "Answer options are temporarily unavailable; you can type your own answer."
+      },
+      "config": {
+        "notFilled": "not set",
+        "mainModelMissing": "The main model is not configured yet. Fill in the endpoint, API key and model name in settings first (recommended: endpoint https://api.deepseek.com, model deepseek-flash; the new and old paths share the same settings).",
+        "optionModelMissing": "The option model is not configured, so answer options will be unavailable; you can still answer the questions manually. Configure the option model in settings if you need options (recommended: deepseek-flash).",
+        "migrationNotice": "A custom teaching prompt was detected. In the new architecture the system prompt is managed by the teaching mode, so the custom text no longer takes effect; the original is still saved in the old path's settings."
+      },
+      "history": {
+        "openHistory": "History",
+        "title": "Conversation history",
+        "untitled": "Untitled conversation",
+        "empty": "No conversations yet.",
+        "runningHint": "This turn is still generating. Cancel it or wait for it to finish before switching conversations.",
+        "close": "Close",
+        "rename": "Rename",
+        "delete": "Delete",
+        "confirmDelete": "Confirm delete",
+        "saveRename": "Save",
+        "cancelRename": "Cancel",
+        "actionFailedQuota": "Local storage is full, so this action did not complete. Try deleting some old conversations first.",
+        "actionFailedCorrupt": "Local history data is corrupted, so this action did not complete.",
+        "actionFailedNotFound": "That conversation is gone; the list has been refreshed.",
+        "actionFailedUnknown": "That action did not complete. Please try again.",
+        "interrupted": "This turn did not finish; the text above is everything that arrived. It will not be re-sent automatically.",
+        "corrupt": "{{count}} history record(s) could not be read and were skipped.",
+        "loadFailed": "Reading history failed; started a new conversation.",
+        "saveFailedQuota": "Local storage is full, so this turn was not saved and stays in memory only. Try deleting some old conversations first.",
+        "saveFailedCorrupt": "Local history data is corrupted, so this turn was not written (to avoid overwriting existing records).",
+        "saveFailedInvalid": "This turn's conversation id is incomplete, so it was not saved.",
+        "saveFailedUnavailable": "Browser storage is unavailable, so this turn was not saved and stays in memory only.",
+        "saveFailedUnknown": "This turn was not saved and stays in memory only."
+      },
+      "messageContent": {
+        "thinking": "Thinking",
+        "charCount": "{{count}} chars"
+      },
+      "toolCard": {
+        "toolLabels": {
+          "ask_question": "Ask",
+          "fallback": "Tool"
+        },
+        "states": {
+          "running": "Preparing question…",
+          "completed": "Completed",
+          "unavailable": "Options unavailable",
+          "rejected": "Question rejected",
+          "failed": "Failed"
+        },
+        "fields": {
+          "tool": "Tool",
+          "inputQuestion": "Question input",
+          "inputContext": "Context",
+          "result": "Result",
+          "pendingResult": "Not returned yet",
+          "failureReason": "Failure reason",
+          "toolFailedFallback": "Tool execution failed",
+          "degradeReason": "Degradation reason",
+          "degradeDetail": "{{errorCode}} (options were not generated; the question can still be answered manually)",
+          "rejectReason": "Rejection reason",
+          "rejectDetail": "{{reason}}: {{message}}",
+          "generatedQuestion": "Generated question",
+          "options": "Answer options",
+          "optionsCount": "{{count}} option(s)"
+        }
+      },
+      "questionGroup": {
+        "title": "{{count}} question(s) in this turn",
+        "skip": "Skip this question"
+      }
+    },
     "PromptConfigPanel": {
       "mainAgent": "Main Model Agent Settings",
       "optionAgent": "Option Model Agent Settings",
@@ -185,6 +275,7 @@
       "AICompleted": "AI Completed!",
       "AIError": "AI Prediction Failed",
       "AIErrorTips": "You can provide a custom answer on the right side",
+      "canAnswer": "Click to answer",
       "deleteQuestion": "Delete Question"
     },
     "AnswerMessageCard": {
