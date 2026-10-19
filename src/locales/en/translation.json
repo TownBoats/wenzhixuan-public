@@ -167,6 +167,7 @@
         "toolLabels": {
           "ask_question": "Ask",
           "visualize": "Visualize",
+          "explain_card": "Diagram",
           "fallback": "Tool"
         },
         "states": {

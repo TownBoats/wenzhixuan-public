@@ -21,6 +21,9 @@ export const ASK_QUESTION_TOOL = 'ask_question';
 /** 可视化工具名（explore/visualize 分支）：模型产出 HTML 片段，展示层沙箱渲染。 */
 export const VISUALIZE_TOOL = 'visualize';
 
+/** 讲解卡片工具名：模型产出纯 SVG 静态图，空 sandbox 渲染（无脚本）。 */
+export const EXPLAIN_CARD_TOOL = 'explain_card';
+
 /** 无工具兜底模式。名字与 `01-核心协议.md` §5 的 `modeSnapshot` 取值一致，不另起别名。 */
 export const MODE_NORMAL = 'normal';
 
@@ -32,7 +35,7 @@ export const MODE_IDS = Object.freeze([MODE_NORMAL, MODE_SOCRATIC]);
 /** 每种模式允许注册的工具名（顺序即声明顺序）。 */
 const TOOL_NAMES_BY_MODE = Object.freeze({
   [MODE_NORMAL]: Object.freeze([]),
-  [MODE_SOCRATIC]: Object.freeze([ASK_QUESTION_TOOL, VISUALIZE_TOOL]),
+  [MODE_SOCRATIC]: Object.freeze([ASK_QUESTION_TOOL, VISUALIZE_TOOL, EXPLAIN_CARD_TOOL]),
 });
 
 /**

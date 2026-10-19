@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Icon, cn } from '@/components/ui';
 import ToolCallCard from '../ToolCallCard/ToolCallCard';
 import VisualizeCard from '../VisualizeCard/VisualizeCard';
+import ExplainCard from '../ExplainCard/ExplainCard';
 import MarkdownContent from './MarkdownContent';
 
 /** visualize 工具的就绪结果交给沙箱渲染卡；其余状态（running / rejected / failed）仍走通用工具卡。 */
@@ -13,6 +14,16 @@ function isReadyVisualizeBlock(block) {
     block.status === 'completed' &&
     block.output?.status === 'ready' &&
     typeof block.output?.html === 'string'
+  );
+}
+
+/** explain_card 的就绪结果交给静态 SVG 渲染卡；路由规则与 visualize 相同。 */
+function isReadyExplainCardBlock(block) {
+  return (
+    block.toolName === 'explain_card' &&
+    block.status === 'completed' &&
+    block.output?.status === 'ready' &&
+    typeof block.output?.svg === 'string'
   );
 }
 
@@ -117,6 +128,16 @@ function MessageContent({ blocks }) {
                 key={block.toolCallId ?? `tool-${index}`}
                 title={block.output.title}
                 html={block.output.html}
+              />
+            );
+          }
+          if (isReadyExplainCardBlock(block)) {
+            return (
+              <ExplainCard
+                key={block.toolCallId ?? `tool-${index}`}
+                title={block.output.title}
+                svg={block.output.svg}
+                viewBox={block.output.viewBox}
               />
             );
           }

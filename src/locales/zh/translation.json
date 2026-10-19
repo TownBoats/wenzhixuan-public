@@ -167,6 +167,7 @@
         "toolLabels": {
           "ask_question": "提问",
           "visualize": "可视化",
+          "explain_card": "讲解卡片",
           "fallback": "工具"
         },
         "states": {
