@@ -180,7 +180,7 @@ function ToolCallCard({ toolCallId, toolName, status, input, output, error }) {
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-md border bg-paper-50/80 transition-shadow duration-base ease-soft',
+        'overflow-hidden rounded-md border bg-white transition-shadow duration-base ease-soft',
         cardState === 'failed' ? 'border-state-alert/30' : 'border-paper-200/80',
         'hover:shadow-soft',
       )}

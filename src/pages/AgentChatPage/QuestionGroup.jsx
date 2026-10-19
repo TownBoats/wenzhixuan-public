@@ -28,7 +28,7 @@ const STATE_META = {
   [QUESTION_STATE.PENDING]: {
     labelKey: 'AgentChat.questionGroup.pending',
     pillClass: 'bg-sage-50 text-sage-700',
-    ringClass: 'border-paper-200 bg-paper-50',
+    ringClass: 'border-paper-200 bg-white',
   },
   [QUESTION_STATE.ANSWERED]: {
     labelKey: 'AgentChat.questionGroup.answered',
@@ -72,7 +72,7 @@ function QuestionTile({ question, index, onOpen, onSkip }) {
         'transition-all duration-base ease-soft',
         meta.ringClass,
         isPending
-          ? 'cursor-pointer hover:-translate-y-0.5 hover:border-sage-300 hover:bg-paper-50 hover:shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/30'
+          ? 'cursor-pointer hover:-translate-y-0.5 hover:border-sage-300 hover:shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/30'
           : 'text-ink-700',
       )}
     >

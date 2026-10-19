@@ -250,10 +250,12 @@ function AgentChatPage() {
   };
 
   return (
-    <div className="flex h-dvh flex-col bg-paper-100">
-      {/* 与对话区同一底色（2026-10-19 用户反馈），只留发丝线分隔；吸顶必须不透明，否则正文会透上来 */}
-      <header className="sticky top-0 z-20 border-b border-paper-200/70 bg-paper-100">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
+    <div className="flex h-dvh flex-col bg-paper-50">
+      {/* ChatGPT 式沉浸画布（2026-10-19 用户反馈）：整页统一 paper-50 亮底、
+          页头无分隔线只留「左 logo / 右按钮」；吸顶必须不透明，否则正文会透上来 */}
+      <header className="sticky top-0 z-20 bg-paper-50">
+        {/* 页头通栏（2026-10-19 用户反馈）：不随正文 max-w-3xl 居中，logo 贴左上、按钮贴右上 */}
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
             <BrandLogo size={24} />
             <div className="min-w-0 leading-tight">
@@ -330,7 +332,7 @@ function AgentChatPage() {
       )}
 
       {configReady && !optionReady && !optionHintDismissed && (
-        <div className="border-b border-paper-200 bg-paper-50">
+        <div className="border-b border-paper-200/60 bg-paper-100/50">
           <div className="mx-auto flex w-full max-w-3xl items-start gap-2 px-4 py-2 text-small text-ink-700 sm:px-6">
             <Icon name="Info" size={14} className="mt-0.5 shrink-0 text-ink-300" />
             <span className="min-w-0 flex-1">{t('AgentChat.config.optionModelMissing')}</span>
@@ -347,7 +349,7 @@ function AgentChatPage() {
       )}
 
       {showMigrationNotice && (
-        <div className="border-b border-paper-200 bg-paper-50">
+        <div className="border-b border-paper-200/60 bg-paper-100/50">
           <div className="mx-auto flex w-full max-w-3xl items-start gap-2 px-4 py-2 text-small text-ink-700 sm:px-6">
             <Icon name="ScrollText" size={14} className="mt-0.5 shrink-0 text-ink-300" />
             <span className="min-w-0 flex-1">{t('AgentChat.config.migrationNotice')}</span>
@@ -368,7 +370,7 @@ function AgentChatPage() {
           {/* 恢复完成前不显示空态，避免「历史里明明有会话」却先闪一下空提示 */}
           {history.ready && renderedTurns.length === 0 && (
             <div className="flex min-h-[58vh] flex-col items-center justify-center gap-6 pb-10 text-center">
-              <div className="rounded-lg bg-paper-50 p-3 shadow-soft ring-1 ring-paper-200">
+              <div className="rounded-lg bg-white p-3 shadow-soft ring-1 ring-paper-200">
                 <BrandLogo size={40} />
               </div>
               <div className="space-y-2">
@@ -388,7 +390,7 @@ function AgentChatPage() {
                       type="button"
                       onClick={() => applySuggestion(label)}
                       className={cn(
-                        'rounded-pill border border-paper-200 bg-paper-50 px-3.5 py-1.5 text-small text-ink-700',
+                        'rounded-pill border border-paper-200 bg-white px-3.5 py-1.5 text-small text-ink-700',
                         'transition-all duration-base ease-soft hover:-translate-y-0.5',
                         'hover:border-sage-300 hover:text-sage-900 hover:shadow-soft',
                         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/30',
@@ -419,7 +421,7 @@ function AgentChatPage() {
 
               {/* 刷新时没跑完的那一轮：内容保留、明确告知、不自动重放（E3） */}
               {turn.status === 'interrupted' && (
-                <div className="flex items-start gap-2 rounded-md border border-paper-200 bg-paper-50/70 px-3 py-2 text-small text-ink-500">
+                <div className="flex items-start gap-2 rounded-md border border-paper-200/70 bg-paper-100/50 px-3 py-2 text-small text-ink-500">
                   <Icon name="Clock" size={14} className="mt-0.5 shrink-0 text-ink-300" />
                   <span>{t('AgentChat.history.interrupted')}</span>
                 </div>
@@ -451,7 +453,7 @@ function AgentChatPage() {
                       {t(errorInfo.textKey)}
                     </p>
                   )}
-                  <p className="mt-1.5 whitespace-pre-wrap break-words rounded-sm bg-paper-50/60 px-2 py-1 font-mono text-caption text-ink-500">
+                  <p className="mt-1.5 whitespace-pre-wrap break-words rounded-sm bg-white/70 px-2 py-1 font-mono text-caption text-ink-500">
                     {turn.error}
                   </p>
                 </div>
@@ -491,14 +493,14 @@ function AgentChatPage() {
         </div>
       </main>
 
-      <footer className="border-t border-paper-200/70">
+      <footer>
         <div className="mx-auto w-full max-w-3xl px-4 py-4 sm:px-6">
-          {/* 输入容器不铺底色（2026-10-19 用户反馈）：只留描边，聚焦时描边变 sage */}
+          {/* ChatGPT 式输入胶囊：白色浮起 + 柔光，比画布更亮一档；聚焦描边变 sage */}
           <div
             className={cn(
-              'flex items-end gap-2 rounded-lg border border-paper-200 p-2',
-              'transition-colors duration-base ease-soft',
-              'focus-within:border-sage-300',
+              'flex items-end gap-2 rounded-lg border border-paper-200/70 bg-white p-2 shadow-soft',
+              'transition-all duration-base ease-soft',
+              'focus-within:border-sage-300 focus-within:shadow-lift',
             )}
           >
             <Textarea
