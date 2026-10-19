@@ -10,9 +10,9 @@ class ConfigManager {
     settings: { model: 'deepseek-flash' }
   };
   static DEFAULT_OPTION_CONFIG = {
-    baseURL: 'https://open.bigmodel.cn',
-    customEndpoint: '/api/paas/v4/chat/completions',
-    settings: { model: 'gpt-4o-mini' }
+    baseURL: 'https://api.deepseek.com',
+    customEndpoint: '/v1/chat/completions',
+    settings: { model: 'deepseek-flash' }
   };
   
   // 获取主模型配置
