@@ -19,6 +19,9 @@ import { QUESTION_STATE } from '../../utils/conversationState';
  *   - 只有 `pending` 的问题可点开（onOpen），已答/已跳过不可再点
  *   - 跳过按钮只在 `pending` 出现，点击调 onSkip，不冒泡到整卡
  *   - 不在这里拼答案、不触发下一轮（C-3：答案只经 submitAnswer / skipQuestion）
+ *
+ * 2026-10-19 调整（用户反馈「排列紧凑一点」）：外层 p-3→p-2.5、
+ * grid gap-2.5→2、磁贴 p-3.5→3、头行 mb-2→1.5、底行 mt-3→2。
  */
 
 const STATE_META = {
@@ -65,7 +68,7 @@ function QuestionTile({ question, index, onOpen, onSkip }) {
         }
       }}
       className={cn(
-        'group relative flex h-full flex-col rounded-md border p-3.5',
+        'group relative flex h-full flex-col rounded-md border p-3',
         'transition-all duration-base ease-soft',
         meta.ringClass,
         isPending
@@ -73,7 +76,7 @@ function QuestionTile({ question, index, onOpen, onSkip }) {
           : 'text-ink-700',
       )}
     >
-      <div className="mb-2 flex items-center gap-2">
+      <div className="mb-1.5 flex items-center gap-2">
         <span className="font-mono text-caption tabular-nums text-sage-500">
           {String(index + 1).padStart(2, '0')}
         </span>
@@ -94,13 +97,13 @@ function QuestionTile({ question, index, onOpen, onSkip }) {
       </div>
 
       {isAnswered && question.answer ? (
-        <p className="mt-2.5 line-clamp-2 border-t border-dashed border-paper-200 pt-2 text-caption leading-relaxed text-ink-500">
+        <p className="mt-2 line-clamp-2 border-t border-dashed border-paper-200 pt-1.5 text-caption leading-relaxed text-ink-500">
           {t('AgentChat.questionGroup.yourAnswer', { answer: question.answer })}
         </p>
       ) : null}
 
       {isPending ? (
-        <div className="mt-3 flex items-center justify-between">
+        <div className="mt-2 flex items-center justify-between">
           <span className="inline-flex items-center gap-1 text-caption font-medium text-sage-700">
             {t('AgentChat.questionGroup.open')}
             <Icon
@@ -149,8 +152,8 @@ function QuestionGroup({ questions, onOpen, onSkip }) {
   if (!Array.isArray(questions) || questions.length === 0) return null;
 
   return (
-    <section className="rounded-md border border-paper-200/80 bg-paper-100/40 p-3 sm:p-4">
-      <header className="mb-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+    <section className="rounded-md border border-paper-200/80 bg-paper-100/40 p-2.5 sm:p-3">
+      <header className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <span className="flex items-center gap-1.5 text-small font-semibold text-ink-900">
           <Icon name="ListChecks" size={14} className="text-sage-700" />
           {t('AgentChat.questionGroup.title', { count: questions.length })}
@@ -158,7 +161,7 @@ function QuestionGroup({ questions, onOpen, onSkip }) {
         <span className="text-caption text-ink-500">{t('AgentChat.questionGroup.hint')}</span>
       </header>
 
-      <div className="grid gap-2.5 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         {questions.map((question, index) => (
           <QuestionTile
             key={question.id}

@@ -22,6 +22,10 @@ import { Icon, cn } from '@/components/ui';
  *   - 折叠条从「一行灰字」改成「状态圆徽 + 工具名 + 状态胶囊」，扫一眼能分清五种态
  *   - 展开区改成两列标签网格，长文本（问题 / 原因）用引用块与等宽 chip 区分
  *   - 进行中加一条呼吸感的进度条，避免用户以为卡住
+ *
+ * 2026-10-19 调整（用户反馈）：折叠条不再只显示「提问 ✓」，
+ * 而是直接露出生成的问题文本（output.question → 回退 input.question），
+ * 「提问」这个标签只在展开详情里出现——一眼能看到问了什么，不用再展开。
  */
 
 // 文案全部在 translation.json 的 AgentChat.toolCard（D7），组件里只留键名与图标
@@ -169,6 +173,9 @@ function ToolCallCard({ toolCallId, toolName, status, input, output, error }) {
     ? t(toolLabelKey)
     : (toolName ?? t('AgentChat.toolCard.toolLabels.fallback'));
   const detailId = useId();
+  // 折叠条主文本：优先「生成的问题」（output.question），其次模型传入的问题（input.question），
+  // 都没有（极少：running 且 input 未投影）才退回工具名。换行压平，配合 truncate 单行省略。
+  const questionText = (output?.question ?? input?.question ?? '').replace(/\s+/g, ' ').trim();
 
   return (
     <div
@@ -197,7 +204,12 @@ function ToolCallCard({ toolCallId, toolName, status, input, output, error }) {
         >
           <Icon name={meta.icon} size={14} className={meta.iconClass} />
         </span>
-        <span className="truncate text-small font-medium text-ink-900">{toolLabel}</span>
+        <span
+          className="min-w-0 flex-1 truncate text-small text-ink-900"
+          title={questionText || undefined}
+        >
+          {questionText || toolLabel}
+        </span>
         <span
           className={cn(
             'shrink-0 rounded-pill px-2 py-0.5 text-caption font-medium',
@@ -210,7 +222,7 @@ function ToolCallCard({ toolCallId, toolName, status, input, output, error }) {
           name="ChevronDown"
           size={16}
           className={cn(
-            'ml-auto shrink-0 text-ink-300 transition-transform duration-base ease-soft',
+            'shrink-0 text-ink-300 transition-transform duration-base ease-soft',
             expanded && 'rotate-180',
           )}
         />
