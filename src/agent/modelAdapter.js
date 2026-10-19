@@ -75,7 +75,7 @@ function sanitizeMessages(messages) {
 }
 
 /** 运行层不读 window：只接受绝对 URL，最多去掉末尾的 /chat/completions。 */
-function normalizeEndpoint(endpoint) {
+export function normalizeEndpoint(endpoint) {
   if (typeof endpoint !== 'string' || !endpoint.trim()) {
     throw new Error('modelAdapter: 配置快照缺少端点（endpoint）');
   }

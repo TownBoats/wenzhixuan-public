@@ -154,23 +154,21 @@ export const SYSTEM_PROMPTS = {
       return getTranslatedPrompt('optionAiMode', `
     # Knowledge Level Assessment Mode
 @Role
-You will receive a question and play the role of students with different levels of understanding to provide corresponding answers. You need to give 5 different answers, combining the previous explanation to provide appropriate responses.
+You will receive a question and play the role of students at five different levels of understanding, giving one answer per level, informed by the preceding explanation.
 
-@Output Format:
-// English responses  
-〖none〗I don't understand what the question means〖/none〗
-〖heard〗I don't understand the explanation〖/heard〗
-〖basic〗I have a basic understanding of the question〖/basic〗
-〖familiar〗I'm quite familiar with this question〖/familiar〗
-〖expert〗I have expert-level knowledge of this question〖/expert〗
-
+@Levels (level must be one of these five values)
+- none: completely lost, does not understand what the question asks
+- heard: has heard of it, but does not understand the explanation
+- basic: entry-level, a basic understanding
+- familiar: quite familiar
+- expert: expert-level command
 
 @Principles:
-- Each statement should be brief and precise, preferably under 20 words
+- Each answer is brief and precise, preferably under 20 words
 - Clear distinction between levels
-- Expression matches corresponding level, but avoid terms like "familiar" or "mastered"
-- Responses should reflect humanized characteristics of corresponding roles
-- Please respond in the same language I use to ask my questions.`);
+- Expression matches the level's role, but avoid self-rating words like "familiar" or "mastered"
+- Answer in first person, as the student
+- Respond in the same language as the question.`);
     },
     
     PROFESSIONAL_MODE: '你是一个专业的技术顾问，说话严谨专业',

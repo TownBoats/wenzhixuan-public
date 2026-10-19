@@ -1,25 +1,29 @@
 /**
- * 运行层 · 副模型服务（阶段 B · 任务 B3）
+ * 运行层 · 副模型服务（阶段 B · 任务 B3；explore/structured-options 起改为结构化输出）
  *
  * 职责：一个问题 → 五档候选答案（档位见 `OPTION_LEVELS`）。只做这一件事。
  *
- * 边界（`决策记录.md` B-10）：
+ * 为什么是结构化输出而不是标签解析：
+ *   旧协议让模型用空心方括号包裹档位名，再用 ContentParser 从正文里抠标签——
+ *   模型漏闭合、嵌套写错、正文里提到标签名，解析就碎。`generateObject` 把输出契约
+ *   交给 JSON Schema：SDK 负责约束格式、解析、校验，本文本只做业务归一化
+ *   （去重 / 定序 / 去空白），标签解析这条路整体废弃。
+ *
+ * 边界（`决策记录.md` B-10，不变）：
  *   - 不生成 questionId、不拼 nextAction、不产生卡片、不等待学生（B4 负责）
  *   - 不控制并发（B5 的并发上限 4）
  *   - 不读 localStorage：副模型配置与 system prompt 由上层传入（运行层硬约束）
  *   - 不抛业务异常：失败一律返回结构化结果，`detail` 只允许白名单取值
+ *   - 不重试：maxRetries 固定 0，与 B1 同纪律
  *
- * 为什么用 `modelAdapter` 而不是 `AgentModel`：
- *   `AgentModel` 没有 `abortSignal` 入参、没有 `abort()`，内部 60s 超时的 abort 还会被它自己的
- *   3 次整轮重试当作普通错误继续重试——「45s 且不超过主运行剩余时间」「可取消」在它身上做不出来。
- *
- * 为什么仍然用 `ContentParser`：
- *   本期副模型协议不变（仍是「用空心方括号包裹档位名」的文本，见 `B-运行层与提问工具.md` 2.4），
- *   而 `ContentParser` 是通用的标签提取器（`tags` 是构造参数），无浏览器依赖、可在 Node 测试中导入。
- *   注意它返回的是**对象**（每档是数组），不是字符串。
+ * 与 B1 的关系：本服务**不再经过** `runModelTurn`——generateObject 是非流式调用，
+ * 不需要 SSE 翻译与开闸哑弹；超时 / 取消 / 端点规范化在本文件内自行处理
+ * （端点规范化复用 modelAdapter 导出的 `normalizeEndpoint`，两处口径一致）。
  */
-import ContentParser from '../../utils/ContentParser.js';
-import { runModelTurn } from '../modelAdapter.js';
+import { generateObject, jsonSchema } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
+
+import { normalizeEndpoint } from '../modelAdapter.js';
 
 /** 五档，顺序即界面从低到高的排列顺序。 */
 export const OPTION_LEVELS = Object.freeze(['none', 'heard', 'basic', 'familiar', 'expert']);
@@ -36,10 +40,38 @@ export const OPTION_DETAIL_INVALID_OUTPUT = 'invalid_output';
 /** 副模型预算：45 秒，且不得超过主运行剩余时间（由上层传入更小的值）。 */
 export const OPTION_TIMEOUT_MS = 45_000;
 
-const parser = new ContentParser([...OPTION_LEVELS]);
+/**
+ * 输出契约：SDK 在 json 模式下会把这份 schema 注入提示词并校验结果。
+ * `level` 用 enum 锁死五档——模型想造第六个档位，在校验阶段就会被拒，
+ * 这是标签解析做不到的事。
+ */
+const OPTIONS_SCHEMA = jsonSchema({
+  type: 'object',
+  properties: {
+    options: {
+      type: 'array',
+      description: '五档候选答案，每档一条',
+      items: {
+        type: 'object',
+        properties: {
+          level: {
+            type: 'string',
+            enum: [...OPTION_LEVELS],
+            description: '档位：none 茫然 / heard 耳闻 / basic 入门 / familiar 熟悉 / expert 精通',
+          },
+          text: { type: 'string', description: '该档位学生的第一人称回答，简短精准' },
+        },
+        required: ['level', 'text'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['options'],
+  additionalProperties: false,
+});
 
-let runCounter = 0;
-const nextRunId = () => `option-${++runCounter}`;
+/** SDK 校验失败时抛出的错误名（ai 包的 NoObjectGeneratedError）。 */
+const NO_OBJECT_ERROR_NAME = 'AI_NoObjectGeneratedError';
 
 /**
  * 副模型是否可用：model / apiKey / 绝对 endpoint 三项齐全。
@@ -54,21 +86,29 @@ export function isOptionConfigReady(config) {
 }
 
 /**
- * 从副模型文本里提取档位。
- * - 只有五档标签内的文本才算候选答案；标签外正文、未知标签一律丢弃（不会出现"无等级"的选项）
+ * 把 SDK 校验过的结构化结果归一化成候选答案：
  * - 同一档出现多次时**只保留第一条**（避免同一屏两个「基本了解」）
+ * - 去空白后为空文本的条目丢弃
  * - 输出顺序固定为 `OPTION_LEVELS`
+ * 与旧 `extractOptions` 的语义完全一致，只是输入从「待解析的正文」变成「已校验的对象」。
  */
-export function extractOptions(text) {
-  if (typeof text !== 'string' || !text) return [];
-  const parsed = parser.parse(text);
+export function normalizeOptions(raw) {
+  const list = Array.isArray(raw?.options) ? raw.options : [];
+  const seen = new Set();
+  const byLevel = new Map();
+
+  for (const item of list) {
+    if (!item || typeof item !== 'object') continue;
+    const level = typeof item.level === 'string' ? item.level.trim() : '';
+    const text = typeof item.text === 'string' ? item.text.trim() : '';
+    if (!OPTION_LEVELS.includes(level) || !text || seen.has(level)) continue;
+    seen.add(level);
+    byLevel.set(level, text);
+  }
 
   const options = [];
   for (const level of OPTION_LEVELS) {
-    const first = parsed?.[level]?.[0];
-    const content = typeof first?.content === 'string' ? first.content.trim() : '';
-    if (!content) continue;
-    options.push({ level, text: content });
+    if (byLevel.has(level)) options.push({ level, text: byLevel.get(level) });
   }
   return options;
 }
@@ -85,8 +125,11 @@ function detailFromError(error) {
   return OPTION_DETAIL_REQUEST_FAILED;
 }
 
+const unavailable = (errorCode, detail) =>
+  detail ? { status: 'unavailable', errorCode, detail } : { status: 'unavailable', errorCode };
+
 /**
- * 生成候选答案。
+ * 生成候选答案（结构化输出）。
  *
  * @param {Object} params
  * @param {string} params.question       学生要回答的问题（B4 已校验非空）
@@ -97,8 +140,9 @@ function detailFromError(error) {
  * @param {string} params.systemPrompt   副模型提示词（上层从配置层读取后传入）
  * @param {AbortSignal} [params.abortSignal]
  * @param {number} [params.timeoutMs]    主运行剩余时间；内部再夹一层 45s 上限
- * @param {string} [params.runId]        事件归属用；不传则自动生成
  * @param {Function} [params.baseFetch]  测试用 fetch 注入
+ * @param {Object} [params.model]        测试用模型注入（`ai/test` 的 MockLanguageModelV3）；
+ *   生产路径永远不传，与 B1 同一纪律（`决策记录.md` B-13）
  * @returns {Promise<{ status:'ready', options: Array<{level:string,text:string}> }
  *   | { status:'unavailable', errorCode:string, detail?:string }>}
  */
@@ -110,8 +154,8 @@ export async function generateAnswerOptions({
   systemPrompt,
   abortSignal,
   timeoutMs,
-  runId,
   baseFetch,
+  model,
 } = {}) {
   void language; // 本期不处理双语（保留签名，不改协议）
 
@@ -124,8 +168,8 @@ export async function generateAnswerOptions({
   }
 
   // 未配置副模型：不发请求（判据要求零网络）
-  if (!isOptionConfigReady(config)) {
-    return { status: 'unavailable', errorCode: OPTION_ERROR_NOT_CONFIGURED };
+  if (!model && !isOptionConfigReady(config)) {
+    return unavailable(OPTION_ERROR_NOT_CONFIGURED);
   }
 
   const messages = [];
@@ -133,41 +177,44 @@ export async function generateAnswerOptions({
   if (trimmedContext) messages.push({ role: 'assistant', content: trimmedContext });
   messages.push({ role: 'user', content: trimmedQuestion });
 
-  let text = '';
-  const result = await runModelTurn({
-    runId: runId || nextRunId(),
-    config: {
-      endpoint: config.endpoint || config.baseURL,
-      apiKey: config.apiKey,
-      model: config.model,
-      timeoutMs: resolveTimeout(timeoutMs),
-    },
-    system: systemPrompt,
-    messages,
-    abortSignal,
-    onEvent: (event) => {
-      if (event?.type === 'text-delta') text += event.delta;
-    },
-    baseFetch,
-  });
+  // ── 超时与取消是两件不同的事，最后要能分别上报（与 B1 同口径）──
+  const timeoutSignal = AbortSignal.timeout(resolveTimeout(timeoutMs));
+  const signal = abortSignal ? AbortSignal.any([abortSignal, timeoutSignal]) : timeoutSignal;
 
-  if (!result.ok) {
-    const detail =
-      result.endedBy === 'timeout'
-        ? OPTION_DETAIL_TIMEOUT
-        : result.endedBy === 'cancelled'
-          ? OPTION_DETAIL_CANCELLED
-          : detailFromError(result.error);
-    return { status: 'unavailable', errorCode: OPTION_ERROR_FAILED, detail };
+  // provider：每次按快照新建，不复用（与 B1 同纪律）；测试注入模型时不建连接。
+  const languageModel =
+    model ??
+    createOpenAI({
+      baseURL: normalizeEndpoint(config.endpoint ?? config.baseURL),
+      apiKey: config.apiKey || 'placeholder',
+      fetch: baseFetch,
+    }).chat(config.model);
+
+  let object;
+  try {
+    ({ object } = await generateObject({
+      model: languageModel,
+      schema: OPTIONS_SCHEMA,
+      // json 模式：SDK 注入 schema 说明并用 JSON 响应格式，OpenAI 兼容端点普遍支持；
+      // 比 tool 模式少一层 function calling 依赖，比提示词标签多一层 SDK 校验。
+      mode: 'json',
+      system: systemPrompt,
+      messages,
+      abortSignal: signal,
+      maxRetries: 0,
+    }));
+  } catch (error) {
+    if (abortSignal?.aborted) return unavailable(OPTION_ERROR_FAILED, OPTION_DETAIL_CANCELLED);
+    if (timeoutSignal.aborted) return unavailable(OPTION_ERROR_FAILED, OPTION_DETAIL_TIMEOUT);
+    if (error?.name === NO_OBJECT_ERROR_NAME) {
+      return unavailable(OPTION_ERROR_FAILED, OPTION_DETAIL_INVALID_OUTPUT);
+    }
+    return unavailable(OPTION_ERROR_FAILED, detailFromError(error));
   }
 
-  const options = extractOptions(text);
+  const options = normalizeOptions(object);
   if (options.length === 0) {
-    return {
-      status: 'unavailable',
-      errorCode: OPTION_ERROR_FAILED,
-      detail: OPTION_DETAIL_INVALID_OUTPUT,
-    };
+    return unavailable(OPTION_ERROR_FAILED, OPTION_DETAIL_INVALID_OUTPUT);
   }
 
   return { status: 'ready', options };
