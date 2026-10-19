@@ -251,7 +251,8 @@ function AgentChatPage() {
 
   return (
     <div className="flex h-dvh flex-col bg-paper-100">
-      <header className="sticky top-0 z-20 border-b border-paper-200/70 bg-paper-50/85 backdrop-blur">
+      {/* 与对话区同一底色（2026-10-19 用户反馈），只留发丝线分隔；吸顶必须不透明，否则正文会透上来 */}
+      <header className="sticky top-0 z-20 border-b border-paper-200/70 bg-paper-100">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
             <BrandLogo size={24} />
@@ -490,13 +491,14 @@ function AgentChatPage() {
         </div>
       </main>
 
-      <footer className="border-t border-paper-200/70 bg-paper-50/85 backdrop-blur">
+      <footer className="border-t border-paper-200/70">
         <div className="mx-auto w-full max-w-3xl px-4 py-4 sm:px-6">
+          {/* 输入容器不铺底色（2026-10-19 用户反馈）：只留描边，聚焦时描边变 sage */}
           <div
             className={cn(
-              'flex items-end gap-2 rounded-lg border border-paper-200 bg-paper-50 p-2 shadow-soft',
-              'transition-all duration-base ease-soft',
-              'focus-within:border-sage-300 focus-within:shadow-lift',
+              'flex items-end gap-2 rounded-lg border border-paper-200 p-2',
+              'transition-colors duration-base ease-soft',
+              'focus-within:border-sage-300',
             )}
           >
             <Textarea
