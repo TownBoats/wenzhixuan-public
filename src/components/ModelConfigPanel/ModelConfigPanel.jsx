@@ -75,10 +75,10 @@ const ModelConfigPanel = ({
 
   const handleLoadDefault = () => {
     const defaultConfig = {
-      baseURL: 'https://open.bigmodel.cn',
-      customEndpoint: '/api/paas/v4/chat/completions',
+      baseURL: 'https://api.deepseek.com',
+      customEndpoint: '/v1/chat/completions',
       apiKey: '',
-      model: 'glm-4.5',
+      model: 'deepseek-flash',
       fullURL: '',
       useCustomURL: false,
     };
@@ -205,7 +205,7 @@ const ModelConfigPanel = ({
               name="fullURL"
               value={config.fullURL}
               onChange={handleChange}
-              placeholder="https://open.bigmodel.cn/api/paas/v4/chat/completions"
+              placeholder="https://api.deepseek.com/v1/chat/completions"
               className="min-w-0 font-sans"
             />
           </div>
@@ -221,7 +221,7 @@ const ModelConfigPanel = ({
                 name="baseURL"
                 value={config.baseURL}
                 onChange={handleChange}
-                placeholder="https://open.bigmodel.cn"
+                placeholder="https://api.deepseek.com"
                 className="min-w-0 font-sans"
               />
             </div>

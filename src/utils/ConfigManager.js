@@ -5,9 +5,9 @@ import { SYSTEM_PROMPTS } from "../services/prompts";
 class ConfigManager {
   // 默认配置（BYOK + 无预设）
   static DEFAULT_MAIN_CONFIG = {
-    baseURL: 'https://open.bigmodel.cn',
-    customEndpoint: '/api/paas/v4/chat/completions',
-    settings: { model: 'gpt-4o-mini' }
+    baseURL: 'https://api.deepseek.com',
+    customEndpoint: '/v1/chat/completions',
+    settings: { model: 'deepseek-flash' }
   };
   static DEFAULT_OPTION_CONFIG = {
     baseURL: 'https://open.bigmodel.cn',
