@@ -166,6 +166,7 @@
       "toolCard": {
         "toolLabels": {
           "ask_question": "提问",
+          "visualize": "可视化",
           "fallback": "工具"
         },
         "states": {
@@ -191,6 +192,10 @@
           "options": "候选答案",
           "optionsCount": "{{count}} 条"
         }
+      },
+      "visualizeCard": {
+        "viewCode": "查看源码",
+        "hideCode": "收起源码"
       },
       "questionGroup": {
         "title": "本轮 {{count}} 个问题",

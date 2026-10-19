@@ -1,7 +1,7 @@
 /**
  * B2 判据（`B-运行层与提问工具.md`）：
  *   ① normal 模式下传给模型的工具集合为空；
- *   ② socratic 模式下工具集合只含 ask_question；
+ *   ② socratic 模式下工具集合恰好含 ask_question 与 visualize（explore/visualize 起）；
  *   ③ 两份教学指令不含任何 U+3016 / U+3017（空心方括号）形式的输出格式规则（本文件按「完全不出现该字符」检查）。
  * 另有两条本次新增的结构保证：system prompt 只由模式决定；注册表缺实现时当场失败。
  *
@@ -16,6 +16,7 @@ import {
   MODE_IDS,
   MODE_NORMAL,
   MODE_SOCRATIC,
+  VISUALIZE_TOOL,
   buildSystemPrompt,
   createModes,
   getMode,
@@ -29,6 +30,7 @@ const socraticMd = readSkill('socratic.md');
 const modes = createModes({ [MODE_NORMAL]: normalMd, [MODE_SOCRATIC]: socraticMd });
 
 const fakeAskQuestion = { description: '假工具，仅用于装配测试' };
+const fakeVisualize = { description: '假可视化工具，仅用于装配测试' };
 
 test('normal 模式的工具集合为空（不注册工具＝代码级保证）', () => {
   const mode = getMode(modes, MODE_NORMAL);
@@ -37,12 +39,18 @@ test('normal 模式的工具集合为空（不注册工具＝代码级保证）'
   assert.equal(mode.allowsQuestions, false);
 });
 
-test('socratic 模式的工具集合只含 ask_question', () => {
+test('socratic 模式的工具集合恰好含 ask_question 与 visualize', () => {
   const mode = getMode(modes, MODE_SOCRATIC);
-  assert.deepEqual(mode.toolNames, [ASK_QUESTION_TOOL]);
-  assert.deepEqual(Object.keys(toolsForMode(mode, { [ASK_QUESTION_TOOL]: fakeAskQuestion })), [
-    ASK_QUESTION_TOOL,
-  ]);
+  assert.deepEqual(mode.toolNames, [ASK_QUESTION_TOOL, VISUALIZE_TOOL]);
+  assert.deepEqual(
+    Object.keys(
+      toolsForMode(mode, {
+        [ASK_QUESTION_TOOL]: fakeAskQuestion,
+        [VISUALIZE_TOOL]: fakeVisualize,
+      }),
+    ),
+    [ASK_QUESTION_TOOL, VISUALIZE_TOOL],
+  );
   assert.equal(mode.allowsQuestions, true);
 });
 
@@ -71,6 +79,7 @@ test('normal 的教学指令不提工具、不写“不要提问”', () => {
 
 test('socratic 的教学指令含且仅含一句工具约束', () => {
   assert.equal(socraticMd.includes(ASK_QUESTION_TOOL), false, '提示词里不应出现工具名/参数细节');
+  assert.equal(socraticMd.includes(VISUALIZE_TOOL), false, '提示词里不应出现可视化工具名');
   assert.equal(socraticMd.includes('提问工具'), true);
 });
 

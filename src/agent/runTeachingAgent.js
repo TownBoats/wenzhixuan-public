@@ -18,8 +18,9 @@
 import { stepCountIs } from 'ai';
 
 import { runModelTurn } from './modelAdapter.js';
-import { ASK_QUESTION_TOOL, buildSystemPrompt, toolsForMode } from './modes.js';
+import { ASK_QUESTION_TOOL, VISUALIZE_TOOL, buildSystemPrompt, toolsForMode } from './modes.js';
 import { REJECT_INTERNAL_ERROR, createAskQuestionTool } from './tools/askQuestion.js';
+import { createVisualizeTool } from './tools/visualize.js';
 
 /** 每轮最多 3 步（安全上限，防模型跑飞）。 */
 export const MAX_STEPS = 3;
@@ -236,7 +237,11 @@ export async function runTeachingAgent({
     }),
     limiter,
   );
-  const tools = toolsForMode(mode, { [ASK_QUESTION_TOOL]: askQuestionTool });
+  const tools = toolsForMode(mode, {
+    [ASK_QUESTION_TOOL]: askQuestionTool,
+    // visualize 无外部依赖、不打断运行，无需并发闸门，每轮一个新实例保证幂等表不跨轮。
+    [VISUALIZE_TOOL]: createVisualizeTool(),
+  });
 
   // ── 2. 事件转发：不属于本次运行的事件丢弃（返回原状态、不报错、不记日志）──
   const forwardEvent = (event) => {

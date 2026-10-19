@@ -3,7 +3,18 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Icon, cn } from '@/components/ui';
 import ToolCallCard from '../ToolCallCard/ToolCallCard';
+import VisualizeCard from '../VisualizeCard/VisualizeCard';
 import MarkdownContent from './MarkdownContent';
+
+/** visualize 工具的就绪结果交给沙箱渲染卡；其余状态（running / rejected / failed）仍走通用工具卡。 */
+function isReadyVisualizeBlock(block) {
+  return (
+    block.toolName === 'visualize' &&
+    block.status === 'completed' &&
+    block.output?.status === 'ready' &&
+    typeof block.output?.html === 'string'
+  );
+}
 
 /**
  * MessageContent — 按 blocks 顺序渲染一条 assistant 消息（D3 / G2 排版改版）
@@ -100,6 +111,15 @@ function MessageContent({ blocks }) {
         }
 
         if (block.type === 'tool') {
+          if (isReadyVisualizeBlock(block)) {
+            return (
+              <VisualizeCard
+                key={block.toolCallId ?? `tool-${index}`}
+                title={block.output.title}
+                html={block.output.html}
+              />
+            );
+          }
           return (
             <ToolCallCard
               key={block.toolCallId ?? `tool-${index}`}
