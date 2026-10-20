@@ -116,6 +116,8 @@ module.exports = {
       animation: {
         'fade-in-out': 'fade-in-out 2s ease-in-out',
         'blink':       'blink 1s steps(2, start) infinite',
+        // 提问磁贴「准备中 → 待作答」的原地转化（QuestionGroup，2026-10-20）
+        'question-ready': 'question-ready 560ms cubic-bezier(0.32, 0.72, 0.24, 1)',
       },
       keyframes: {
         'fade-in-out': {
@@ -123,6 +125,11 @@ module.exports = {
           '20%':  { opacity: '1', transform: 'translateY(0)' },
           '80%':  { opacity: '1', transform: 'translateY(0)' },
           '100%': { opacity: '0', transform: 'translateY(-10px)' },
+        },
+        'question-ready': {
+          '0%':   { transform: 'scale(0.985)', boxShadow: '0 0 0 0 rgba(107, 142, 140, 0.35)' },
+          '60%':  { transform: 'scale(1.006)' },
+          '100%': { transform: 'scale(1)', boxShadow: '0 0 0 10px rgba(107, 142, 140, 0)' },
         },
         'blink': {
           '0%, 100%': { opacity: '1' },

@@ -429,6 +429,7 @@ function AgentChatPage() {
 
               <QuestionGroup
                 questions={turn.questions}
+                blocks={turn.blocks}
                 onOpen={setOpenQuestionId}
                 onSkip={(questionId) => session.skipQuestion({ questionId })}
               />

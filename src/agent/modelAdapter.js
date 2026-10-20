@@ -329,6 +329,33 @@ export async function runModelTurn({
           emit({ type: 'reasoning-delta', runId, partId: reasoningPartId, delta });
           continue;
         }
+        case 'tool-input-start': {
+          // 参数开始流出（explore/streaming-cards）：比 tool-call 早得多，
+          // 展示层靠它把「运行中」卡片提前摆出来。
+          // 实测（ai@6.0.177）：该部分的调用 ID 字段叫 `id`，与 tool-call 的 toolCallId 同值。
+          if (!part.id) continue; // 没有身份就不建卡（不变量 5 的前提）
+          emit({
+            type: 'tool-input-started',
+            runId,
+            toolCallId: part.id,
+            toolName: part.toolName,
+          });
+          continue;
+        }
+        case 'tool-input-delta': {
+          // 参数 JSON 的逐字增量；展示层据此做流式渲染（如 explain_card 的 SVG）。
+          // 实测（ai@6.0.177）：增量字段叫 `delta`，归属字段叫 `id`。
+          if (!part.id) continue;
+          const delta = stripGate(part.delta ?? '');
+          if (!delta) continue;
+          emit({
+            type: 'tool-input-delta',
+            runId,
+            toolCallId: part.id,
+            delta,
+          });
+          continue;
+        }
         case 'tool-call': {
           emit({
             type: 'tool-started',

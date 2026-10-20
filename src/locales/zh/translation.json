@@ -161,7 +161,9 @@
         "charCount": "{{count}} 字",
         "copy": "复制代码",
         "copied": "已复制",
-        "plainText": "纯文本"
+        "plainText": "纯文本",
+        "questionNotSent": "这次提问未发出，不影响继续对话",
+        "questionFailed": "提问未能完成，可继续对话或重试"
       },
       "toolCard": {
         "toolLabels": {
@@ -198,9 +200,13 @@
         "viewCode": "查看源码",
         "hideCode": "收起源码"
       },
+      "explainCard": {
+        "drawing": "正在绘制…"
+      },
       "questionGroup": {
         "title": "本轮 {{count}} 个问题",
         "hint": "点开任一题作答，答完这轮才会继续",
+        "preparing": "准备中",
         "pending": "待作答",
         "answered": "已回答",
         "skipped": "已跳过",

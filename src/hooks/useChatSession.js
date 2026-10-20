@@ -31,6 +31,8 @@ const EVENT_ACTION_TYPES = Object.freeze({
   'run-started': 'RUN_STARTED',
   'text-delta': 'TEXT_DELTA',
   'reasoning-delta': 'REASONING_DELTA',
+  'tool-input-started': 'TOOL_INPUT_STARTED',
+  'tool-input-delta': 'TOOL_INPUT_DELTA',
   'tool-started': 'TOOL_STARTED',
   'tool-completed': 'TOOL_COMPLETED',
   'tool-failed': 'TOOL_FAILED',

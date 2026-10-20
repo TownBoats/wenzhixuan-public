@@ -27,6 +27,48 @@ function isReadyExplainCardBlock(block) {
   );
 }
 
+/** explain_card 运行中：交给 ExplainCard 的流式预览（参数增量实时渲染）。 */
+function isStreamingExplainCardBlock(block) {
+  return block.toolName === 'explain_card' && block.status === 'running';
+}
+
+/**
+ * ask_question 的展示约定（2026-10-20 与用户拍板）：
+ * 用户只关心「问题是什么」，不关心工具调用本身——问题就绪后由 QuestionGroup 磁贴接管展示。
+ *   - ready（含候选答案不可用）：不渲染。同一问题下方已有磁贴，再摆一张工具卡是重复打扰；
+ *     「手动作答」等状态磁贴上已有表达。
+ *   - running：不渲染。准备中的磁贴在 QuestionGroup 里与待作答磁贴融合渲染
+ *     （同一 toolCallId 原地转化），消息流里不再放占位卡。
+ *   - rejected / failed：一行灰字交代「这次提问没发出去」，不暴露工具名 / toolCallId 等技术细节
+ *     （细节仍可从投影数据里查）。
+ * 与 visualize / explain_card 的就绪路由同理：工具的成功结果由专属 UI 接管，通用工具卡兜底其余工具。
+ */
+function AskQuestionTrace({ block }) {
+  const { t } = useTranslation();
+
+  if (block.status !== 'failed' && block.output?.status !== 'rejected') return null;
+
+  return (
+    <p className="flex items-center gap-1.5 px-1 text-caption text-ink-300">
+      <Icon
+        name={block.status === 'failed' ? 'CircleX' : 'CircleSlash2'}
+        size={12}
+        className="text-current"
+      />
+      {block.status === 'failed'
+        ? t('AgentChat.messageContent.questionFailed')
+        : t('AgentChat.messageContent.questionNotSent')}
+    </p>
+  );
+}
+
+AskQuestionTrace.propTypes = {
+  block: PropTypes.shape({
+    status: PropTypes.string,
+    output: PropTypes.object,
+  }).isRequired,
+};
+
 /**
  * MessageContent — 按 blocks 顺序渲染一条 assistant 消息（D3 / G2 排版改版）
  *
@@ -40,6 +82,8 @@ function isReadyExplainCardBlock(block) {
  *
  * 顺序即实际发生顺序，工具卡不挪到末尾（协议保留有序 parts 的直接原因）。
  * reasoning 只显示接口真实返回的内容，默认折叠（2026-10-17 与用户拍板）。
+ * ask_question 不走通用工具卡：就绪不渲染、准备中由 QuestionGroup 的融合磁贴接管，
+ * 只有 rejected / failed 在这里留一行灰字（2026-10-20 与用户拍板，见 AskQuestionTrace）。
  *
  * G2 的改动只在展示层：
  *   - 正文改 Markdown 渲染（此前是 `whitespace-pre-wrap` 纯文本，模型输出的列表 / 代码 / 表格全成了字面量）
@@ -122,6 +166,14 @@ function MessageContent({ blocks }) {
         }
 
         if (block.type === 'tool') {
+          if (block.toolName === 'ask_question') {
+            return (
+              <AskQuestionTrace
+                key={block.toolCallId ?? `tool-${index}`}
+                block={block}
+              />
+            );
+          }
           if (isReadyVisualizeBlock(block)) {
             return (
               <VisualizeCard
@@ -138,6 +190,15 @@ function MessageContent({ blocks }) {
                 title={block.output.title}
                 svg={block.output.svg}
                 viewBox={block.output.viewBox}
+              />
+            );
+          }
+          if (isStreamingExplainCardBlock(block)) {
+            return (
+              <ExplainCard
+                key={block.toolCallId ?? `tool-${index}`}
+                status="running"
+                partialInput={block.partialInput}
               />
             );
           }

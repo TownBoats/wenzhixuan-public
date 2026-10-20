@@ -161,7 +161,9 @@
         "charCount": "{{count}} chars",
         "copy": "Copy code",
         "copied": "Copied",
-        "plainText": "text"
+        "plainText": "text",
+        "questionNotSent": "That question was not sent — the conversation can continue",
+        "questionFailed": "The question could not be completed — continue or retry"
       },
       "toolCard": {
         "toolLabels": {
@@ -198,9 +200,13 @@
         "viewCode": "View code",
         "hideCode": "Hide code"
       },
+      "explainCard": {
+        "drawing": "Drawing…"
+      },
       "questionGroup": {
         "title": "{{count}} question(s) in this turn",
         "hint": "Open any question to answer; this turn continues once all are answered",
+        "preparing": "Preparing",
         "pending": "To answer",
         "answered": "Answered",
         "skipped": "Skipped",

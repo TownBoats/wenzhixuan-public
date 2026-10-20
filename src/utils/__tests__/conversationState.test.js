@@ -639,3 +639,98 @@ test('projectTurns 与 deriveViewState：渲染块合并、问题卡保序、派
   assert.equal(deriveViewState(cancelled).pendingQuestions.length, 0);
   assert.equal(deriveViewState(cancelled).isRunning, false);
 });
+
+
+// ── explore/streaming-cards：工具参数增量（partialInput）──
+
+test('TOOL_INPUT_STARTED 提前建卡，TOOL_INPUT_DELTA 累积，完成后清空且不进投影', () => {
+  let state = runningState();
+
+  // 参数开始流出：卡片立刻出现（running，还没有完整 input）
+  state = reduceSession(state, {
+    type: 'TOOL_INPUT_STARTED',
+    runId: 'r1',
+    toolCallId: 's1',
+    toolName: 'explain_card',
+  });
+  let toolPart = state.turns.at(-1).parts.find((part) => part.toolCallId === 's1');
+  assert.equal(toolPart.status, 'running');
+  assert.equal(toolPart.input, null);
+  assert.equal(toolPart.partialInput, '');
+
+  // 逐字增量累积
+  state = reduceSession(state, {
+    type: 'TOOL_INPUT_DELTA',
+    runId: 'r1',
+    toolCallId: 's1',
+    delta: '{"title":"',
+  });
+  state = reduceSession(state, {
+    type: 'TOOL_INPUT_DELTA',
+    runId: 'r1',
+    toolCallId: 's1',
+    delta: '时序图"',
+  });
+  toolPart = state.turns.at(-1).parts.find((part) => part.toolCallId === 's1');
+  assert.equal(toolPart.partialInput, '{"title":"时序图"');
+
+  // 投影透出 partialInput（展示层流式渲染的输入）
+  let blocks = projectTurns(state.turns)[0].blocks;
+  assert.equal(blocks.find((block) => block.toolCallId === 's1').partialInput, '{"title":"时序图"');
+
+  // TOOL_STARTED 补全 input 后 partialInput 保留（流式渲染持续到 completed）
+  state = reduceSession(state, {
+    type: 'TOOL_STARTED',
+    runId: 'r1',
+    toolCallId: 's1',
+    toolName: 'explain_card',
+    input: { title: '时序图', svg: '<svg/>' },
+  });
+  toolPart = state.turns.at(-1).parts.find((part) => part.toolCallId === 's1');
+  assert.deepEqual(toolPart.input, { title: '时序图', svg: '<svg/>' });
+
+  // 完成：partialInput 清空，投影为 null
+  state = reduceSession(state, {
+    type: 'TOOL_COMPLETED',
+    runId: 'r1',
+    toolCallId: 's1',
+    output: { status: 'ready', title: '时序图', svg: '<svg/>', viewBox: { width: 680, height: 200 } },
+  });
+  toolPart = state.turns.at(-1).parts.find((part) => part.toolCallId === 's1');
+  assert.equal(toolPart.partialInput, null);
+  blocks = projectTurns(state.turns)[0].blocks;
+  assert.equal(blocks.find((block) => block.toolCallId === 's1').partialInput, null);
+
+  // 完成后的迟到 delta 不再改变卡片
+  const after = reduceSession(state, {
+    type: 'TOOL_INPUT_DELTA',
+    runId: 'r1',
+    toolCallId: 's1',
+    delta: 'late',
+  });
+  assert.equal(after, state);
+});
+
+test('TOOL_INPUT_DELTA 找不到卡片时补建（不静默丢弃）', () => {
+  let state = runningState();
+  state = reduceSession(state, {
+    type: 'TOOL_INPUT_DELTA',
+    runId: 'r1',
+    toolCallId: 'orphan',
+    delta: '{"svg":"<svg',
+  });
+  const toolPart = state.turns.at(-1).parts.find((part) => part.toolCallId === 'orphan');
+  assert.equal(toolPart.status, 'running');
+  assert.equal(toolPart.partialInput, '{"svg":"<svg');
+});
+
+test('不属于当前 runId 的增量事件不改变状态', () => {
+  const state = runningState();
+  const next = reduceSession(state, {
+    type: 'TOOL_INPUT_DELTA',
+    runId: 'someone-else',
+    toolCallId: 's1',
+    delta: 'x',
+  });
+  assert.equal(next, state);
+});

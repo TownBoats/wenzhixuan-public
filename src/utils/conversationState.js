@@ -268,9 +268,76 @@ function handleRunStarted(state, action) {
   };
 }
 
-/** `tool-started`：同一 `toolCallId` 视为更新，不追加第二张卡（不变量 5）。 */
-function handleToolStarted(state, action) {
+/**
+ * `tool-input-started`（explore/streaming-cards）：参数开始流出，比 `tool-call` 早得多。
+ * 提前把「运行中」卡片摆出来；完整 input 要等 TOOL_STARTED 才有。
+ */
+function handleToolInputStarted(state, action) {
   if (!isStreamingRun(state, action)) return state;
+  if (!action.toolCallId) return state; // 没有身份的输入事件不建卡（上游已过滤，双保险）
+
+  const turn = currentTurn(state);
+  const parts = [...turn.parts];
+  const index = findToolPartIndex(parts, action.toolCallId);
+
+  if (index >= 0) {
+    const existing = parts[index];
+    parts[index] = { ...existing, toolName: action.toolName ?? existing.toolName };
+  } else {
+    parts.push({
+      type: 'tool',
+      toolCallId: action.toolCallId,
+      toolName: action.toolName ?? null,
+      input: null,
+      partialInput: '',
+      status: TOOL_PART_STATUS.RUNNING,
+      output: null,
+      error: null,
+      runId: turn.runId,
+    });
+  }
+
+  return replaceLastTurn(state, { ...turn, parts });
+}
+
+/**
+ * `tool-input-delta`：参数 JSON 的逐字增量，累积到 `partialInput`。
+ * 找不到卡片时补建（与 completed/failed 同纪律：不静默丢弃）。
+ * `partialInput` 是瞬态字段：TOOL_COMPLETED / TOOL_FAILED 时清空，不进历史。
+ */
+function handleToolInputDelta(state, action) {
+  if (!isStreamingRun(state, action)) return state;
+  if (!action.toolCallId) return state;
+  if (typeof action.delta !== 'string' || !action.delta) return state;
+
+  const turn = currentTurn(state);
+  const parts = [...turn.parts];
+  let index = findToolPartIndex(parts, action.toolCallId);
+
+  if (index < 0) {
+    parts.push({
+      type: 'tool',
+      toolCallId: action.toolCallId,
+      toolName: null,
+      input: null,
+      partialInput: '',
+      status: TOOL_PART_STATUS.RUNNING,
+      output: null,
+      error: null,
+      runId: turn.runId,
+    });
+    index = parts.length - 1;
+  }
+
+  const existing = parts[index];
+  // 已完结的卡片不再累积增量（迟到事件防御；正常时序下 delta 先于 tool-call 到达）
+  if (existing.status !== TOOL_PART_STATUS.RUNNING) return state;
+  parts[index] = { ...existing, partialInput: (existing.partialInput ?? '') + action.delta };
+  return replaceLastTurn(state, { ...turn, parts });
+}
+
+/** `tool-started`：同一 `toolCallId` 视为更新，不追加第二张卡（不变量 5）。 */
+function handleToolStarted(state, action) {  if (!isStreamingRun(state, action)) return state;
 
   const turn = currentTurn(state);
   const parts = [...turn.parts];
@@ -319,6 +386,8 @@ function handleToolCompleted(state, action) {
     status: TOOL_PART_STATUS.COMPLETED,
     output: action.output ?? null,
     error: null,
+    // 瞬态增量用完即清：不进投影、不进历史（不变量：持久化只留最终态）
+    partialInput: null,
   };
 
   if (index >= 0) {
@@ -385,6 +454,7 @@ function handleToolFailed(state, action) {
   const patch = {
     status: TOOL_PART_STATUS.FAILED,
     error: toErrorText(action.error) ?? '工具执行失败',
+    partialInput: null,
   };
 
   if (index >= 0) {
@@ -626,6 +696,10 @@ export function reduceSession(state, action) {
       return appendDelta(state, action, 'reasoning');
     case 'TOOL_STARTED':
       return handleToolStarted(state, action);
+    case 'TOOL_INPUT_STARTED':
+      return handleToolInputStarted(state, action);
+    case 'TOOL_INPUT_DELTA':
+      return handleToolInputDelta(state, action);
     case 'TOOL_COMPLETED':
       return handleToolCompleted(state, action);
     case 'TOOL_FAILED':
@@ -773,6 +847,7 @@ export function projectTurns(turns) {
           toolName: part.toolName ?? null,
           status: part.status ?? TOOL_PART_STATUS.RUNNING,
           input: part.input ?? null,
+          partialInput: part.partialInput ?? null,
           output: part.output ?? null,
           error: part.error ?? null,
         });
