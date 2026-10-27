@@ -381,6 +381,23 @@ function AgentChatPage() {
                   {t('AgentChat.page.emptyState')}
                 </p>
               </div>
+              {/* 两点提点：交互式学习（追问 + 点卡作答）与生成式 UI（讲解卡片 / 可视化实时生成）。
+                  刻意做轻——一行小字加图标，点到为止，不做成卡片式 feature grid */}
+              {/* w-full 让 max-w-full 有确定参照：父级 items-center 下本行宽度由内容决定，
+                  百分比约束成循环依赖，窄屏会溢出（390px 实测右侧被裁） */}
+              <div className="flex w-full flex-col items-center gap-1.5 text-small text-ink-500 sm:flex-row sm:justify-center sm:gap-4">
+                {/* 文本包一层 min-w-0：inline-flex 里的匿名 flex item 不会换行，
+                    窄屏下会溢出被裁（390px 实测），包一层让它可收缩换行 */}
+                <span className="inline-flex max-w-full items-center gap-1.5">
+                  <Icon name="MessagesSquare" size={14} className="text-sage-500" />
+                  <span className="min-w-0">{t('AgentChat.page.featureInteractive')}</span>
+                </span>
+                <span className="hidden h-3.5 w-px bg-paper-200 sm:block" aria-hidden="true" />
+                <span className="inline-flex max-w-full items-center gap-1.5">
+                  <Icon name="Sparkles" size={14} className="text-sage-500" />
+                  <span className="min-w-0">{t('AgentChat.page.featureGenerative')}</span>
+                </span>
+              </div>
               <div className="flex flex-wrap justify-center gap-2">
                 {SUGGESTION_KEYS.map((key) => {
                   const label = t(key);

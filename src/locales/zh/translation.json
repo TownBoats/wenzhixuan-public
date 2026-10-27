@@ -97,6 +97,8 @@
         "tagline": "提问带动理解",
         "emptyTitle": "从一个问题开始",
         "emptyState": "输入一个想学的主题，比如：闭包",
+        "featureInteractive": "交互式学习 · 它先向你提问，点卡片就能作答",
+        "featureGenerative": "生成式 UI · 讲解卡片与可视化随讲随生成",
         "suggest": {
           "closure": "闭包",
           "eventLoop": "事件循环",

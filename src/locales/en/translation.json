@@ -97,6 +97,8 @@
         "tagline": "Understanding through questions",
         "emptyTitle": "Start with a question",
         "emptyState": "Enter a topic you want to learn, e.g. closures",
+        "featureInteractive": "Interactive learning · it asks you first, answer with a tap",
+        "featureGenerative": "Generative UI · explain cards and visuals generated as you learn",
         "suggest": {
           "closure": "Closures",
           "eventLoop": "Event loop",
