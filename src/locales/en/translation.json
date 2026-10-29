@@ -244,7 +244,12 @@
       "customAnswer": "Custom",
       "tips1": "Take a moment to pause, reflection has its time. Just ",
       "tips2": " seconds until the answer finds you.",
-      "tips3": "Truth beyond, thought gets you there.",
+      "tips3": "Tap to view answer",
+      "selectionHint": "Tap to preview and select; double-tap to confirm",
+      "confirmSelection": "Confirm selection",
+      "confirmLevel": "Confirm · {{level}}",
+      "waitSettingsTitle": "Thinking time before answering",
+      "waitSettingsDescription": "Wait 5 seconds by default before viewing and choosing suggested answers. Choose 0–30 seconds, or turn this off to answer immediately. Saved automatically; applies the next time you open a question.",
       "questionDetails": "Question"
     },
     "WelcomeScreen": {

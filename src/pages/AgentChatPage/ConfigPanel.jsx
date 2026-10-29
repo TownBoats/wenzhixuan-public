@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import ModelConfigPanel from '../../components/ModelConfigPanel/ModelConfigPanel';
 import SettingsSection from '../../components/SettingsPanel/SettingsSection';
+import AnswerWaitSettings from '../../components/SettingsPanel/AnswerWaitSettings';
 import { Button, Icon, BrandLogo } from '@/components/ui';
 
 /**
@@ -12,10 +13,11 @@ import { Button, Icon, BrandLogo } from '@/components/ui';
  * 为什么新写而不是复用旧 `components/SettingsPanel/SettingsPanel.jsx`：
  *   旧面板是四 Tab（通用 / 模型 / 提示词 / 数据）600 行组件，强依赖旧路径的
  *   `histories`、`handleNewChat`、`mainPrompt` 等状态，搬进新页面要造一堆等价数据。
- *   新路径只需要「能填主模型 + 副模型」，因此这里只放三段：
+ *   新路径包含答题偏好和模型配置：
  *     ① 主模型（复用 ModelConfigPanel，与旧面板同一套行为：BYOK、测试连接、URL 调试）
  *     ② 候选答案模型（同上，留空即降级为手动作答）
- *     ③ 我的个人信息（作者邮箱 / GitHub，来自原「关于」Tab）
+ *     ③ 答题等待时间（沿用旧版 localStorage 偏好）
+ *     ④ 我的个人信息（作者邮箱 / GitHub，来自原「关于」Tab）
  *
  * 不提供的项（有意为之）：
  *   - 主提示词编辑：新架构由 `src/agent/skills/*.md` 按教学模式固定，改了也不生效（D6 迁移提示已说明）
@@ -93,6 +95,8 @@ function ConfigPanel({ open, onClose, mainConfig, optionConfig, onMainConfigChan
                 onConfigChange={onOptionConfigChange}
                 agentType="option"
               />
+
+              <AnswerWaitSettings />
 
               <SettingsSection
                 icon={<Icon name="Mail" size={16} className="text-sage-700" />}

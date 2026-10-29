@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import MarkdownRenderer from '../MarkdownRenderer/MarkdownRenderer';
 import useMediaQuery, { BREAKPOINTS } from '../../hooks/useMediaQuery';
 import { Button, Icon, BrandLogo, LevelIcon, cn } from '@/components/ui';
+import { getAnswerWaitSeconds } from '../../utils/answerPreferences';
 
 // 旧 ContentParser key → tailwind level-* token class（必须写出完整类名才能被 Tailwind 提取）
 const LEVEL_TEXT_CLASS = {
@@ -48,10 +49,11 @@ const AnswerCard = ({
   const { t } = useTranslation();
   const isDesktop = useMediaQuery(BREAKPOINTS.md);
   const [customAnswer, setCustomAnswer] = useState('');
-  const [localAnswers, setLocalAnswers] = useState(question?.answer || {});
+  const localAnswers = question?.answer || {};
   const [revealedCards, setRevealedCards] = useState({});
+  const [selectedLevel, setSelectedLevel] = useState(null);
   const [hoveredCard, setHoveredCard] = useState(null);
-  const [countdowns, setCountdowns] = useState({});
+  const [countdowns, setCountdowns] = useState(() => ({ global: getAnswerWaitSeconds() }));
   const [isDragging, setIsDragging] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -106,24 +108,22 @@ const AnswerCard = ({
   });
 
   const nodeRef = useRef(null);
+  const submittedRef = useRef(false);
+  const questionId = question?.id ?? question?.question;
+  const optionsReady = Object.values(localAnswers).some((value) => Array.isArray(value) && value.length > 0);
 
-  // ── 同步 props.answer ──
+  // A new question starts a new preview/selection session.
   useEffect(() => {
-    if (question?.answer) {
-      setLocalAnswers(question.answer);
-    }
-  }, [question?.answer]);
+    setSelectedLevel(null);
+    setRevealedCards({});
+    setCustomAnswer('');
+    setHoveredCard(null);
+    submittedRef.current = false;
+  }, [questionId]);
 
   // ── 倒计时 ──
   useEffect(() => {
-    if (!question?.answer) return;
-    const enableWaitTime = localStorage.getItem('enableWaitTime') !== 'false';
-    if (!enableWaitTime) {
-      setCountdowns({ global: 0 });
-      return;
-    }
-    const savedTime = localStorage.getItem('waitTime');
-    const countdown = savedTime ? parseInt(savedTime, 10) : 5;
+    const countdown = optionsReady ? getAnswerWaitSeconds() : 0;
     setCountdowns({ global: countdown });
     if (countdown <= 0) return;
     const timer = setInterval(() => {
@@ -134,7 +134,7 @@ const AnswerCard = ({
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [question?.answer]);
+  }, [questionId, optionsReady]);
 
   if (!question || typeof question !== 'object') return null;
   if (!question.question || !question.answer) return null;
@@ -160,19 +160,28 @@ const AnswerCard = ({
   };
 
   // ── 选档 / 自定义 ──
-  const handleLevelClick = (level) => {
-    if (isCountingDown) return;
+  const handleLevelPreview = (level) => {
+    if (isCountingDown || submittedRef.current) return;
+    setRevealedCards((prev) => ({ ...prev, [level]: true }));
+    setSelectedLevel(level);
+  };
+
+  const handleLevelConfirm = (level = selectedLevel) => {
+    if (isCountingDown || submittedRef.current) return;
     const answerArray = localAnswers[level];
     if (!Array.isArray(answerArray) || answerArray.length === 0) return;
     const answerContent = answerArray[0].content;
+    submittedRef.current = true;
     onLevelSelect?.(level, answerContent);
   };
 
   const handleCustomSubmit = (e) => {
+    if (submittedRef.current) return;
     if (e && e.type === 'keydown') {
       if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent?.isComposing && e.keyCode !== 229) {
         e.preventDefault();
         if (customAnswer.trim()) {
+          submittedRef.current = true;
           onLevelSelect?.('custom', customAnswer.trim());
           onClose?.();
         }
@@ -180,6 +189,7 @@ const AnswerCard = ({
       return;
     }
     if (customAnswer.trim()) {
+      submittedRef.current = true;
       onLevelSelect?.('custom', customAnswer.trim());
       onClose?.();
     }
@@ -297,8 +307,10 @@ const AnswerCard = ({
                                   answer={answerArray[0]?.content}
                                   isHovered={hoveredCard === level}
                                   isRevealed={Boolean(revealedCards[level])}
+                                  isSelected={selectedLevel === level}
                                   isCountingDown={isCountingDown}
-                                  onClick={() => handleLevelClick(level)}
+                                  onClick={() => handleLevelPreview(level)}
+                                  onConfirm={() => handleLevelConfirm(level)}
                                   onMouseEnter={() => {
                                     setHoveredCard(level);
                                     if (!isCountingDown) {
@@ -321,7 +333,10 @@ const AnswerCard = ({
                       <div className="shrink-0 border-t border-paper-200 bg-paper-100/50 p-3 md:px-4">
                         <CustomOption
                               value={customAnswer}
-                              onChange={setCustomAnswer}
+                              onChange={(value) => {
+                                setCustomAnswer(value);
+                                setSelectedLevel(null);
+                              }}
                               onKeyDown={handleCustomSubmit}
                               onSubmit={handleCustomSubmit}
                               isHovered={hoveredCard === 'custom'}
@@ -331,6 +346,24 @@ const AnswerCard = ({
                               placeholder={t('AnswerCard.placeholder')}
                               sendTitle={t('AnswerCard.send')}
                         />
+                        {optionsReady && (
+                          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-caption text-ink-500">
+                              {t('AnswerCard.selectionHint')}
+                            </span>
+                            <Button
+                              intent="primary"
+                              size="lg"
+                              className="w-full sm:w-auto"
+                              disabled={!selectedLevel || isCountingDown}
+                              onClick={() => handleLevelConfirm()}
+                            >
+                              {selectedLevel
+                                ? t('AnswerCard.confirmLevel', { level: LEVEL_LABELS[selectedLevel] })
+                                : t('AnswerCard.confirmSelection')}
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -420,24 +453,66 @@ function LevelOption({
   answer,
   isHovered,
   isRevealed,
+  isSelected,
   isCountingDown,
   onClick,
+  onConfirm,
   onMouseEnter,
   onMouseLeave,
   tipText,
 }) {
+  const touchRef = useRef(null);
+  const lastTapRef = useRef(null);
+  const isInteractiveChild = (event) => event.target.closest('a, button, input, textarea, select');
+
   return (
     <div
       className={cn(
         'group rounded-sm border bg-paper-50 px-3 py-2.5 transition-colors duration-fast',
         'outline-none focus-visible:border-sage-500 focus-visible:ring-2 focus-visible:ring-sage-500/30',
-        isHovered ? 'border-sage-500 bg-sage-50' : 'border-paper-200',
+        isSelected ? 'border-sage-500 bg-sage-50 ring-1 ring-sage-500' : isHovered ? 'border-sage-300' : 'border-paper-200',
         isCountingDown ? 'cursor-not-allowed opacity-80' : 'cursor-pointer',
+        'touch-manipulation',
       )}
-      onClick={onClick}
+      onClick={(event) => {
+        if (!isInteractiveChild(event)) onClick();
+      }}
+      onDoubleClick={(event) => {
+        if (!isInteractiveChild(event)) onConfirm();
+      }}
+      onPointerDown={(event) => {
+        if (event.pointerType === 'mouse' || isCountingDown || isInteractiveChild(event)) return;
+        touchRef.current = { x: event.clientX, y: event.clientY, time: event.timeStamp, moved: false };
+      }}
+      onPointerMove={(event) => {
+        const touch = touchRef.current;
+        if (touch && Math.hypot(event.clientX - touch.x, event.clientY - touch.y) > 10) {
+          touch.moved = true;
+        }
+      }}
+      onPointerCancel={() => {
+        touchRef.current = null;
+        lastTapRef.current = null;
+      }}
+      onPointerUp={(event) => {
+        const touch = touchRef.current;
+        touchRef.current = null;
+        if (!touch || touch.moved || event.timeStamp - touch.time > 500 || isCountingDown || isInteractiveChild(event)) {
+          lastTapRef.current = null;
+          return;
+        }
+        const last = lastTapRef.current;
+        if (last && event.timeStamp - last.time < 300 && Math.hypot(event.clientX - last.x, event.clientY - last.y) < 24) {
+          lastTapRef.current = null;
+          onConfirm();
+        } else {
+          lastTapRef.current = { time: event.timeStamp, x: event.clientX, y: event.clientY };
+        }
+      }}
       role="button"
       tabIndex={isCountingDown ? -1 : 0}
       aria-disabled={isCountingDown}
+      aria-pressed={isSelected}
       onFocus={onMouseEnter}
       onBlur={onMouseLeave}
       onKeyDown={(event) => {
@@ -468,9 +543,10 @@ function LevelOption({
         <div className="min-w-0 flex-1 break-words font-sans text-small leading-relaxed text-ink-700">
           <div className="relative">
             <div
+              aria-hidden={!isRevealed}
               className={cn(
                 'transition-opacity duration-fast',
-                isRevealed ? 'opacity-100' : 'opacity-0',
+                isRevealed ? 'visible opacity-100' : 'invisible opacity-0',
               )}
             >
               <div>
@@ -509,8 +585,10 @@ LevelOption.propTypes = {
   answer: PropTypes.string,
   isHovered: PropTypes.bool,
   isRevealed: PropTypes.bool,
+  isSelected: PropTypes.bool,
   isCountingDown: PropTypes.bool,
   onClick: PropTypes.func.isRequired,
+  onConfirm: PropTypes.func.isRequired,
   onMouseEnter: PropTypes.func.isRequired,
   onMouseLeave: PropTypes.func.isRequired,
   tipText: PropTypes.string.isRequired,

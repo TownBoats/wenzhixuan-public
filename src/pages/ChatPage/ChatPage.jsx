@@ -712,6 +712,7 @@ const ChatPage = ({ className }) => {
       {selectedQuestion && (
         <div className="fixed inset-0 z-[9999] pointer-events-none">
           <AnswerCard
+            key={selectedQuestion.id}
             question={selectedQuestion}
             onLevelSelect={handleLevelSelect}
             onClose={handleCloseAnswer}

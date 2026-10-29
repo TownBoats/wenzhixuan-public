@@ -574,6 +574,7 @@ function AgentChatPage() {
             </div>
           )}
           <AnswerCard
+            key={openQuestion.id}
             question={toAnswerCardModel(openQuestion)}
             answerSettled
             onLevelSelect={handleLevelSelect}

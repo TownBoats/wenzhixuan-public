@@ -244,7 +244,12 @@
       "customAnswer": "自答",
       "tips1": "留一刻静待，思考自有其时。还有",
       "tips2": "秒，让答案找到你。",
-      "tips3": "真理于彼岸，思考即渡舟",
+      "tips3": "点击查看答案",
+      "selectionHint": "单击查看并预选，双击确认",
+      "confirmSelection": "确认选择",
+      "confirmLevel": "确认选择 · {{level}}",
+      "waitSettingsTitle": "答题前的思考时间",
+      "waitSettingsDescription": "默认等待 5 秒后可查看和选择候选答案。可设置 0–30 秒，关闭或设为 0 秒即可直接作答。自动保存，下次打开问题时生效。",
       "questionDetails": "问题详情"
     },
     "WelcomeScreen": {
