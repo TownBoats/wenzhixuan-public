@@ -1,6 +1,6 @@
 # 当前交接
 
-更新时间：2026-11-01。源码基准：`347a6a44f44356102b3e7cd7d6ef393f4c784b2e`，当前分支 `dev`。
+更新时间：2026-11-01。源码基准：Git HEAD（阶段归档提交 `610752c` 起），当前分支 `dev`。
 
 ## 1. 当前状态
 
@@ -15,9 +15,9 @@
 
 先审阅本轮 [Harness](harness/README.md)、[业务知识](knowledge/agent-upgrade.md) 与 [阶段总结](knowledge/agent-upgrade-summary.md)。
 
-审阅通过后的第一个提交准备动作：决定现行规则/知识及历史快照的 Git 跟踪范围，复核历史资料后选择性放行；当前 `.gitignore` 不变。不要直接强制加入整个忽略目录。
+资料与规则已纳入 Git，dev 已推送并快进同步到 main；后续修改按普通受跟踪文件提交，`.codebuddy/teams` 等本机状态继续忽略。
 
-后续产品清理、依赖排障、dev 集成 main 和发布分别作为明确任务，不因本轮归档自动执行。
+后续产品清理、依赖排障和发布分别作为明确任务，不因本轮归档自动执行。
 
 ## 3. 未关闭事项
 
@@ -31,9 +31,9 @@
 | C-01 旧实现清理 | 旧 ChatPage 和专用链无主入口，仍保留在仓库 | 按静态引用候选单独删除和验证；保留新路径共享组件与 v1 兼容 |
 | C-02 兼容边界 | MarkdownRenderer、SettingsSection/AnswerWaitSettings、ConfigManager、historyV1 等仍使用 | 不能按旧目录整体删除；历史键和模型配置不可随旧源码清空 |
 | S-01 生成内容 | sandbox/CSP/来源校验存在；visualize 允许部分外部资源 | 新阶段按风险验证，不声称已完成安全审计 |
-| G-01 资料跟踪 | docs、.agent、.codebuddy 此前被忽略；本轮已改为跟踪 docs 与两个短规则入口，.codebuddy/teams 仍忽略 | 若远端出现敏感信息，停止推送并按已提交范围处置 |
-| G-02 原工作区删除 | docs/REDESIGN_KARE.md 与 REDESIGN_KARE_FEASIBILITY.md 删除已纳入阶段提交，UI README 的失效链接已修正 | 无后续动作 |
-| G-03 分支集成 | 用户要求将 dev 提交推送并同步到 main；执行前 main 为 ef5c90a、dev 为 347a6a4 | 采用快进合并，不用强推；结果以 git log / ls-remote 为准 |
+| G-01 资料跟踪 | docs 与两个短规则入口已纳入 Git；`.codebuddy/teams` 等本机状态继续忽略 | 若后续出现敏感信息，按已提交范围处置 |
+| G-02 原工作区删除 | docs/REDESIGN_KARE.md 与 REDESIGN_KARE_FEASIBILITY.md 删除已入库，UI README 的失效链接已修正 | 无后续动作 |
+| G-03 分支集成 | dev 已推送，并以快进方式同步到 main；本地与远端指向同一提交 | 后续以 `git log` / `git ls-remote` 核对；不改用强推 |
 
 依赖故障的根因未定；此前会话侧 junction 现象不能直接推广为整机故障。不要沿用“代码/锁文件肯定没问题”或“重装必然解决”的旧断言。
 

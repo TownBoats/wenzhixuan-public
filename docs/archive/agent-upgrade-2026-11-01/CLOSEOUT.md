@@ -37,10 +37,10 @@ IDE diagnostics in checked documents/rules: 0
 
 ## Git 和产品边界
 
-- `.gitignore` 未改，docs及两工具规则目录继续忽略；归档不是已提交到远端的备份。
-- 新增可跟踪根AGENTS、修改根README；原两份设计文档删除保持未暂存。
-- 没有修改src、scripts、package.json或锁文件，没有删除旧业务源码或清空浏览器数据。
-- 暂存区为空；未执行commit、merge、push、部署或模型请求。
+- `.gitignore` 已改为跟踪 `docs/` 与两个短规则入口，`.codebuddy/teams` 等本机状态继续忽略。
+- 根AGENTS、根README、原两份设计文档删除已随阶段提交入库；文档引用已修正。
+- 没有修改src业务逻辑、scripts、package.json或锁文件，没有删除旧业务源码或清空浏览器数据。
+- 已提交并推送 dev，再以快进方式同步 main；未部署或请求真实模型，具体哈希见 Git 日志。
 - 未运行产品测试、ESLint全量或Vite构建；现有自动验证缺口与人工验收结论分别保留在新HANDOFF。
 
 ## 接手入口

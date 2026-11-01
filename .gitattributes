@@ -1,0 +1,2 @@
+# Frozen historical archive must keep original bytes for SHA-256 integrity checks.
+docs/archive/** -text
