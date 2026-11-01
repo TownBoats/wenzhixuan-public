@@ -1,14 +1,12 @@
 # `src/components/ui/` — 问知轩原子组件层
 
-> 设计规格：[../../../docs/REDESIGN_KARE.md](../../../docs/REDESIGN_KARE.md) Layer 2
->
-> 实施背景：[../../../docs/REDESIGN_KARE_FEASIBILITY.md](../../../docs/REDESIGN_KARE_FEASIBILITY.md)
+> 设计 token 与组件约定以本文件与 `eslint.config.js` 为准；早期设计规格文档已从仓库移除。
 
 ---
 
 ## 设计原则
 
-1. **Token-only**：本目录由 ESLint 严格守门，**禁止**使用 hex 字面量或旧 Tailwind 色家族 (`cyan/blue/amber/slate/...`)。任何 `text-cyan-500` 这类写法都是 build error。
+1. **Token-only**：本目录由 ESLint 严格守门，**禁止**使用 hex 字面量或旧 Tailwind 色家族 (`cyan/blue/amber/slate/...`)。任何 `text-cyan-500` 这类写法都会报 ESLint error。
 2. **零业务耦合**：原子组件不依赖任何应用状态、hook、i18n。
 3. **Susan Kare 触感**：圆润、克制、可访问性优先。所有交互组件默认带 `:focus-visible`。
 4. **PropTypes 强制**：所有 prop 都必须声明类型与（可选）默认值。

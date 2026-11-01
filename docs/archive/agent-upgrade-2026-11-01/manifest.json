@@ -1,0 +1,187 @@
+{
+  "snapshotDate": "2026-11-01",
+  "sourceHead": "347a6a44f44356102b3e7cd7d6ef393f4c784b2e",
+  "purpose": "Frozen local history; historical instructions are inactive; not current implementation proof",
+  "files": [
+    {
+      "source": "docs/agent-mvp/01-核心协议.md",
+      "snapshot": "agent-mvp/01-核心协议.md",
+      "bytes": 17266,
+      "sha256": "ca01cffe52dfcd0f8da6f5aa7fb6a9820385250b4c0c64c721f3addf3f6f9a9e"
+    },
+    {
+      "source": "docs/agent-mvp/02-架构图.md",
+      "snapshot": "agent-mvp/02-架构图.md",
+      "bytes": 22017,
+      "sha256": "2c980506abcb38517908dc4aed3ce8a992d494b4edaffe67137f52bd14ba7cdc"
+    },
+    {
+      "source": "docs/agent-mvp/A-基线与端点验证.md",
+      "snapshot": "agent-mvp/A-基线与端点验证.md",
+      "bytes": 10816,
+      "sha256": "364da8a178a9278784d47d54620481912ae8392921bd818d4e12998ef0103c4a"
+    },
+    {
+      "source": "docs/agent-mvp/A-基线存档.md",
+      "snapshot": "agent-mvp/A-基线存档.md",
+      "bytes": 5817,
+      "sha256": "ca441b0d9765383df1f2b7fe92754b55d62d48a1cccb91a72282e42db1012e9c"
+    },
+    {
+      "source": "docs/agent-mvp/A-开发指导.md",
+      "snapshot": "agent-mvp/A-开发指导.md",
+      "bytes": 3690,
+      "sha256": "80957eeb0b9a20597b5ecd1c2b31298230053c06666aed9bb9780246e82062ad"
+    },
+    {
+      "source": "docs/agent-mvp/B-开发指导.md",
+      "snapshot": "agent-mvp/B-开发指导.md",
+      "bytes": 16204,
+      "sha256": "c1aa511b0ec7b5c5e7eff81767730cd549f3bd969ec54a4632eec95304903c81"
+    },
+    {
+      "source": "docs/agent-mvp/B-运行层与提问工具.md",
+      "snapshot": "agent-mvp/B-运行层与提问工具.md",
+      "bytes": 21770,
+      "sha256": "58d631a95db5717b5d56ebf422041aacedcb2cbdf613bc6a001e9c99e8ec373f"
+    },
+    {
+      "source": "docs/agent-mvp/C-会话状态层.md",
+      "snapshot": "agent-mvp/C-会话状态层.md",
+      "bytes": 12483,
+      "sha256": "44568e6a995a277ca1ca5b1d7485a57341fe1ab5d0667e861cac43916a762d52"
+    },
+    {
+      "source": "docs/agent-mvp/C-开发指导.md",
+      "snapshot": "agent-mvp/C-开发指导.md",
+      "bytes": 9337,
+      "sha256": "7381882897f4c9fdf962ed743e0612de8131559b90dc305bebbcbc464b4e12c6"
+    },
+    {
+      "source": "docs/agent-mvp/D-开发指导.md",
+      "snapshot": "agent-mvp/D-开发指导.md",
+      "bytes": 11509,
+      "sha256": "4d2a2c17edf4ec56b1b8ee6150ca0cf042bfa337d1a8c2f1d514bc845371c4c6"
+    },
+    {
+      "source": "docs/agent-mvp/D-页面与模式.md",
+      "snapshot": "agent-mvp/D-页面与模式.md",
+      "bytes": 14388,
+      "sha256": "2c49ca4822da1d6e7f9260ffc814fff4314baa610750828dc8b4e5277cfa23b8"
+    },
+    {
+      "source": "docs/agent-mvp/diagrams/01-全局分层与数据流.svg",
+      "snapshot": "agent-mvp/diagrams/01-全局分层与数据流.svg",
+      "bytes": 97457,
+      "sha256": "fba5aaf35ec9a473ef4468a4093b4a699ce94d6e17bce4ff96a1af3731d1ab8c"
+    },
+    {
+      "source": "docs/agent-mvp/diagrams/02-一轮时序.svg",
+      "snapshot": "agent-mvp/diagrams/02-一轮时序.svg",
+      "bytes": 62256,
+      "sha256": "c41e3988ca9c476e9fc99b03760b20a04a8f0eeda04aa008404a766214f7791a"
+    },
+    {
+      "source": "docs/agent-mvp/diagrams/03-运行层内部.svg",
+      "snapshot": "agent-mvp/diagrams/03-运行层内部.svg",
+      "bytes": 84927,
+      "sha256": "f3f407e7af22bf8ecb8f3ca3fa154144b3b7c65dbb1d1ed4ca7a70564ae9ebf9"
+    },
+    {
+      "source": "docs/agent-mvp/diagrams/04a-turn状态机.svg",
+      "snapshot": "agent-mvp/diagrams/04a-turn状态机.svg",
+      "bytes": 41078,
+      "sha256": "b5814591d11b98c7caf102a4ea570384872479d57c40421f6edae89a1a787fa9"
+    },
+    {
+      "source": "docs/agent-mvp/diagrams/04b-question状态机.svg",
+      "snapshot": "agent-mvp/diagrams/04b-question状态机.svg",
+      "bytes": 31297,
+      "sha256": "93ef2e78b62884185ae72db96df2bc771541b1f8b9e3b7d29a61d9b15f30c4f0"
+    },
+    {
+      "source": "docs/agent-mvp/diagrams/05-三种投影.svg",
+      "snapshot": "agent-mvp/diagrams/05-三种投影.svg",
+      "bytes": 42020,
+      "sha256": "9733aa3b8520e5fb391bf6a365acb97b53686a07a6a589029c6caa27b579857c"
+    },
+    {
+      "source": "docs/agent-mvp/diagrams/06-新旧对照.svg",
+      "snapshot": "agent-mvp/diagrams/06-新旧对照.svg",
+      "bytes": 36365,
+      "sha256": "8b99ddb2ce48978a263fb468f6c8683fedba5779d079c78fa003fbf61f24b013"
+    },
+    {
+      "source": "docs/agent-mvp/E-历史存储与恢复.md",
+      "snapshot": "agent-mvp/E-历史存储与恢复.md",
+      "bytes": 10239,
+      "sha256": "67890a9088d9020b66d4deed10a22cc6f0447d6479692370d6628fe1aa53faab"
+    },
+    {
+      "source": "docs/agent-mvp/E-开发指导.md",
+      "snapshot": "agent-mvp/E-开发指导.md",
+      "bytes": 10640,
+      "sha256": "68295f404f96903a9318d59cae506fb328a1b245e3936678fce6057dc5c48b48"
+    },
+    {
+      "source": "docs/agent-mvp/F-取消重试与验收.md",
+      "snapshot": "agent-mvp/F-取消重试与验收.md",
+      "bytes": 9735,
+      "sha256": "72e090b20b8c43596628c8b83dae227e6cd542fd656732c683afb3f943e8cac6"
+    },
+    {
+      "source": "docs/agent-mvp/F-开发指导.md",
+      "snapshot": "agent-mvp/F-开发指导.md",
+      "bytes": 8314,
+      "sha256": "933f9ce45799a9b22df45c4c10fe6c03e7b34330b1cae79dbe30c99a2910ec1d"
+    },
+    {
+      "source": "docs/agent-mvp/F-验收记录.md",
+      "snapshot": "agent-mvp/F-验收记录.md",
+      "bytes": 10834,
+      "sha256": "9355be46de3592ed5be1b87664ad23fdb1e5a303d290a29fb35a979cdae3f3e7"
+    },
+    {
+      "source": "docs/agent-mvp/HANDOFF.md",
+      "snapshot": "agent-mvp/HANDOFF.md",
+      "bytes": 316252,
+      "sha256": "353591f066c5ff72b37ddbca11fc7db2c56f339b94d7cc6402731f01f034fd83"
+    },
+    {
+      "source": "docs/agent-mvp/README.md",
+      "snapshot": "agent-mvp/README.md",
+      "bytes": 8018,
+      "sha256": "ddbadf14c3747796c610d68dc4dff8bfe34d27f65c08ad4749c36c1b68da9987"
+    },
+    {
+      "source": "docs/agent-mvp/visualize/可视化设计规范速查表.html",
+      "snapshot": "agent-mvp/visualize/可视化设计规范速查表.html",
+      "bytes": 20563,
+      "sha256": "8b3cd98b9e0cc0fc8a9907f8fab87c1596f114f434821d364562d80841d5e2a1"
+    },
+    {
+      "source": "docs/agent-mvp/决策记录.md",
+      "snapshot": "agent-mvp/决策记录.md",
+      "bytes": 186928,
+      "sha256": "af2a0feda75a542bd7aca2e83d247214b85c6141b90bfc2077fed9eafdd57065"
+    },
+    {
+      "source": "docs/AGENT_MVP_PLAN.md",
+      "snapshot": "AGENT_MVP_PLAN.md",
+      "bytes": 34149,
+      "sha256": "65ade1a6e2d6aaa6b642ab3c09d9f7c5b59c70dc012431c46b7103f50f37c514"
+    },
+    {
+      "source": ".agent/rules/agent-mvp/RULE.mdc",
+      "snapshot": "rules/agent-agent-mvp.txt",
+      "bytes": 18868,
+      "sha256": "cf47796c337d4235d08cd409c650e83115476035188fc1cd611c6a5d312bf14f"
+    },
+    {
+      "source": ".codebuddy/rules/agent-mvp/RULE.mdc",
+      "snapshot": "rules/codebuddy-agent-mvp.txt",
+      "bytes": 18868,
+      "sha256": "cf47796c337d4235d08cd409c650e83115476035188fc1cd611c6a5d312bf14f"
+    }
+  ]
+}

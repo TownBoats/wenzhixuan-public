@@ -1,3 +1,9 @@
+## 开发与阶段归档
+
+Agent 升级 A–G 已完成阶段收尾。开发从 [当前交接](docs/HANDOFF.md) 和根 `AGENTS.md` 开始；[文档索引](docs/README.md) 提供 [开发 Harness](docs/harness/README.md)、[过程复盘](docs/harness/RETROSPECTIVE.md)、[业务知识](docs/knowledge/agent-upgrade.md) 与 [阶段总结](docs/knowledge/agent-upgrade-summary.md)。[完整历史归档](docs/archive/agent-upgrade-2026-11-01/README.md) 保留原始工作包、交接和决策。
+
+这些资料已纳入版本控制。下方产品介绍仍含升级前的模式入口与试用信息，当前行为以业务知识和源码为准。
+
 ## 项目基本信息
 - **项目名称**：问知轩/WisClick-会问，才会学；会答，更会想。
 - **项目简介**：一个高度定制的问答交互框架，采用苏格拉底追问式对答，让与AI的对话更有记忆点。

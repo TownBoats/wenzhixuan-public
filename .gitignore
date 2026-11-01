@@ -31,10 +31,13 @@ yarn.lock
 
 /external-content
 
-# docs
-docs
-.agent
-.codebuddy
+# local agent tool state (share rules, keep session/team data local)
+.codebuddy/*
+!.codebuddy/rules/
+!.codebuddy/rules/**
+.agent/*
+!.agent/rules/
+!.agent/rules/**
 
 # generated probe outputs
 scripts/*.output.json

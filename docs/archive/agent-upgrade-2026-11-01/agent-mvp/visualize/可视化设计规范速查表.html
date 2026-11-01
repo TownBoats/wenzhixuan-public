@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>可视化设计规范速查表</title>
+<style>
+  :root {
+    --bg: #FBFAF7;
+    --card: #FFFFFF;
+    --line: #E5E3DC;
+    --ink: #1F1E1C;
+    --ink2: #5C5A54;
+    --ink3: #8A877E;
+    --accent: #185FA5;
+    --mono: "SF Mono", "Cascadia Code", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 56px 24px 96px;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 14px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; }
+
+  header { margin-bottom: 48px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 26px; font-weight: 600; margin: 0 0 10px; letter-spacing: -0.3px; }
+  header p { margin: 0; color: var(--ink2); font-size: 14px; }
+  header .meta { margin-top: 16px; font-size: 12px; color: var(--ink3); }
+
+  section { margin-bottom: 52px; }
+  h2 {
+    font-size: 17px; font-weight: 600; margin: 0 0 6px;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  h2 .num {
+    font-family: var(--mono); font-size: 12px; font-weight: 500;
+    color: var(--accent); letter-spacing: 0.5px;
+  }
+  .lede { color: var(--ink2); margin: 0 0 20px; font-size: 13px; }
+  h3 { font-size: 14px; font-weight: 600; margin: 26px 0 10px; color: var(--ink); }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px 22px;
+  }
+
+  ul, ol { margin: 0; padding-left: 20px; }
+  li { margin-bottom: 7px; }
+  li:last-child { margin-bottom: 0; }
+  li b, p b { font-weight: 600; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: #F3F1EA;
+    padding: 1.5px 5px;
+    border-radius: 4px;
+    color: #3A3833;
+  }
+  pre {
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.65;
+    background: #F7F5EF;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 10px 0 0;
+    color: #3A3833;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+  th {
+    text-align: left; font-weight: 600; font-size: 12px; color: var(--ink2);
+    padding: 8px 12px; border-bottom: 1px solid var(--line);
+    background: #FAF9F5;
+  }
+  td { padding: 9px 12px; border-bottom: 1px solid #F0EEE7; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td code { font-size: 12px; }
+
+  .palette { margin-top: 8px; }
+  .prow {
+    display: grid;
+    grid-template-columns: 88px repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 4px;
+    align-items: center;
+  }
+  .pname { font-family: var(--mono); font-size: 11.5px; color: var(--ink2); }
+  .sw {
+    height: 46px; border-radius: 6px;
+    border: 1px solid rgba(0,0,0,0.06);
+    position: relative;
+    cursor: default;
+  }
+  .sw span {
+    position: absolute; bottom: 3px; left: 0; right: 0;
+    text-align: center; font-family: var(--mono); font-size: 9.5px;
+    opacity: 0.72; letter-spacing: -0.2px;
+  }
+  .phead {
+    display: grid;
+    grid-template-columns: 88px repeat(7, 1fr);
+    gap: 4px; margin-bottom: 6px;
+  }
+  .phead div {
+    font-family: var(--mono); font-size: 10px; color: var(--ink3);
+    text-align: center;
+  }
+  .phead div:first-child { text-align: left; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 720px) {
+    .grid2, .grid3 { grid-template-columns: 1fr; }
+    .prow, .phead { grid-template-columns: 64px repeat(7, 1fr); }
+    .sw span { display: none; }
+  }
+
+  .pill {
+    display: inline-block; font-size: 11px; padding: 2px 9px;
+    border-radius: 20px; background: #EEF4FB; color: #185FA5;
+    border: 1px solid #D6E5F4; font-family: var(--mono);
+  }
+  .pill.warn { background: #FDF0EE; color: #A33A1E; border-color: #F5D7CF; }
+
+  .rule-list { counter-reset: r; list-style: none; padding: 0; }
+  .rule-list li {
+    counter-increment: r;
+    position: relative; padding-left: 32px; margin-bottom: 12px;
+  }
+  .rule-list li::before {
+    content: counter(r);
+    position: absolute; left: 0; top: 3px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #F3F1EA; color: var(--ink2);
+    font-family: var(--mono); font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .kv { display: grid; grid-template-columns: 150px 1fr; gap: 0; }
+  .kv > div { padding: 8px 0; border-bottom: 1px solid #F0EEE7; font-size: 13px; }
+  .kv > div:nth-child(odd) { color: var(--ink2); font-family: var(--mono); font-size: 12px; }
+  .kv > div:nth-last-child(-n+2) { border-bottom: none; }
+
+  .note {
+    background: #FBF7EC; border-left: 3px solid #EF9F27;
+    padding: 12px 16px; border-radius: 0 8px 8px 0;
+    font-size: 13px; color: #5A4A22; margin-top: 14px;
+  }
+  footer {
+    margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line);
+    font-size: 12px; color: var(--ink3);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>可视化设计规范速查表</h1>
+  <p>内联图表与示意图的完整设计系统：配色、排版、坐标、类型路由。</p>
+  <div class="meta">适用范围：SVG 示意图 / HTML 交互组件 / 数据图表　·　整理于 2026-10-19</div>
+</header>
+
+<section>
+  <h2><span class="num">01</span>核心原则</h2>
+  <p class="lede">这五条决定了所有细节规则的方向。</p>
+  <div class="card">
+    <ol class="rule-list">
+      <li><b>无缝</b>：用户不该察觉宿主界面在哪里结束、图形在哪里开始。外层容器永远透明，背景由宿主提供。</li>
+      <li><b>扁平</b>：不用渐变、网格背景、噪点纹理、装饰性效果。靠留白和层级区分，不靠特效。</li>
+      <li><b>紧凑</b>：关键内容内联展示，其余用文字说明。一张图塞满解释是最常见的失败。</li>
+      <li><b>文字归文字，视觉归视觉</b>：所有解释、引言、总结写在正文里，图形里只放标签。</li>
+      <li><b>克制</b>：字号只用两档字重（400 / 500），配色最多两个色系，一层最多四个盒子。</li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">02</span>流式渲染约束</h2>
+  <p class="lede">代码是逐字流出的，结构要让"有用的内容"尽早出现。</p>
+  <div class="card">
+    <div class="grid2">
+      <div>
+        <h3 style="margin-top:0">输出顺序</h3>
+        <ul>
+          <li><b>HTML</b>：短 <code>&lt;style&gt;</code> → 内容 → <code>&lt;script&gt;</code> 放最后</li>
+          <li><b>SVG</b>：<code>&lt;defs&gt;</code>（marker）→ 视觉元素立即出现</li>
+          <li><code>&lt;style&gt;</code> 控制在 15 行以内</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="margin-top:0">为什么</h3>
+        <ul>
+          <li>渐变、阴影、模糊在流式 diff 时会闪烁</li>
+          <li>优先内联 <code>style="..."</code> 而非样式块，保证中途状态就是对的</li>
+          <li>输入框、开关等控件必须在中途就长得正确</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">03</span>硬性禁止项</h2>
+  <p class="lede">这几条是红线，破一条整张图的质感就塌了。</p>
+  <div class="card">
+    <div class="grid2">
+      <div>
+        <ul>
+          <li><span class="pill warn">禁止</span> 注释（<code>&lt;!-- --&gt;</code> / <code>/* */</code>）——浪费 token 且打断流式</li>
+          <li><span class="pill warn">禁止</span> 小于 11px 的字号</li>
+          <li><span class="pill warn">禁止</span> emoji——用 CSS 形状或 SVG path 替代</li>
+          <li><span class="pill warn">禁止</span> 渐变、投影、模糊、发光、霓虹</li>
+        </ul>
+      </div>
+      <div>
+        <ul>
+          <li><span class="pill warn">禁止</span> 外层容器深色或彩色背景（必须透明）</li>
+          <li><span class="pill warn">禁止</span> <code>position: fixed</code></li>
+          <li><span class="pill warn">禁止</span> 600 / 700 字重，只用 400 / 500</li>
+          <li><span class="pill warn">禁止</span> 标题式大写（Title Case / ALL CAPS）</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note">
+      <b>字体规格：</b>h1 = 15px，h2 = 14px，h3 = 13px，全部 <code>font-weight: 500</code>；正文 13px / 400 / 行高 1.6。
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">04</span>CSS 变量</h2>
+  <p class="lede">颜色和圆角一律走变量，不写死值——这样浅色 / 深色主题能自动适配。</p>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th style="width:130px">类别</th><th>变量</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>背景</td>
+          <td><code>--color-background-primary</code>（白）<br><code>-secondary</code>（面）<code>-tertiary</code>（页底）<br><code>-info</code> <code>-danger</code> <code>-success</code> <code>-warning</code></td>
+        </tr>
+        <tr>
+          <td>文字</td>
+          <td><code>--color-text-primary</code>（黑）<code>-secondary</code>（弱）<code>-tertiary</code>（提示）<br>语义色同上：<code>-info</code> <code>-danger</code> <code>-success</code> <code>-warning</code></td>
+        </tr>
+        <tr>
+          <td>边框</td>
+          <td><code>--color-border-tertiary</code>（0.15α，默认）<code>-secondary</code>（0.3α，悬停）<code>-primary</code>（0.4α）</td>
+        </tr>
+        <tr>
+          <td>字体</td>
+          <td><code>--font-sans</code> <code>--font-serif</code> <code>--font-mono</code></td>
+        </tr>
+        <tr>
+          <td>圆角</td>
+          <td><code>--border-radius-md</code>（8px）<code>--border-radius-lg</code>（12px，组件首选）<code>--border-radius-xl</code>（16px）</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">05</span>配色板</h2>
+  <p class="lede">9 个色系 × 7 个层级。层级的含义：50 = 最浅填充，400 = 中间调，600 = 描边 / 强调，800–900 = 浅底上的文字色。</p>
+  <div class="card">
+    <div class="phead">
+      <div>ramp</div><div>50</div><div>100</div><div>200</div><div>400</div><div>600</div><div>800</div><div>900</div>
+    </div>
+    <div class="palette" id="palette"></div>
+    <div class="grid2" style="margin-top:24px">
+      <div>
+        <h3 style="margin-top:0">浅色主题速选</h3>
+        <p style="margin:0;font-size:13px;color:var(--ink2)">
+          填充 <code>50</code>　+　描边 <code>600</code>　+　标题字 <code>800</code>　+　副标题 <code>600</code>
+        </p>
+      </div>
+      <div>
+        <h3 style="margin-top:0">深色主题速选</h3>
+        <p style="margin:0;font-size:13px;color:var(--ink2)">
+          填充 <code>800</code>　+　描边 <code>200</code>　+　标题字 <code>100</code>　+　副标题 <code>200</code>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">06</span>SVG 搭建规则</h2>
+  <p class="lede">画布的坐标系是固定的，所有尺寸都从它推算。</p>
+  <div class="card">
+    <div class="kv">
+      <div>viewBox</div><div>固定 <code>"0 0 680 H"</code>，<b>680 不可更改</b>——它是所有坐标计算的基准</div>
+      <div>width</div><div>根节点写 <code>width="100%"</code></div>
+      <div>H（高度）</div><div>= 最下方元素的底边 + 20px，不要猜</div>
+      <div>安全区</div><div>x = 40 → 640，y = 40 → (H − 40)，背景透明</div>
+      <div>单次输出</div><div>一次调用只产出一张 SVG</div>
+      <div>文字方向</div><div>不允许旋转文字</div>
+      <div>描边</div><div>图形边框与连线统一 0.5px</div>
+      <div>连接线</div><div>凡是当连线用的 <code>&lt;path&gt;</code> / <code>&lt;polyline&gt;</code>，<b>必须</b>写 <code>fill="none"</code>，否则会变成巨大黑色色块</div>
+    </div>
+
+    <h3>箭头 marker（每张 SVG 的 defs 里都要有）</h3>
+    <pre><code>&lt;defs&gt;
+  &lt;marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5"
+    markerWidth="6" markerHeight="6" orient="auto-start-reverse"&gt;
+    &lt;path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/&gt;
+  &lt;/marker&gt;
+&lt;/defs&gt;</code></pre>
+
+    <h3>字号校准表</h3>
+    <table>
+      <thead><tr><th>用途</th><th>字数</th><th>字重</th><th>字号</th><th>实际渲染宽度</th></tr></thead>
+      <tbody>
+        <tr><td>标题</td><td>12</td><td>500</td><td>14px</td><td>≈ 88px</td></tr>
+        <tr><td>副标题</td><td>16</td><td>400</td><td>13px</td><td>≈ 104px</td></tr>
+        <tr><td>正文</td><td>24</td><td>400</td><td>13px</td><td>≈ 156px</td></tr>
+        <tr><td>说明文字</td><td>20</td><td>400</td><td>12px</td><td>≈ 120px</td></tr>
+      </tbody>
+    </table>
+    <div class="note">
+      <b>盒子宽度公式：</b><code>宽 = max(标题字数 × 7, 副标题字数 × 6) + 24</code>　·　中文按每字 14px 估算，中文标题不超过 7 字（105px 宽的盒子）。
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">07</span>复杂度预算</h2>
+  <p class="lede">超过这些上限，图就开始"看不懂"而不是"一目了然"。</p>
+  <div class="card">
+    <div class="grid3">
+      <div>
+        <div style="font-size:26px;font-weight:500;color:var(--accent);line-height:1.2">≤ 5</div>
+        <div style="font-size:12px;color:var(--ink2)">副标题字数</div>
+      </div>
+      <div>
+        <div style="font-size:26px;font-weight:500;color:var(--accent);line-height:1.2">≤ 2</div>
+        <div style="font-size:12px;color:var(--ink2)">配色色系数</div>
+      </div>
+      <div>
+        <div style="font-size:26px;font-weight:500;color:var(--accent);line-height:1.2">≤ 4</div>
+        <div style="font-size:12px;color:var(--ink2)">满宽横向盒子数</div>
+      </div>
+    </div>
+    <div class="note" style="margin-top:22px">
+      流程图的间距硬指标：盒子之间最少 <b>60px</b>，盒内留白 <b>24px</b>，文字距边缘 <b>12px</b>；同层同类型盒子必须等高——单行 <b>44px</b>，双行 <b>56px</b>；盒内每个 <code>&lt;text&gt;</code> 都要带 <code>dominant-baseline="central"</code>。
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">08</span>图表类型路由</h2>
+  <p class="lede">同一个问题，选错图形比画得难看更致命。</p>
+  <div class="card">
+    <table>
+      <thead><tr><th style="width:34%">用户说</th><th style="width:18%">用什么</th><th>画什么</th></tr></thead>
+      <tbody>
+        <tr><td>X 是怎么工作的</td><td><span class="pill">示意图</span></td><td>抽象成空间隐喻：大模型 = 词元行 + 层叠板 + 注意力线</td></tr>
+        <tr><td>X 的架构是什么</td><td><span class="pill">结构图</span></td><td>带标签的容器：嵌入层 / 注意力头 / 前馈网络 / 归一化</td></tr>
+        <tr><td>训练分哪几步</td><td><span class="pill">流程图</span></td><td>前向 → 损失 → 反向 → 更新</td></tr>
+        <tr><td>三次握手的过程</td><td><span class="pill">流程图</span></td><td>SYN → SYN-ACK → ACK</td></tr>
+        <tr><td>TCP 怎么保证可靠</td><td><span class="pill">示意图</span></td><td>两个端点、编号的数据包、返回的 ACK</td></tr>
+        <tr><td>循环 / 事件循环 / 代谢循环</td><td><span class="pill">HTML 分步器</span></td><td>点击切换阶段，<b>不要画成环形</b></td></tr>
+        <tr><td>数据库表结构</td><td><span class="pill">mermaid</span></td><td><code>erDiagram</code> 语法，不用 SVG</td></tr>
+        <tr><td>数据对比 / 趋势</td><td><span class="pill">图表</span></td><td>Chart.js 柱状 / 折线，由真实数据驱动</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">09</span>三类图形的画法要点</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin-top:0">流程图</h3>
+      <ul>
+        <li>单方向流动优先，最多 4–5 个节点</li>
+        <li>循环不画成圈，改用分步器</li>
+        <li>同类型节点等高</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">结构图</h3>
+      <ul>
+        <li>最外层圆角 20–24，最浅填充</li>
+        <li>内层圆角 8–12，次一级填充</li>
+        <li>每层容器内留白至少 20px，最多嵌套 3 层</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">示意 / 直觉图</h3>
+      <ul>
+        <li>物理对象画简化的剖面或切面</li>
+        <li>抽象概念发明空间隐喻（哈希 = 漏斗撒入桶）</li>
+        <li><b>颜色编码强度，不编码类别</b>：暖色 = 热 / 活跃，冷色 = 静 / 休眠</li>
+        <li>标签放在对象外部，用细引导线连接</li>
+        <li>有控件就做成可交互，不要静态</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">动效许可</h3>
+      <ul>
+        <li>整张图最多一个 <code>&lt;linearGradient&gt;</code>（仅限连续物理量）</li>
+        <li><code>@keyframes</code> 只动 <code>transform</code> 和 <code>opacity</code>，周期 2 秒内</li>
+        <li>必须包在 <code>@media (prefers-reduced-motion: no-preference)</code> 里</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">10</span>无障碍</h2>
+  <div class="card">
+    <ul>
+      <li><b>HTML 组件</b>：开头放一个视觉隐藏的 <code>&lt;h2 class="sr-only"&gt;</code>，写一句话摘要。</li>
+      <li><b>SVG</b>：根节点加 <code>role="img"</code>，并把 <code>&lt;title&gt;</code> 和 <code>&lt;desc&gt;</code> 作为第一个子元素。</li>
+      <li><b>本地图片</b>：直接用绝对路径引用（<code>&lt;img src="/abs/path.png"&gt;</code>），宿主会自动改写，不要手写 base64。</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  这份规范的底层逻辑只有一句：<b>把"好看"翻译成可以计算的约束</b>。坐标、间距、字号、色阶全部有公式，所以不需要审美判断也能稳定出图。
+</footer>
+
+</div>
+
+<script>
+(function () {
+  var ramps = [
+    { name: "c-purple", c: ["#EEEDFE", "#CECBF6", "#AFA9EC", "#7F77DD", "#534AB7", "#3C3489", "#26215C"] },
+    { name: "c-teal",   c: ["#E1F5EE", "#9FE1CB", "#5DCAA5", "#1D9E75", "#0F6E56", "#085041", "#04342C"] },
+    { name: "c-coral",  c: ["#FAECE7", "#F5C4B3", "#F0997B", "#D85A30", "#993C1D", "#712B13", "#4A1B0C"] },
+    { name: "c-pink",   c: ["#FBEAF0", "#F4C0D1", "#ED93B1", "#D4537E", "#993556", "#72243E", "#4B1528"] },
+    { name: "c-gray",   c: ["#F1EFE8", "#D3D1C7", "#B4B2A9", "#888780", "#5F5E5A", "#444441", "#2C2C2A"] },
+    { name: "c-blue",   c: ["#E6F1FB", "#B5D4F4", "#85B7EB", "#378ADD", "#185FA5", "#0C447C", "#042C53"] },
+    { name: "c-green",  c: ["#EAF3DE", "#C0DD97", "#97C459", "#639922", "#3B6D11", "#27500A", "#173404"] },
+    { name: "c-amber",  c: ["#FAEEDA", "#FAC775", "#EF9F27", "#BA7517", "#854F0B", "#633806", "#412402"] },
+    { name: "c-red",    c: ["#FCEBEB", "#F7C1C1", "#F09595", "#E24B4A", "#A32D2D", "#791F1F", "#501313"] }
+  ];
+
+  var box = document.getElementById("palette");
+  ramps.forEach(function (r) {
+    var row = document.createElement("div");
+    row.className = "prow";
+
+    var label = document.createElement("div");
+    label.className = "pname";
+    label.textContent = r.name;
+    row.appendChild(label);
+
+    r.c.forEach(function (hex, i) {
+      var sw = document.createElement("div");
+      sw.className = "sw";
+      sw.style.background = hex;
+      sw.title = r.name + " / " + [50, 100, 200, 400, 600, 800, 900][i] + " · " + hex;
+
+      var t = document.createElement("span");
+      t.textContent = hex.replace("#", "");
+      t.style.color = i >= 4 ? "rgba(255,255,255,0.85)" : "rgba(0,0,0,0.45)";
+      sw.appendChild(t);
+
+      row.appendChild(sw);
+    });
+
+    box.appendChild(row);
+  });
+})();
+</script>
+</body>
+</html>

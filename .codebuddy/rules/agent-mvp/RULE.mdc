@@ -1,0 +1,16 @@
+---
+description: 问知轩长期项目协作规则入口；Agent 升级 A–G 已关闭，现行共享规则在根 AGENTS.md。
+alwaysApply: true
+enabled: true
+updatedAt: 2026-11-01T00:00:00.000Z
+---
+
+# 问知轩项目规则入口
+
+开始实质性任务时读取根 `AGENTS.md` 与 `docs/HANDOFF.md`，按影响范围读取 `docs/knowledge/agent-upgrade.md`。
+
+运行层独立于 React 和存储；会话状态统一归并；工具在运行层执行；模型上下文仅接收状态合格且调用配对的历史；维持 runId、幂等、数据兼容和生成内容沙箱边界。验证、用户验收与发布分别记录，不能用历史输出冒充当前结果。
+
+A–G 的串行流程、旧文件白名单和长交接协议已退役；原规则完整保存在 `docs/archive/agent-upgrade-2026-11-01/rules/codebuddy-agent-mvp.txt`。历史归档不作为当前执行指令。不要删除 `.codebuddy` 目录。
+
+用户当前授权决定本轮范围；不为已授权的可逆工作反复询问。结束时更新短交接，详细历史进入归档。

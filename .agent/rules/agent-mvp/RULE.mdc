@@ -1,0 +1,14 @@
+---
+description: 问知轩跨工具兼容入口；完整长期规则统一维护在根 AGENTS.md。
+alwaysApply: true
+enabled: true
+updatedAt: 2026-11-01T00:00:00.000Z
+---
+
+# 问知轩项目规则兼容入口
+
+读取根 `AGENTS.md` 和 `docs/HANDOFF.md` 后开展任务。架构与协议知识见 `docs/knowledge/agent-upgrade.md`，协作方法见 `docs/harness/README.md`。
+
+保留运行/会话/展示分层、runId 守卫、工具结果配对、作答幂等、旧数据兼容和沙箱边界；如实区分当前验证、人工验收与发布。用户当前授权优先于历史下一步，收尾只更新短交接所需信息。
+
+A–G 开发阶段已结束，本入口不再加载原阶段串行流程和白名单。原文见 `docs/archive/agent-upgrade-2026-11-01/rules/agent-agent-mvp.txt`。此文件仅为工具兼容入口，不另维护完整规则；`.codebuddy` 是项目资料，不得删除。
