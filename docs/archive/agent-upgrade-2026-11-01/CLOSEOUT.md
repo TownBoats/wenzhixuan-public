@@ -22,7 +22,7 @@ Archive SHA-256 / bytes: 30/30 OK
 Archive bytes: 1,194,105
 Source HEAD: 347a6a44f44356102b3e7cd7d6ef393f4c784b2e
 Active documents checked: 13
-Local Markdown targets checked: 107
+Local Markdown targets checked: 101
 Local targets exist: OK
 Current HANDOFF: 60 lines
 Legacy HANDOFF pointer: 13 lines
