@@ -151,6 +151,37 @@ ExplainCard 就绪态使用空 sandbox 和限制性 CSP，不给模型脚本执�
 
 旧 ChatPage 及专用 hooks/lib/解析器/旧 UI 是静态删除候选；删除前仍需依赖与运行验证。`/design`、ui-review 是有效开发入口，闲置 LandingPage 用途另行判断。历史兼容和旧配置键的退役需要单独产品决定。
 
+## 学习链路（2026-11-01 实现，ADR-001）
+
+学习记录是第四种数据投影：由会话派生、独立存储、**不进入教学上下文**。链路图内嵌在消息流末尾，有对话时以一行淡色文字按钮出现，默认收起，展开后为目标一句话加横向节点图；窄屏横向滚动。
+
+组成：
+
+| 层 | 文件 | 职责 |
+| --- | --- | --- |
+| 纯函数 | `utils/learningJournal.js` | 单元推导、证据池、提取输入、产出校验、折叠、指纹与调度判断 |
+| 存储 | `utils/learningJournalStore.js` | 独立键 `learning_journals_v1`，失败回 `{ ok, reason }`，整键损坏拒写 |
+| 提取器 | `agent/services/extractLearning.js` | 单次非流式 `generateText` + 强制 `submit_learning_update`，30 秒，`maxRetries: 0` |
+| 提示词 | `agent/skills/learning-extractor.md` | 经 `modePrompts.js` 的 `?raw` 导出，服务只接字符串 |
+| 调度 | `pages/AgentChatPage/useLearningJournal.js` | 对账式串行提取、会话切换中止、迟到结果丢弃 |
+| 展陈 | `pages/AgentChatPage/LearningChain.jsx` | 折叠入口与节点图；状态分为 empty / extracting / unavailable / failed / ready |
+
+关键口径：
+
+- 节点由 `topic`（概念主题，2–10 字名词短语，界面上的标题）、`type`（六类状态，降为小标签）、`points`（1–2 条短 bullet）、`evidence` 组成。标题写概念不写状态，折叠只合并「同主题同状态」。
+- 单元 `U(T)` 需 T 合格（completed / awaiting_user）且 T+1 已创建；尾单元仅在用户展开时按需提取。
+- 证据池只收**手答**与 `source === 'input'` 的自由输入。点选候选的文本是副模型生成的，与手答同存在 `question.answer`，靠 `selectedLevel` 区分；答案汇总轮含题干与模板，整段不做证据。
+- 结果有效性存 `inputHash` / `prevDigest` / `extractorVersion` 三个指纹，覆盖「尾轮部分作答」与「前序重算」两种失效；当前提取器版本为 `v2`（节点带主题）。
+- 失败**遇错即停**并在下一轮对话重试；同一批 turns 下不自动重复请求，避免失败循环。
+- 未配置副模型时不发任何请求，链路显示为不可用；首份记录由用户展开链路时显式触发，避免打开旧会话就批量消耗。
+- 保存失败显式暴露，不假装已存。删除会话时联动删除学习记录，其失败不升级为会话删除失败。
+
+未做：回流教学、跨会话档案、历史压缩，均需新 ADR。真实模型提取质量仍未验证，mock 只证明通道与校验。
+
+### 本机依赖布局
+
+Windows 在本机禁止跨 junction 访问 `.pnpm`（`untrusted mount point`），pnpm 默认链接布局会让所有依赖“存在但读不到”，并伪装成缺包错误。项目 `.npmrc` 因此设 `node-linker=hoisted`：依赖平铺复制，不使用 junction。它只改变 `node_modules` 结构，不改 `pnpm-lock.yaml` 与依赖版本；换机器或文件系统允许链接时可再评估。诊断判据是：`node_modules/<pkg>` 存在但读取内部文件报路径不存在，或 `dir` 显示空目录。
+
 ## 12. 证据、已知问题和修改入口
 
 本轮只做源码核对与资料整理。A–F 历史自动项、真实模型证据、G 人工验收和当前回归缺口见 [阶段总结](agent-upgrade-summary.md)。下一动作和未关闭问题由 [短交接](../HANDOFF.md) 维护，不在本文复制会话日志。

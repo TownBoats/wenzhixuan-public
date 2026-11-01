@@ -90,6 +90,23 @@
       "optionDefault": "请选择模式"
     },
     "AgentChat": {
+      "review": {
+        "title": "学习链路",
+        "types": {
+          "stuck": "卡点",
+          "misconception": "误区",
+          "breakthrough": "转折",
+          "verified": "验证",
+          "residual": "未解",
+          "goal_change": "目标变化"
+        },
+        "state": {
+          "empty": "还没有可回顾的内容。",
+          "extracting": "正在整理这段学习…",
+          "unavailable": "配置副模型后可以生成学习链路。",
+          "failed": "这次没有整理成功，继续学习后再看看。"
+        }
+      },
       "page": {
         "title": "问知轩",
         "settings": "设置",
