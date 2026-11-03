@@ -1,6 +1,6 @@
 # 对话上下文窗口：调研与实施
 
-日期：2026-11-03。源码基准：`dev` 的 `11c0c63` + 本轮工作区；Windows / Node v22.22.1 / pnpm 10.9.0。
+日期：2026-11-03。产品源码基准：`0f97f43`（由 `dev` 的 `11c0c63` + 已测工作区提交）；Windows / Node v22.22.1 / pnpm 10.9.0。
 
 ## 调研结论
 
@@ -32,4 +32,4 @@ v2 turn 可选增加 `contextUsage: {inputTokens, outputTokens}` 与 `usageModel
 - `pnpm exec vite build` 最终成功 14.93s。Browserslist 数据陈旧与大 chunk 提示保留，不升级依赖。
 - Chrome 本地 Vite 5175：桌面、390×844，详情展开、Escape、草稿增减、手动容量 32768 与恢复自动识别通过；390px 时文档宽度 390、面板左右边界 16/368，无横向溢出。测试草稿已清空、容量已恢复、视口 override 已 reset，没有发送真实模型请求。
 - 截图只保存在本机 visualization 目录，未纳入公共仓库；没有记录浏览器配置和会话原文。
-- 未执行用户人工验收、真实端点 usage 验证、发布；本轮未提交、推送或集成分支。
+- 未执行用户人工验收或真实端点 usage 验证。用户随后明确要求 push 到 main，已提交 `0f97f43`、快进本地 main 并成功普通推送；本次只推 main，没有操作部署平台或核对线上自动部署。
