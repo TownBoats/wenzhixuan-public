@@ -11,14 +11,7 @@
  */
 import normalMd from './skills/normal.md?raw';
 import socraticMd from './skills/socratic.md?raw';
-import learningExtractorMd from './skills/learning-extractor.md?raw';
 import { createModes, MODE_NORMAL, MODE_SOCRATIC } from './modes.js';
-
-/**
- * 学习链路提取提示词。仍然只有本文件使用 `?raw`：
- * 提取服务接收字符串参数，测试不经过本文件。
- */
-export const LEARNING_EXTRACTOR_PROMPT = learningExtractorMd;
 
 export const MODES = createModes({
   [MODE_NORMAL]: normalMd,

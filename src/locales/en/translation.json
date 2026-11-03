@@ -90,23 +90,6 @@
       "optionDefault": "Please select a mode"
     },
     "AgentChat": {
-      "review": {
-        "title": "Learning path",
-        "types": {
-          "stuck": "Stuck",
-          "misconception": "Misconception",
-          "breakthrough": "Shift",
-          "verified": "Verified",
-          "residual": "Open",
-          "goal_change": "Goal change"
-        },
-        "state": {
-          "empty": "Nothing to review yet.",
-          "extracting": "Putting this session together…",
-          "unavailable": "Configure the option model to build a learning path.",
-          "failed": "This one did not come together. Try again after a few more turns."
-        }
-      },
       "page": {
         "title": "Wenzhixuan",
         "settings": "Settings",

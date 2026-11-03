@@ -13,7 +13,6 @@
 | [提取依据](harness/SOURCES.md) | 原材料、决策、缺陷和新知识之间的追溯地图 |
 | [业务与架构知识](knowledge/agent-upgrade.md) | 当前教学闭环、状态、工具、存储、兼容与安全边界 |
 | [阶段总结](knowledge/agent-upgrade-summary.md) | 整个 Agent 升级的交付、代码量、决策和验证范围 |
-| [ADR-001 学习链路](decisions/ADR-001-learning-journal.md) | 学习记录的提取粒度、证据口径、存储与调度；已实现，含实施修订 |
 | [原始历史归档](archive/agent-upgrade-2026-11-01/README.md) | A–G 原始工作包、长交接、决策和规则快照，含完整性清单与勘误 |
 
 ## 使用原则

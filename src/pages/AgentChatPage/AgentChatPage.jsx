@@ -1,7 +1,7 @@
 import { useDeferredValue, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import MODES, { LEARNING_EXTRACTOR_PROMPT } from '../../agent/modePrompts';
+import MODES from '../../agent/modePrompts';
 import useChatSession from '../../hooks/useChatSession';
 import ConfigManager from '../../utils/ConfigManager';
 import zhTranslation from '../../locales/zh/translation.json';
@@ -16,9 +16,7 @@ import { BrandLogo, Button, Icon, Textarea, cn } from '@/components/ui';
 import QuestionGroup from './QuestionGroup';
 import HistoryDrawer from './HistoryDrawer';
 import ConfigPanel from './ConfigPanel';
-import LearningChain from './LearningChain';
 import useConversationHistory from './useConversationHistory';
-import useLearningJournal from './useLearningJournal';
 import { classifyTurnError } from './errorAdapter';
 import { levelSelectToSubmission, toAnswerCardModel } from './questionAdapter';
 
@@ -161,12 +159,6 @@ function AgentChatPage() {
   const session = useChatSession({ modes: MODES, config, optionConfig, optionSystemPrompt });
   // E3：载入 / 保存 / 提示。页面只读它的结果，不自己解析存储。
   const history = useConversationHistory({ session });
-  // 学习链路：旁路提取，不进入教学上下文，也不改 turn 状态
-  const learning = useLearningJournal({
-    session,
-    optionConfig,
-    systemPrompt: LEARNING_EXTRACTOR_PROMPT,
-  });
   // E5：历史抽屉的开合（纯 UI 状态，数据在打开时重读）
   const [historyOpen, setHistoryOpen] = useState(false);
   const renderedTurns = useDeferredValue(session.renderedTurns);
@@ -514,15 +506,6 @@ function AgentChatPage() {
                 </span>
                 {isRegenerating ? t('AgentChat.page.regenerating') : t('AgentChat.page.generating')}
               </div>
-            )}
-
-            {renderedTurns.length > 0 && (
-              <LearningChain
-                state={learning.state}
-                goal={learning.goal}
-                nodes={learning.nodes}
-                onRequest={learning.requestGeneration}
-              />
             )}
           </div>
         </div>

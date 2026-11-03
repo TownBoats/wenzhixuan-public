@@ -243,20 +243,13 @@ test('请求失败 → detail 只允许白名单，且不含端点/密钥/请求
 });
 
 test('超时 → detail: timeout', async () => {
-  // AbortSignal.timeout 的计时器是 unref 的：测试进程没有其他活跃句柄时会先退出，
-  // promise 永远不 settle，后续用例被连带取消。显式保活只影响测试进程。
-  const keepAlive = setInterval(() => {}, 1000);
-  try {
-    const result = await run(hangingFetch, { timeoutMs: 60 });
+  const result = await run(hangingFetch, { timeoutMs: 60 });
 
-    assert.deepEqual(result, {
-      status: 'unavailable',
-      errorCode: OPTION_ERROR_FAILED,
-      detail: 'timeout',
-    });
-  } finally {
-    clearInterval(keepAlive);
-  }
+  assert.deepEqual(result, {
+    status: 'unavailable',
+    errorCode: OPTION_ERROR_FAILED,
+    detail: 'timeout',
+  });
 });
 
 test('外部取消 → detail: cancelled', async () => {

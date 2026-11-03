@@ -16,7 +16,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { createHistoryStore } from '../../utils/historyStore.js';
-import { createLearningJournalStore } from '../../utils/learningJournalStore.js';
 import { projectV1Record } from '../../utils/historyV1.js';
 
 /** 保存失败原因 → 文案键。全是 E3 新增的键，不改 `AgentChat` 里已有的键。 */
@@ -78,11 +77,6 @@ export function buildSaveSignature(conversationId, turns) {
  */
 export default function useConversationHistory({ session, storage } = {}) {
   const store = useMemo(() => createHistoryStore(storage ?? resolveStorage()), [storage]);
-  // 学习记录是派生数据，跟随会话删除；它自己有独立的键与失败语义
-  const journalStore = useMemo(
-    () => createLearningJournalStore(storage ?? resolveStorage()),
-    [storage],
-  );
 
   // 载入只发生在挂载时，用镜像读最新 session，避免把它写进 effect 依赖
   const sessionRef = useRef(session);
@@ -211,15 +205,11 @@ export default function useConversationHistory({ session, storage } = {}) {
       return false;
     }
 
-    // 会话已经删掉，学习记录即使删除失败也只是残留派生数据；
-    // 这里不把它的失败升级成会话删除失败，但也不假装删掉了。
-    journalStore.remove(id);
-
     if (id === sessionRef.current?.conversationId) sessionRef.current?.newConversation?.();
     setActionFailure(null);
     refreshConversations();
     return true;
-  }, [store, journalStore, refreshConversations]);
+  }, [store, refreshConversations]);
 
   /** 重命名：空标题由 store 回退到自动标题；成功后重读列表（顺序不变，只换标题）。 */
   const renameConversation = useCallback((id, title) => {
