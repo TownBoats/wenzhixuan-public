@@ -101,6 +101,25 @@ const readyOptions = async ({ question }) => ({
   options: [{ level: 'basic', text: `${question} 的浅层答案` }],
 });
 
+test('context window usage is the last request, not the sum of repeated tool-loop prompts', async () => {
+  const final = textScript('final', ['done']);
+  final.at(-1).usage = {
+    inputTokens: { total: 120, noCache: 20, cacheRead: 100, cacheWrite: 0 },
+    outputTokens: { total: 7, text: 7, reasoning: 0 },
+  };
+  const { result } = await runAgent({ scripts: [toolScript([{ input: { question: '' } }]), final] });
+  assert.equal(result.stepCount, 2);
+  assert.deepEqual(result.contextUsage, { inputTokens: 120, outputTokens: 7 });
+});
+
+test('provider without usage leaves measured context unknown, not zero', async () => {
+  const final = textScript('final', ['done']);
+  final.at(-1).usage = { inputTokens: { total: undefined }, outputTokens: { total: undefined } };
+  const { result } = await runAgent({ scripts: [final], modeId: 'normal' });
+  assert.equal(result.reason, 'completed');
+  assert.equal(result.contextUsage, null);
+});
+
 /**
  * 跑一次 B5，回放给定脚本。
  *

@@ -312,6 +312,7 @@ export async function runTeachingAgent({
     finishReason: result?.finishReason ?? null,
     stepCount: result?.stepCount ?? 0,
     awaitingUser,
+    contextUsage: result?.contextUsage ?? null,
     // 一律取 B1 的返回值：手工拼装会与 SDK 内部记录重复，产生重复的 tool 消息。
     responseMessages: result?.responseMessages ?? [],
     error: result?.error ?? null,

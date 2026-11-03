@@ -173,6 +173,8 @@ export function useChatSession({
           // 失败类别来自运行层的 `endedBy`（协议 §5 / F3）：超时与取消是两件事，
           // 只靠 error.message 区分不了（两者原文都是「运行已中断」）。
           errorKind: result?.endedBy ?? null,
+          contextUsage: result?.contextUsage ?? null,
+          usageModel: config?.model ?? null,
         });
         return result ?? null;
       } catch (error) {

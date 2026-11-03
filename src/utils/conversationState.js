@@ -20,6 +20,8 @@
  *      **禁止**「遍历对象所有值再拼成字符串」这类通用拼接。
  */
 
+import { sanitizeTokenUsage } from './tokenUsage.js';
+
 /** turn 状态（协议 §5）。`interrupted` 只在恢复历史时出现（E 阶段写入）。 */
 export const TURN_STATUS = Object.freeze({
   STREAMING: 'streaming',
@@ -138,6 +140,8 @@ function createTurn({ id, runId, modeSnapshot, userMessage, status }) {
     error: null,
     // 失败类别（协议 §5 / F3）：'timeout' | 'failed' | null。取消一律 null（取消不是错误）
     errorKind: null,
+    contextUsage: null,
+    usageModel: null,
   };
 }
 
@@ -490,6 +494,8 @@ function handleRunFinished(state, action) {
     ...turn,
     status,
     modelMessages: Array.isArray(action.responseMessages) ? action.responseMessages : [],
+    contextUsage: sanitizeTokenUsage(action.contextUsage),
+    usageModel: typeof action.usageModel === 'string' ? action.usageModel : null,
     error: action.error ? toErrorText(action.error) : turn.error,
     /**
      * 类别与错误文本同生共死：没有 error 就没有类别（取消走这条，因此 `errorKind` 必为 null）；
@@ -641,6 +647,8 @@ export function reduceSession(state, action) {
         ...turn,
         runId: action.runId,
         status: TURN_STATUS.STREAMING,
+        contextUsage: null,
+        usageModel: null,
         error: null,
         errorKind: null,
       });
@@ -682,6 +690,8 @@ export function reduceSession(state, action) {
             questions: Array.isArray(turn?.questions) ? turn.questions : [],
             error: turn?.error ?? null,
             errorKind: typeof turn?.errorKind === 'string' ? turn.errorKind : null,
+            contextUsage: sanitizeTokenUsage(turn?.contextUsage),
+            usageModel: typeof turn?.usageModel === 'string' ? turn.usageModel : null,
           };
         }),
       };

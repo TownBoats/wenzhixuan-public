@@ -20,6 +20,8 @@
  * 用返回值表达时调用方必须处理；用异常表达很容易被一个空 catch 吞成「假保存成功」。
  */
 
+import { sanitizeTokenUsage } from './tokenUsage.js';
+
 /** 新键：v2 记录数组。 */
 export const STORAGE_KEY_V2 = 'chat_histories_v2';
 /** 旧键：v1 记录数组。本模块只读（删除/重命名除外）。 */
@@ -328,6 +330,8 @@ function sanitizeTurn(turn) {
     error: typeof turn.error === 'string' ? stripGate(turn.error) : null,
     // 失败类别（协议 §5 / F3）：只接受运行层会产出的两个值，其余归 null
     errorKind: ERROR_KINDS.has(turn.errorKind) ? turn.errorKind : null,
+    contextUsage: sanitizeTokenUsage(turn.contextUsage),
+    usageModel: isNonEmptyString(turn.usageModel) ? stripGate(turn.usageModel) : null,
   };
 }
 

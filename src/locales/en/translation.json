@@ -90,6 +90,38 @@
       "optionDefault": "Please select a mode"
     },
     "AgentChat": {
+      "context": {
+        "label": "Context",
+        "details": "Context window",
+        "estimated": "Estimate",
+        "unknown": "Unknown",
+        "unset": "Limit not set",
+        "noModel": "No main model configured",
+        "accessible": "Estimated context: {{used}} tokens out of {{total}} tokens. View details",
+        "percent": "Estimated usage: {{percent}}%",
+        "estimateHint": "A rough character estimate of instructions, tool definitions, eligible conversation and draft. During generation, only visible content is estimated; thinking is excluded. Actual model tokenization differs.",
+        "lastRequest": "Latest main model request · API reported",
+        "measured": "Input {{input}} · output {{output}} tokens",
+        "nearLimit": "Estimated usage is approaching the limit. Consider a new conversation. History is not automatically compacted.",
+        "overLimit": "Estimated usage has reached the limit. Sending may exceed it. Start a new conversation or check the limit setting.",
+        "configure": "Set context limit",
+        "settingsTitle": "Main model context window",
+        "settingsLabel": "Total capacity (tokens)",
+        "settingsPlaceholder": "Auto-detect, or enter e.g. 131072",
+        "settingsHint": "Use your provider's total input and output capacity, not the maximum output length. Leave blank to detect verified official models; other endpoints show unknown. Changing model or endpoint clears your override.",
+        "capacity": {
+          "configured": "Capacity comes from your main model settings.",
+          "catalog": "Capacity from official DeepSeek model metadata, checked Nov 3, 2026. You can override it in settings.",
+          "unknown": "Capacity is unknown for this endpoint and model. Set it using your provider's documentation."
+        },
+        "parts": {
+          "system": "System instructions",
+          "tools": "Tool definitions",
+          "conversation": "Conversation and current input",
+          "generating": "Current generation",
+          "draft": "Unsent draft"
+        }
+      },
       "page": {
         "title": "Wenzhixuan",
         "settings": "Settings",

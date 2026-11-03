@@ -1,5 +1,6 @@
 // 预设已移除，保留纯自定义配置
 import { SYSTEM_PROMPTS } from "../services/prompts";
+import { normalizeContextWindow } from './contextWindow.js';
 
 // 配置管理器
 class ConfigManager {
@@ -33,6 +34,7 @@ class ConfigManager {
           fullURL: parsed.fullURL || '',
           enableThinking: parsed.enableThinking || false,
           thinkingBudget: parsed.thinkingBudget ?? 8000,
+          contextWindow: normalizeContextWindow(parsed.contextWindow),
         };
       }
     } catch (error) {
@@ -109,7 +111,7 @@ class ConfigManager {
   static getMainPrompt() {
     try {
       return localStorage.getItem('mainAgentPrompt') || SYSTEM_PROMPTS.LEARNING_MODE;
-    } catch (error) {
+    } catch {
       return SYSTEM_PROMPTS.TEST_MODE;
     }
   }
@@ -131,7 +133,7 @@ class ConfigManager {
       
       // 最后使用默认提示词
       return SYSTEM_PROMPTS.OPTION_AI_MODE;
-    } catch (error) {
+    } catch {
       return SYSTEM_PROMPTS.OPTION_AI_MODE;
     }
   }

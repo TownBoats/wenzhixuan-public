@@ -90,6 +90,38 @@
       "optionDefault": "请选择模式"
     },
     "AgentChat": {
+      "context": {
+        "label": "上下文",
+        "details": "上下文窗口",
+        "estimated": "估算",
+        "unknown": "未知",
+        "unset": "总量未设置",
+        "noModel": "未配置主模型",
+        "accessible": "上下文估算占用 {{used}} tokens，总容量 {{total}} tokens，查看详情",
+        "percent": "估算已用 {{percent}}%",
+        "estimateHint": "按中英文字符粗略估算，包含系统指令、工具定义、可发送的对话和草稿；生成中只估算可见内容，不含思考。与模型实际分词会有差异。",
+        "lastRequest": "最近一次主模型请求 · 接口实测",
+        "measured": "输入 {{input}} · 输出 {{output}} tokens",
+        "nearLimit": "估算接近窗口上限，可考虑新建对话。目前不会自动压缩历史。",
+        "overLimit": "估算已达到窗口上限，继续发送可能超限。可新建对话或检查容量设置。",
+        "configure": "设置总容量",
+        "settingsTitle": "主模型上下文窗口",
+        "settingsLabel": "总容量（tokens）",
+        "settingsPlaceholder": "留空自动识别，或输入如 131072",
+        "settingsHint": "填写提供商允许的输入与输出总容量，不是单次输出上限。留空时仅识别已核实的官方模型，其他端点显示未知；切换模型或端点会清除手动值。",
+        "capacity": {
+          "configured": "总容量来自你的主模型设置。",
+          "catalog": "总容量来自 DeepSeek 官方模型资料（2026-11-03 核对），可在设置中覆盖。",
+          "unknown": "尚未识别这个端点与模型的总窗口，请按提供商资料设置。"
+        },
+        "parts": {
+          "system": "系统指令",
+          "tools": "工具定义",
+          "conversation": "对话历史与当前输入",
+          "generating": "本轮正在生成",
+          "draft": "待发送草稿"
+        }
+      },
       "page": {
         "title": "问知轩",
         "settings": "设置",

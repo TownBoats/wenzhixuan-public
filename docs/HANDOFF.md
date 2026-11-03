@@ -1,18 +1,20 @@
 # 当前交接
 
 更新时间：2026-11-03。当前分支 `dev`。
-源码基准：整条撤销 `eab0f12`，产品源码恢复到父提交 `0711273`。
-本页和现行知识另补撤销状态与验证记录，最终提交哈希以 Git 日志为准。
+源码基准：`11c0c63`（学习链路 revert）+ 本轮上下文窗口实现工作区。
+当前改动尚未提交；分支和精确哈希以 Git 日志为准。
 
 ## 1. 当前状态
 
-- 用户本轮目标：撤销“学习链路”相关 commit，并检查当前分支。
-- 全部分支提交标题中仅找到 `eab0f12 feat(agent): 学习链路旁路提取与内嵌链路图`。
-- 开始时 `dev` 与本地 `origin/dev` 跟踪引用均为 `eab0f12`。
+- 用户本轮目标：先调研主流编码 Agent 与可用组件，再为对话显示上下文占用及总容量。
+- 已完成 Cursor / Claude Code / Cline 与 AI Elements / shadcn 调研，详见报告。
+- 实现输入框下常驻圆环、估算占用/总量、百分比，点击分类、来源、最近请求实测与容量设置。
+- 估算含系统指令、真实工具 schema、合格历史、生成中可见内容与草稿；不冒充精确分词。
+- 运行层取最后一步 SDK usage，新增可选的数字统计与模型名字段；旧数据无需批量迁移。
+- 默认仅识别核实过的官方 DeepSeek 模型，其他端点手动设置；未知不计算比例。
+- 开始时 `dev` 为 `11c0c63`，领先本地 `origin/dev`（`eab0f12`）1 个提交。
 - 本地 `main` 与 `origin/main` 跟踪引用均为父提交 `0711273`。
-- 新增 revert 提交保留历史，不 reset、不强推、不切换分支。
-- 学习链路 UI、调度、提取器、提示词、存储、专用测试和翻译整体撤销。
-- 该提交捆绑的 `.npmrc` 与候选服务超时测试保活修复也随之撤销。
+- 上一轮已用 `11c0c63` 整条撤销学习链路；其捆绑 `.npmrc` 和超时测试保活修复也已撤销。
 - 没有更改依赖版本或锁文件，没有重装现有 `node_modules`。
 - 浏览器会话与模型配置不迁移、不清空；残留学习记录键不再读写，也未清除。
 - A–F 与 G 阶段历史验收保持历史事实，不代表本次撤销已经人工验收。
@@ -20,8 +22,8 @@
 
 ## 2. 分支、工作区和下一步
 
-本轮仅生成本地撤销提交，未推送，也未集成到 `main`。
-`origin/*` 是本地跟踪引用；本轮 `git ls-remote origin refs/heads/dev refs/heads/main` 失败，远端实时状态未确认。
+当前功能留在工作区，未提交、推送或集成到 `main`。
+`origin/*` 是本地跟踪引用；上一轮 `git ls-remote origin refs/heads/dev refs/heads/main` 失败，本轮未重查远端。
 原始错误：`Failed to connect to github.com port 443`。
 
 工作区原有未跟踪文件保留，并排除在提交之外：
@@ -30,36 +32,38 @@
 - `dist-verify/`
 
 此前交接记载计划任务 `wzx-vite-preview` 使用该脚本和 5174 端口；本轮未核验或操作任务。
-旧 `dist-verify/` 不代表本轮源码的构建制品；继续使用旧预览前应核对其源码或制品。
-后续推送、分支集成、发布由用户另行授权，不因完成撤销自动执行。
+旧 `dist-verify/` 不代表本轮源码的构建制品；本轮另用本地 Vite 5175 走查，无真实模型请求。
+下一步：用户验收当前显示与估算口径；如需核实接口实测，使用目标提供商进行真实会话。
+后续提交、推送、分支集成、发布由用户另行授权，不因完成功能自动执行。
 独立依赖布局配置或超时测试保活修复如需重新引入，应作为单独的小修复处理。
 
 ## 3. 本轮验证
 
 日期：2026-11-03；环境：Windows / Node v22.22.1 / pnpm 10.9.0，现有本地依赖。
-基准：`eab0f12` 的整条逆向补丁（产品源码与 `0711273` 相同），附本轮文档更新。
-未使用真实模型，没有验证模型端点、浏览器交互或移动端。
+基准：`11c0c63` + 本轮工作区；详细来源与动作见 [调研及实施报告](research_context_window/report.md)。
+未使用真实模型；浏览器检查限本地 Chrome 桌面和 390×844 窄屏，不代表手机设备验收。
 
 | 命令 / 动作 | 结果与限制 |
 | --- | --- |
-| `node --test "src/agent/__tests__/*.test.js" "src/utils/__tests__/*.test.js"` | 189 项：182 通过，0 断言失败，7 取消；退出码 1，不能称完整通过 |
-| `node --test --test-reporter=spec src/agent/__tests__/generateAnswerOptions.test.js` | 单文件复核：8 通过、7 取消；超时用例先触发事件循环退出，后续用例连带取消 |
+| `node --test "src/agent/__tests__/*.test.js" "src/utils/__tests__/*.test.js"` | 加 spec reporter 执行：195 项，188 通过，0 断言失败，7 取消；退出码 1，不能称完整通过 |
+| 新增上下文行为用例 | 6/6 通过，覆盖多步不累加、usage 缺失、估算边界、容量来源、重试/迟到/存储兼容 |
 | `node scripts/session-loop.mjs` | 17/17 通过；受控运行层，不代表真实模型 |
-| 4 个改动且仍存在的 JS/JSX 文件 ESLint | 无报错；范围见下方命令 |
-| `pnpm exec vite build` | 成功，44.66s；提示 Browserslist 数据陈旧与大于 500 kB 的 chunk，未升级依赖 |
-| `git diff --cached --check` / `git diff --check` | 逆向补丁与文档更新检查通过 |
-| 搜索学习链路源码引用 | `src` 中无残留匹配；现行知识保留撤销与数据边界说明 |
+| 14 个改动/新增 JS/JSX 文件 ESLint | 通过；ConfigManager 现存两个无用 catch 变量同步去除，未改变行为 |
+| `pnpm exec vite build` | 最终成功 14.93s；Browserslist 陈旧和大 chunk 提示保留，未升级依赖 |
+| 浏览器交互 | 桌面/390px 详情、Escape、草稿增减、容量 32768 与恢复自动识别通过；测试草稿已清空，视口恢复 |
+| `git diff --check` | 收尾通过；未暂存原有未跟踪文件 |
 
-Lint 命令：`pnpm exec eslint src/agent/__tests__/generateAnswerOptions.test.js src/agent/modePrompts.js src/pages/AgentChatPage/AgentChatPage.jsx src/pages/AgentChatPage/useConversationHistory.js`。
+Lint 命令：`pnpm exec eslint <本轮14个JS/JSX文件>`，范围与实现清单见报告及 Git 差异。
 取消错误原文：`Promise resolution is still pending but the event loop has already resolved`。
 原因与被撤销提交内的测试修复吻合：`AbortSignal.timeout` 不保活，挂起 mock 没有其他活跃句柄。
-为保持整条提交撤销，本轮未重新引入该修复，也没有将取消计作通过。
+本轮未重新引入已撤销的无关测试修复，也没有将取消计作通过。
 
 ## 4. 未关闭事项
 
 | ID | 事实与影响 | 下一动作 / 解除条件 |
 | --- | --- | --- |
 | V-01 超时测试 | 整条撤销恢复旧测试保活问题，7 项取消；依赖加载未受阻 | 如需完整绿灯，独立恢复测试保活修复后重跑 |
+| V-04 上下文精度 | 当前值是字符粗估；最后请求实测已接 SDK mock，真实端点未验 | 估算与实测保持分列；目标端点真实会话验收 |
 | V-02 工具质量 | 三工具、结构化副模型与流式预览的历史记录不覆盖本次真实端点行为 | 按现行知识安排范围化验证 |
 | V-03 配置闭环 | 历史 G-1 用假 key；用户已接受，未补具体端点范围 | 需要时单独验证真实配置保存与发送 |
 | P-01 文案 | migrationNotice 仍描述旧入口；AnswerCard.send 缺翻译键等 | 小修复时核对中英文及无障碍文案 |

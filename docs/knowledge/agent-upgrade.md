@@ -157,6 +157,14 @@ ExplainCard 就绪态使用空 sandbox 和限制性 CSP，不给模型脚本执�
 
 原提交捆绑的 `node-linker=hoisted` 配置与候选服务超时测试保活修复一并撤销，现有安装目录未重建。当前依赖安装可用性不能外推为重新安装后的可用性；完整自动验证的结果与测试取消限制见当前交接。
 
+### 上下文窗口显示（2026-11-03）
+
+输入框下方常驻上下文估算占用、总容量与占比，点击查看分类和最近主模型请求的实测 input/output。估算基于当前模式系统指令、实际工具 schema、`buildModelContext` 的合格历史、正在生成的可见内容与草稿；不是模型 tokenizer，不含 reasoning、旧运行片段、失败历史或临时预览，不进入模型消息或存储。
+
+运行层只取 SDK 最后一步 usage，避免多步工具循环重复累加 prompt；v2 turn 可选保存经过数字白名单清洗的 `contextUsage` 和 `usageModel`，旧记录缺省为 null，schemaVersion 与历史键不变。重试清空、迟到事件沿用原守卫；缺实测时不显示假零值。当前估算与最近请求实测是两个口径。
+
+容量优先主模型配置 `contextWindow`；只为核实过的官方 DeepSeek HTTPS 端点和准确模型名提供静态默认值，其余未知且不计算百分比。模型或端点切换清除手动容量；配置与旧版本兼容，不批量迁移、不清空数据、不自动压缩或截断。实现入口为 `utils/contextWindow.js`、`utils/tokenUsage.js`、`agent/contextSchemas.js` 与 `AgentChatPage/ContextWindowIndicator.jsx`；来源和验证见 [调研与实施](../research_context_window/report.md)。
+
 ## 12. 证据、已知问题和修改入口
 
 本轮只做源码核对与资料整理。A–F 历史自动项、真实模型证据、G 人工验收和当前回归缺口见 [阶段总结](agent-upgrade-summary.md)。下一动作和未关闭问题由 [短交接](../HANDOFF.md) 维护，不在本文复制会话日志。

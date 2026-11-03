@@ -19,6 +19,9 @@ import ConfigPanel from './ConfigPanel';
 import useConversationHistory from './useConversationHistory';
 import { classifyTurnError } from './errorAdapter';
 import { levelSelectToSubmission, toAnswerCardModel } from './questionAdapter';
+import ContextWindowIndicator from './ContextWindowIndicator';
+import { contextToolDefinitions } from '../../agent/contextSchemas.js';
+import { estimateContextTokens, latestContextUsage, resolveContextWindow } from '../../utils/contextWindow.js';
 
 /**
  * AgentChatPage — 新 Agent 运行时页面（D4：useChatSession 真实接线）
@@ -38,6 +41,7 @@ function toRunnerConfig(stored) {
     endpoint: ConfigManager.buildEndpointUrl(stored),
     apiKey: stored?.apiKey ?? '',
     model: stored?.model ?? '',
+    contextWindow: stored?.contextWindow ?? null,
   };
 }
 
@@ -148,7 +152,13 @@ function AgentChatPage() {
   // 合并而不是整体覆盖：面板不管理 `enableThinking` / `thinkingBudget` 等旧路径字段，
   // 直接覆盖会把它们重置成默认值（旧路径仍在读同一份存储）。
   const handleMainConfigChange = (next) => {
-    ConfigManager.saveMainModelConfig({ ...ConfigManager.getMainModelConfig(), ...next });
+    const current = ConfigManager.getMainModelConfig();
+    const merged = { ...current, ...next };
+    // Capacity overrides belong to an exact model/endpoint, not the next model typed in.
+    if (merged.model !== current.model || ConfigManager.buildEndpointUrl(merged) !== ConfigManager.buildEndpointUrl(current)) {
+      merged.contextWindow = null;
+    }
+    ConfigManager.saveMainModelConfig(merged);
     setConfigSnapshot(readConfigSnapshot());
   };
   const handleOptionConfigChange = (next) => {
@@ -162,6 +172,14 @@ function AgentChatPage() {
   // E5：历史抽屉的开合（纯 UI 状态，数据在打开时重读）
   const [historyOpen, setHistoryOpen] = useState(false);
   const renderedTurns = useDeferredValue(session.renderedTurns);
+  const contextTools = useMemo(() => contextToolDefinitions(MODES[session.mode]), [session.mode]);
+  const deferredInput = useDeferredValue(inputText);
+  const contextTurns = useDeferredValue(session.turns);
+  const contextEstimate = useMemo(() => estimateContextTokens({
+    turns: contextTurns, system: MODES[session.mode]?.teaching ?? '', tools: contextTools, draft: deferredInput,
+  }), [contextTurns, session.mode, contextTools, deferredInput]);
+  const contextCapacity = resolveContextWindow(config);
+  const contextUsage = latestContextUsage(session.turns, config.model);
 
   /**
    * 重试入口与「重新生成中…」（F2）都靠**派生值**，不新增可写布尔量：
@@ -560,6 +578,13 @@ function AgentChatPage() {
               </Button>
             )}
           </div>
+          <ContextWindowIndicator
+            estimate={contextEstimate}
+            capacity={contextCapacity}
+            usage={contextUsage}
+            model={config.model}
+            onConfigure={() => setConfigOpen(true)}
+          />
         </div>
       </footer>
 

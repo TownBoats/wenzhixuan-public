@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next';
 import ModelConfigPanel from '../../components/ModelConfigPanel/ModelConfigPanel';
 import SettingsSection from '../../components/SettingsPanel/SettingsSection';
 import AnswerWaitSettings from '../../components/SettingsPanel/AnswerWaitSettings';
-import { Button, Icon, BrandLogo } from '@/components/ui';
+import { Button, Icon, BrandLogo, Input } from '@/components/ui';
+import { normalizeContextWindow } from '../../utils/contextWindow.js';
 
 /**
  * ConfigPanel — 新路径的配置面板（模态）
@@ -95,6 +96,20 @@ function ConfigPanel({ open, onClose, mainConfig, optionConfig, onMainConfigChan
                 onConfigChange={onOptionConfigChange}
                 agentType="option"
               />
+
+              <SettingsSection title={t('AgentChat.context.settingsTitle')} icon={<Icon name="Gauge" size={16} className="text-sage-700" />}>
+                <label htmlFor="main-context-window" className="mb-1 block text-small font-medium text-ink-700">
+                  {t('AgentChat.context.settingsLabel')}
+                </label>
+                <Input id="main-context-window" type="number" min="1" step="1" inputMode="numeric"
+                  value={mainConfig?.contextWindow ?? ''} placeholder={t('AgentChat.context.settingsPlaceholder')}
+                  aria-describedby="main-context-window-hint"
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (value === '' || normalizeContextWindow(value)) onMainConfigChange({ contextWindow: normalizeContextWindow(value) });
+                  }} />
+                <p id="main-context-window-hint" className="mt-2 text-caption leading-relaxed text-ink-500">{t('AgentChat.context.settingsHint')}</p>
+              </SettingsSection>
 
               <AnswerWaitSettings />
 

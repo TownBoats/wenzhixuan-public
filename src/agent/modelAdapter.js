@@ -1,5 +1,6 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
+import { sanitizeTokenUsage } from '../utils/tokenUsage.js';
 
 /**
  * 运行层 · 一次模型执行（阶段 B · 任务 B1）
@@ -427,6 +428,8 @@ export async function runModelTurn({
       finishReason: steps.at(-1)?.finishReason ?? null,
       stepCount: steps.length,
       responseMessages,
+      // Last step only. totalUsage sums repeated prompts across tool steps.
+      contextUsage: sanitizeTokenUsage(steps.at(-1)?.usage),
     };
   } catch (error) {
     const endedBy = timedOut ? 'timeout' : cancelled || error?.name === 'AbortError' ? 'cancelled' : 'failed';
