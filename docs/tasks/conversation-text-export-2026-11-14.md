@@ -1,6 +1,6 @@
 # 单个对话的可读文本导出
 
-日期：2026-11-14；实施源码基准：`7e17ff2` + 本轮工作区。Windows / Node v22.22.1 / pnpm 10.9.0，现有本地依赖，无依赖或锁文件变更。沿用本会话既有推送部署授权交付用户对上一轮的澄清。
+日期：2026-11-14；源码基准：`e62f29d`（实施阶段为 `7e17ff2` + 工作区）。Windows / Node v22.22.1 / pnpm 10.9.0，现有本地依赖，无依赖或锁文件变更。沿用本会话既有推送部署授权交付用户对上一轮的澄清。
 
 ## 目标与结果
 
@@ -28,4 +28,6 @@
 
 ## 发布
 
-通过 main 与既有 Vercel Git 集成发布，提交/生产资源状态见当前交接。原有 `dev-preview.cmd`、`dist-verify/` 保留，不纳入提交。
+功能提交 `e62f29d1c2b5bf2d40b2e738074689c0a6d84fe8` 已普通推送 main；[Vercel 部署](https://vercel.com/2413250743-qqcoms-projects/wenzhixuan-public/7TWFVDndP8xXc5Mq7RcDs4DiPsDe) 的 GitHub 状态为 success。
+
+生产域名 `https://wenzhixuan.com/` 和新资源 `/assets/index-CV4LsUpQ.js` 均为 HTTP 200。bundle 已包含“导出对话文本”、“易读的 TXT 对话”和 `text/plain`，确认新功能资源已提供；未对生产用户数据执行下载或模型请求。原有 `dev-preview.cmd`、`dist-verify/` 保留，不纳入提交。

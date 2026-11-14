@@ -1,9 +1,9 @@
 # 当前交接
 
-更新时间：2026-11-14。当前分支 `main`，本轮基准 `7e17ff2` + 工作区。
-用户澄清单个导出需要核心文本聊天记录；本轮改为 TXT，沿用本会话发布授权。
+更新时间：2026-11-14。当前分支 `main`，产品源码基准 `e62f29d`。
+用户澄清单个导出需要核心文本聊天记录；本轮已改为 TXT 并上线。
 用户当前目标：按双方角色导出易读正文与作答，不需要数据结构、图示代码等。
-完整 JSON 备份保持；本轮 TXT 提交与部署状态待后续核对。
+完整 JSON 备份保持；TXT 功能已推送 main，Vercel success，最终文档提交以 Git 为准。
 
 ## 1. 当前状态
 
@@ -41,18 +41,18 @@
 - `dev-preview.cmd`
 - `dist-verify/`
 
-本轮使用独立测试端口 5193，收尾清理临时 Vite、模拟历史和测试页。
+本轮独立测试端口 5193 的临时 Vite、模拟历史和测试页均已清理。
 5175 已有业务存储和线上站点数据未修改；原有预览任务未核验或更改。
 浏览器触发过仅含模拟数据的下载，最终下载目录未由工具核实。
-下一动作：发布 TXT 改动，用户验收“历史下载 → 直接阅读 TXT”；数据恢复仍使用设置 JSON。
-此前单条 JSON 提交 `690d2ff186cefe16520709bd45dea469de1d3429` 已普通推送 main。
-Vercel deployment `CG469Qzh7qr8H5iPe2sugh2V7Kup` 的 GitHub 状态为 success。
-生产域名 `https://wenzhixuan.com/` 返回 200，新 JS `/assets/index-q4TE1NvI.js` 返回 200，
-已确认包含单对话文件名前缀、导出动作和操作提示；未在生产数据中实际执行导入。
+下一动作：用户验收“历史下载 → 直接阅读 TXT”；数据恢复仍使用设置 JSON。
+TXT 提交 `e62f29d1c2b5bf2d40b2e738074689c0a6d84fe8` 已普通推送 main。
+Vercel deployment `7TWFVDndP8xXc5Mq7RcDs4DiPsDe` 的 GitHub 状态为 success。
+生产域名 `https://wenzhixuan.com/` 返回 200，新 JS `/assets/index-CV4LsUpQ.js` 返回 200，
+已确认包含“导出对话文本”、TXT 操作提示和 text/plain；未在生产用户数据中执行下载。
 
 ## 3. 本轮验证
 
-日期：2026-11-14；源码：`7e17ff2` + 本轮可读文本工作区。
+日期：2026-11-14；源码：`e62f29d`（实施阶段为 `7e17ff2` + 本轮工作区）。
 环境：Windows / Node v22.22.1 / pnpm 10.9.0，现有本地依赖。
 无真实模型请求；浏览器证据为 Chrome 桌面及 390×844 移动模拟，不是实体手机验收。
 详细动作、源码入口及限制见 [文本导出验证](tasks/conversation-text-export-2026-11-14.md)。
@@ -67,7 +67,7 @@ Vercel deployment `CG469Qzh7qr8H5iPe2sugh2V7Kup` 的 GitHub 状态为 success。
 | 浏览器文本下载 | 5193 模拟 v2/旧 v1 均下载 TXT，角色/正文可读，无档位/候选/代码；不切换当前会话 |
 | 完整备份回归 | 设置按钮仍下载 JSON，MIME 和 format 正确；本轮不重复移动端验收 |
 | `git diff --check` | 通过，未暂存原有本机产物 |
-| main 推送 / Vercel / 生产资源 | 此前单条 JSON 已上线；本轮 TXT 待推送和生产资源核对 |
+| main 推送 / Vercel / 生产资源 | TXT 功能已推送，Vercel success；生产资源 200，含 TXT 动作/提示及 MIME |
 
 7 项取消仍来自 `generateAnswerOptions.test.js` 的超时保活问题：
 `Promise resolution is still pending but the event loop has already resolved`。
@@ -91,7 +91,7 @@ Vercel deployment `CG469Qzh7qr8H5iPe2sugh2V7Kup` 的 GitHub 状态为 success。
 | C-01/C-02 旧代码/数据 | 旧源码闲置不等于可删除共享组件和用户存储 | 按引用与兼容范围另行处理 |
 | S-01 生成内容 | sandbox/CSP/来源校验保留，非完整安全审计 | 不声称所有外部请求已禁止 |
 | G-01 本机产物 | 两项本机产物保留，不随功能提交 | 如需清理，另行核对范围 |
-| G-02 发布 | 完整 JSON 保持上线，单条阅读 TXT 待本轮发布 | 用户阅读验收；不冒充真实模型/线上数据测试 |
+| G-02 发布 | 完整 JSON 保持上线，单条阅读 TXT 已发布 | 用户阅读验收；不冒充真实模型/线上数据测试 |
 
 ## 5. 知识和历史入口
 
