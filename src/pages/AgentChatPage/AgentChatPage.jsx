@@ -22,6 +22,7 @@ import { levelSelectToSubmission, toAnswerCardModel } from './questionAdapter';
 import ContextWindowIndicator from './ContextWindowIndicator';
 import { contextToolDefinitions } from '../../agent/contextSchemas.js';
 import { estimateContextTokens, latestContextUsage, resolveContextWindow } from '../../utils/contextWindow.js';
+import { downloadBackupFile } from '../../utils/downloadBackup.js';
 
 /**
  * AgentChatPage — 新 Agent 运行时页面（D4：useChatSession 真实接线）
@@ -636,6 +637,14 @@ function AgentChatPage() {
         onOpen={handleOpenConversation}
         onRename={history.renameConversation}
         onDelete={history.removeConversation}
+        onExport={(id) => {
+          const result = history.exportConversation(id);
+          if (!result.ok) return result;
+          try {
+            downloadBackupFile(result.backup, 'wenzhixuan-conversation');
+            return { ok: true };
+          } catch { return { ok: false, reason: 'unavailable' }; }
+        }}
         onDismissError={dismissHistoryError}
       />
     </div>

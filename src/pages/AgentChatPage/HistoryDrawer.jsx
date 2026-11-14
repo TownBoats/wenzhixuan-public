@@ -11,10 +11,11 @@ import { Icon, cn } from '@/components/ui';
  * 本组件只做展示与交互，不读存储、不拼标题：标题由 store 按「首条用户消息前 20 字」
  * 生成，空串时这里显示「未命名会话」。
  *
- * 三个动作全部经页面传入的回调，组件自身不改会话状态：
+ * 动作全部经页面传入的回调，组件自身不改会话状态：
  *   - 打开：onOpen(id)
  *   - 重命名：onRename(id, title)（空标题由 store 回退到自动标题）
  *   - 删除：onDelete(id)（「确认删除」二次点击，3 秒后自动退回）
+ *   - 导出：onExport(id)，不必切换会话；生成中只禁用当前会话的导出
  *
  * `running`（F1 决策 2B）：当前这一轮还在生成时，`openConversation` 会中止运行并整体
  * 替换状态，这一轮只在「发送 / 工具完成」两处落过盘，剩下的内容会丢。因此运行期间
@@ -53,12 +54,14 @@ function HistoryDrawer({
   onOpen,
   onRename,
   onDelete,
+  onExport,
   onDismissError,
 }) {
   const { t, i18n } = useTranslation();
   const [editingId, setEditingId] = useState(null);
   const [draftTitle, setDraftTitle] = useState('');
   const [confirmingId, setConfirmingId] = useState(null);
+  const [exportNotice, setExportNotice] = useState(null);
 
   // Esc 关闭；编辑中先退出编辑，避免一次按键连丢两层状态
   useEffect(() => {
@@ -82,6 +85,7 @@ function HistoryDrawer({
       setEditingId(null);
       setDraftTitle('');
       setConfirmingId(null);
+      setExportNotice(null);
     }
   }, [open]);
 
@@ -158,6 +162,16 @@ function HistoryDrawer({
           <p className="border-b border-paper-200 bg-sun-300/15 px-4 py-2 text-small text-ink-700">
             {t('AgentChat.history.runningHint')}
           </p>
+        )}
+
+        <p className="border-b border-paper-200 px-4 py-2 text-caption leading-relaxed text-ink-500">
+          {t('AgentChat.history.exportHint')}
+        </p>
+        {exportNotice && (
+          <p role={exportNotice.error ? 'alert' : 'status'} className={cn(
+            'border-b border-paper-200 px-4 py-2 text-small leading-relaxed',
+            exportNotice.error ? 'text-state-alert' : 'text-sage-700',
+          )}>{exportNotice.text}</p>
         )}
 
         <div className="flex-1 overflow-y-auto p-2">
@@ -244,6 +258,25 @@ function HistoryDrawer({
 
                         <button
                           type="button"
+                          disabled={running && isCurrent}
+                          onClick={() => {
+                            setConfirmingId(null);
+                            const result = onExport(item.id);
+                            const reason = result.reason;
+                            setExportNotice(result.ok
+                              ? { text: t('AgentChat.history.exported', { title: item.title || t('AgentChat.history.untitled') }) }
+                              : { error: true, text: t(reason === 'not_found'
+                                ? 'AgentChat.history.exportNotFound'
+                                : `AgentChat.backup.errors.${['busy', 'quota', 'corrupt', 'invalid'].includes(reason) ? reason : 'unavailable'}`) });
+                          }}
+                          aria-label={t('AgentChat.history.exportConversation', { title: item.title || t('AgentChat.history.untitled') })}
+                          title={t(running && isCurrent ? 'AgentChat.backup.running' : 'AgentChat.history.export')}
+                          className="rounded-sm p-1 text-ink-500 transition-colors duration-fast hover:bg-paper-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <Icon name="Download" size={14} />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => startEdit(item)}
                           aria-label={t('AgentChat.history.rename')}
                           title={t('AgentChat.history.rename')}
@@ -325,6 +358,7 @@ HistoryDrawer.propTypes = {
   onOpen: PropTypes.func.isRequired,
   onRename: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
+  onExport: PropTypes.func.isRequired,
   onDismissError: PropTypes.func.isRequired,
 };
 

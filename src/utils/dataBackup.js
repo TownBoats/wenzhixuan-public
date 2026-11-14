@@ -53,6 +53,29 @@ export function createDataBackup(storage, { includeCredentials = true, now = new
   }
 }
 
+/** Only the selected conversation, using the same v2-first rule as the history drawer. */
+export function createConversationBackup(storage, id, { now = new Date() } = {}) {
+  if (typeof id !== 'string' || !id.trim()) return fail('invalid');
+  for (const key of [STORAGE_KEY_V2, STORAGE_KEY_V1]) {
+    let raw;
+    try { raw = storage.getItem(key); } catch { return fail('unavailable'); }
+    if (raw === null || raw.trim() === '') continue;
+    let records;
+    try {
+      records = JSON.parse(raw);
+      if (!Array.isArray(records)) return fail('corrupt');
+    } catch { return fail('corrupt'); }
+    const matches = records.filter((item) => object(item) && item.id === id);
+    if (!matches.length) continue;
+    try { parseCollection(JSON.stringify(matches), key); } catch { return fail('corrupt'); }
+    const record = key === STORAGE_KEY_V2 ? sanitizeConversation(matches[0]) : matches[0];
+    return { ok: true, backup: { format: BACKUP_FORMAT, version: BACKUP_VERSION,
+      exportedAt: now.toISOString(), includesCredentials: false,
+      data: { [key]: JSON.stringify([record]) } } };
+  }
+  return fail('not_found');
+}
+
 function parseCollection(raw, key) {
   const records = raw === null ? [] : JSON.parse(raw);
   if (!Array.isArray(records)) throw new Error('invalid collection');

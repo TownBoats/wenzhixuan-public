@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
-import { createDataBackup, parseDataBackup, planDataImport, importDataBackup,
+import { createDataBackup, createConversationBackup, parseDataBackup, planDataImport, importDataBackup,
   BACKUP_FORMAT, BACKUP_VERSION, MAX_BACKUP_BYTES } from '../dataBackup.js';
 import { createHistoryStore, sanitizeConversation } from '../historyStore.js';
 import { projectV1Record } from '../historyV1.js';
@@ -66,6 +66,60 @@ test('full backup round trip preserves both schemas, tool content, answers, conf
   const opened = reduceSession(createInitialState(), { type: 'OPEN_CONVERSATION', conversationId: 'c1', mode: 'socratic', turns: current.turns });
   assert.equal(opened.turns[0].questions[0].state, 'pending');
   assert.equal(destination.getItem('unrelated'), 'destination data');
+});
+
+test('single-conversation export selects v2 only, preserves its content and round trips without settings', () => {
+  const item = record('chosen');
+  item.turns[0].questions.push({ ...item.turns[0].questions[0], id: 'answered', state: 'answered', answer: '我的回答' });
+  const source = memory({ chat_histories_v2: JSON.stringify([item, record('other')]),
+    chat_histories: JSON.stringify([{ ...legacy, id: item.id }, legacy]),
+    mainAgentConfig: JSON.stringify({ apiKey: 'must-not-export' }),
+    learning_journals_v1: JSON.stringify([{ conversationId: item.id, units: [] }]) });
+  const before = [...source.map];
+  const result = createConversationBackup(source, item.id);
+  assert.equal(result.ok, true);
+  assert.equal(result.backup.includesCredentials, false);
+  assert.deepEqual(Object.keys(result.backup.data), ['chat_histories_v2']);
+  assert.deepEqual(JSON.parse(result.backup.data.chat_histories_v2), [item]);
+  assert.deepEqual([...source.map], before, 'export is read-only');
+  const destination = memory({ mainAgentConfig: '{"apiKey":"destination-key"}', waitTime: '4' });
+  const text = JSON.stringify(result.backup);
+  assert.equal(planDataImport(destination, text).summary.added, 1);
+  assert.equal(importDataBackup(destination, text).ok, true);
+  assert.deepEqual(createHistoryStore(destination).loadById(item.id).record, item);
+  assert.equal(createHistoryStore(destination).listForSidebar().items.length, 1);
+  assert.equal(destination.getItem('mainAgentConfig'), '{"apiKey":"destination-key"}');
+  assert.equal(destination.getItem('waitTime'), '4');
+});
+
+test('single legacy export keeps the original v1 payload and remains importable', () => {
+  const source = memory({ chat_histories_v2: ' ', chat_histories: JSON.stringify([legacy, { ...legacy, id: 'other' }]) });
+  const result = createConversationBackup(source, legacy.id);
+  assert.deepEqual(Object.keys(result.backup.data), ['chat_histories']);
+  assert.deepEqual(JSON.parse(result.backup.data.chat_histories), [legacy]);
+  const destination = memory();
+  assert.equal(importDataBackup(destination, JSON.stringify(result.backup)).ok, true);
+  assert.deepEqual(createHistoryStore(destination).loadById(legacy.id).record, legacy);
+  assert.equal(projectV1Record(legacy).turns.length, 1);
+});
+
+test('single export does not read model settings or require other records to be valid', () => {
+  const source = memory({ chat_histories_v2: JSON.stringify([null, record('chosen')]) });
+  const get = source.getItem;
+  source.getItem = (key) => {
+    assert.equal(['chat_histories_v2', 'chat_histories'].includes(key), true);
+    return get(key);
+  };
+  assert.equal(createConversationBackup(source, 'chosen').ok, true);
+});
+
+test('single export reports missing, damaged and inaccessible records instead of downloading stale data', () => {
+  assert.equal(createConversationBackup(memory(), 'missing').reason, 'not_found');
+  assert.equal(createConversationBackup(memory(), '').reason, 'invalid');
+  const damaged = memory({ chat_histories_v2: '{broken', chat_histories: JSON.stringify([legacy]) });
+  assert.equal(createConversationBackup(damaged, legacy.id).reason, 'corrupt');
+  assert.equal(createConversationBackup(memory({ chat_histories_v2: JSON.stringify([record(), record()]) }), 'c1').reason, 'corrupt');
+  assert.equal(createConversationBackup({ getItem() { throw new Error('denied'); } }, 'c1').reason, 'unavailable');
 });
 
 test('merge is idempotent, keeps local-only entries and newer/tied local versions', () => {
@@ -225,5 +279,26 @@ test('refresh after import reopens updated current data without issuing model re
   assert.equal(view.opened.at(-1).title, newer.title);
   assert.equal(view.history.conversations[0].title, newer.title);
   assert.equal(createHistoryStore(storage).loadById(item.id).record.title, newer.title);
+  view.close();
+});
+
+test('single export checkpoints the current conversation but allows exporting another during an active run', () => {
+  const item = record();
+  const other = record('other');
+  const storage = memory({ chat_histories_v2: JSON.stringify([item, other]) });
+  const session = { conversationId: item.id, mode: item.mode, turns: item.turns, isRunning: false };
+  const view = mountHistory(storage, session);
+  const modified = [...item.turns, { ...item.turns[0], id: 'second-turn' }];
+  view.update({ ...session, turns: modified });
+  let result;
+  act(() => { result = view.history.exportConversation(item.id); });
+  assert.equal(JSON.parse(result.backup.data.chat_histories_v2)[0].turns.length, 2);
+  view.update({ ...session, isRunning: true });
+  assert.equal(view.history.exportConversation(item.id).reason, 'busy');
+  const before = [...storage.map];
+  const openedBefore = view.opened.length;
+  assert.equal(view.history.exportConversation('other').ok, true);
+  assert.deepEqual([...storage.map], before);
+  assert.equal(view.opened.length, openedBefore, 'export must not switch the active conversation');
   view.close();
 });

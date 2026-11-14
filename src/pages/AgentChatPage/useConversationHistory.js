@@ -17,6 +17,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { createHistoryStore } from '../../utils/historyStore.js';
 import { projectV1Record } from '../../utils/historyV1.js';
+import { createConversationBackup } from '../../utils/dataBackup.js';
 
 /** 保存失败原因 → 文案键。全是 E3 新增的键，不改 `AgentChat` 里已有的键。 */
 export const SAVE_FAILURE_KEYS = Object.freeze({
@@ -173,6 +174,16 @@ export default function useConversationHistory({ session, storage } = {}) {
     return result;
   }, [ready, store]);
 
+  const exportConversation = useCallback((id) => {
+    if (!ready) return { ok: false, reason: 'busy' };
+    // Exporting another saved conversation never interrupts or checkpoints the active run.
+    if (id === sessionRef.current?.conversationId) {
+      const saved = checkpoint();
+      if (!saved.ok) return saved;
+    }
+    return createConversationBackup(storage ?? resolveStorage(), id);
+  }, [ready, checkpoint, storage]);
+
   /**
    * 重读侧栏列表（每次打开抽屉都调一次，避免看到过期快照）。
    * 故意不动 `corruptCount`：那是启动时的一次性提示，用户关掉后不该因为刷新又冒出来。
@@ -258,6 +269,7 @@ export default function useConversationHistory({ session, storage } = {}) {
   return {
     ready,
     checkpoint,
+    exportConversation,
     refreshAfterImport,
     saveFailure,
     saveFailureKey: saveFailure

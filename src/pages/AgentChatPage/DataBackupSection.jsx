@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Icon } from '@/components/ui';
 import SettingsSection from '../../components/SettingsPanel/SettingsSection';
 import { createDataBackup, planDataImport, importDataBackup, MAX_BACKUP_BYTES } from '../../utils/dataBackup.js';
+import { downloadBackupFile } from '../../utils/downloadBackup.js';
 
 function DataBackupSection({ disabled, beforeTransfer, onImported }) {
   const { t } = useTranslation();
@@ -25,16 +26,7 @@ function DataBackupSection({ disabled, beforeTransfer, onImported }) {
       if (!saved.ok) { error(saved.reason); return; }
       const result = createDataBackup(window.localStorage, { includeCredentials });
       if (!result.ok) { error(result.reason); return; }
-      const blob = new Blob([JSON.stringify(result.backup, null, 2)], { type: 'application/json;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `wenzhixuan-backup-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-      document.body.appendChild(link);
-      try { link.click(); } finally {
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      }
+      downloadBackupFile(result.backup);
       setNotice({ text: message('exported') });
     } catch { error('unavailable'); }
   };
