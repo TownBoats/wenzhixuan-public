@@ -39,12 +39,13 @@ test('fragmented text, pending questions, skipped questions and failed partial r
   assert.equal(/diagnostic|protocol-only|candidate/.test(text), false);
 });
 
-test('diagram code and hidden thinking are omitted without leaving empty assistant messages', () => {
+test('diagram source is retained while hidden thinking is omitted', () => {
   for (const source of ['<svg><text>diagram internals</text></svg>', '```svg\n<svg>diagram</svg>\n```',
-    '```mermaid\ngraph TD; A-->B\n```', '<think>private reasoning</think>', '<think>unfinished reasoning',
+    '```mermaid\ngraph TD; A-->B\n```']) assert.ok(plainText(source).includes(source.startsWith('<') ? source : source.split('\n')[1]));
+  for (const source of ['<think>private reasoning</think>', '<think>unfinished reasoning',
     '〖thinking〗private reasoning〖/thinking〗']) assert.equal(plainText(source), '');
   const text = formatConversationText({ turns: [{ userMessage: { text: '开始' }, parts: [{ type: 'text', text: '<svg>diagram</svg>' }] }] });
-  assert.equal(text.includes('问知轩：'), false);
+  assert.ok(text.includes('问知轩：\n<svg>diagram</svg>'));
 });
 
 test('legacy UI transcript keeps chosen answers and questions without model-summary duplicates or options', () => {
@@ -54,12 +55,37 @@ test('legacy UI transcript keeps chosen answers and questions without model-summ
       { role: 'assistant', content: [{ type: 'thinking', value: 'hidden thinking' },
         { type: 'response', value: '**闭包**能记住环境。' },
         { type: 'question', value: [{ question: '记住什么？', options: [{ text: 'hidden candidate' }] }] },
-        { type: 'visualize', value: '<svg>hidden diagram</svg>' }] },
+        { type: 'visualize', value: '<svg>legacy diagram source</svg>' }] },
       { role: 'user', content: [{ type: 'answer-card', value: { question: '记住什么？', answer: '环境', level: 'expert' } }] },
     ] });
   assert.equal(text.match(/记住什么？/g).length, 1);
   assert.ok(text.includes('我：\n环境'));
-  assert.equal(/hidden|expert|<svg|\*\*/.test(text), false);
+  assert.ok(text.includes('<svg>legacy diagram source</svg>'));
+  assert.equal(/hidden|expert|\*\*/.test(text), false);
+});
+
+test('ready SVG/HTML sources appear in dialogue order verbatim without tool inputs, previews or diagnostics', () => {
+  const svg = '<svg viewBox="0 0 20 20">\n  <text>**literal**</text>\n\n\n</svg>';
+  const html = '<div id="demo"></div>\n<script>const value = "```";\n  const msg = "<think>literal</think>";</script>';
+  const record = { title: '图示', turns: [{ userMessage: { text: '解释图示' }, parts: [
+    { type: 'text', text: '图示前的讲解。' },
+    { type: 'tool', toolName: 'explain_card', status: 'completed', toolCallId: 'secret-id',
+      input: { secret: 'hidden input' }, output: { status: 'ready', title: '静态图', svg } },
+    { type: 'text', text: '图示后的讲解。' },
+    { type: 'tool', toolName: 'visualize', status: 'completed', output: { status: 'ready', title: '交互图', html } },
+    { type: 'tool', toolName: 'visualize', status: 'running', partialInput: { html: 'hidden preview' } },
+    { type: 'tool', toolName: 'visualize', status: 'failed', output: { html: 'hidden failed code' } },
+    { type: 'tool', toolName: 'unknown_tool', status: 'completed', output: { html: 'hidden unknown output' } },
+  ] }] };
+  const before = JSON.stringify(record);
+  const text = formatConversationText(record);
+  assert.ok(text.includes(svg));
+  assert.ok(text.includes(html));
+  assert.ok(text.indexOf('图示前的讲解') < text.indexOf(svg));
+  assert.ok(text.indexOf(svg) < text.indexOf('图示后的讲解'));
+  assert.ok(text.indexOf('图示后的讲解') < text.indexOf(html));
+  assert.equal(/secret-id|hidden/.test(text), false);
+  assert.equal(JSON.stringify(record), before);
 });
 
 test('legacy message-only exports remove old protocol tags and allow translated role labels', () => {

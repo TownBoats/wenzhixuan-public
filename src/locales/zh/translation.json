@@ -204,7 +204,7 @@
         "rename": "重命名",
         "export": "导出对话文本",
         "exportConversation": "导出对话文本：{{title}}",
-        "exportHint": "点击下载图标可导出易读的 TXT 对话，保留双方正文、问题和你的回答，省略格式符号、候选答案及图示代码。完整数据备份请前往设置。",
+        "exportHint": "点击下载图标可导出易读的 TXT 对话，保留双方正文、问题、你的回答和图示代码，省略排版标记与候选答案。完整数据备份请前往设置。",
         "textUser": "我",
         "textAssistant": "问知轩",
         "textSkipped": "跳过",

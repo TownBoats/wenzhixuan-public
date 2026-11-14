@@ -31,3 +31,13 @@
 功能提交 `e62f29d1c2b5bf2d40b2e738074689c0a6d84fe8` 已普通推送 main；[Vercel 部署](https://vercel.com/2413250743-qqcoms-projects/wenzhixuan-public/7TWFVDndP8xXc5Mq7RcDs4DiPsDe) 的 GitHub 状态为 success。
 
 生产域名 `https://wenzhixuan.com/` 和新资源 `/assets/index-CV4LsUpQ.js` 均为 HTTP 200。bundle 已包含“导出对话文本”、“易读的 TXT 对话”和 `text/plain`，确认新功能资源已提供；未对生产用户数据执行下载或模型请求。原有 `dev-preview.cmd`、`dist-verify/` 保留，不纳入提交。
+
+## 同日补充：保留图示代码
+
+用户追加“图示代码可以保留”，替代前述过滤图示源码的范围。基准 `1c3443d` + 本轮工作区，环境不变。已完成 explain_card/visualize 结果的 SVG/HTML 源码按原讲解位置输出；正文代码块、原始 SVG/HTML、Mermaid 和旧 v1 图示片段保留。代码在 Markdown 处理前以占位保护，提取文字后原样恢复；工具 ID、未知载荷、失败输入/运行中预览与思考仍不纳入，不更改模型或持久化。
+
+- 文本 + 备份专项：26/26（文本 8 项、备份 18 项）。新增覆盖成功图示源代码次序、缩进/空行和代码字面标记精确保留，过滤失败/未完成/未知工具数据；原过滤图示用例已按新要求替换。
+- 完整命令 `node --test "src/agent/__tests__/*.test.js" "src/utils/__tests__/*.test.js"`：221 项，214 通过、0 断言失败、7 取消，退出 1；既有超时保活问题不变。
+- `pnpm exec eslint src/utils/conversationText.js src/utils/__tests__/conversationText.test.js` 通过；`pnpm exec vite build` 成功，Browserslist 与大 chunk 提示保留；`git diff --check` 通过。
+- Chrome 独立端口 5195 模拟会话实际点击下载：`.txt` / `text/plain;charset=utf-8`，Blob 内 SVG/HTML 与原始输入逐字相同（含缩进和连续空行），顺序为讲解 → SVG → 讲解 → HTML。没有操作生产用户数据或真实模型。
+- 临时浏览器页、模拟历史和 Vite 在收尾清理；与前次相同，未核实最终下载目录。按本会话既有授权推 main 后核对 Vercel 和生产资源，最终证据见当前交接。

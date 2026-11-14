@@ -204,7 +204,7 @@
         "rename": "Rename",
         "export": "Export conversation text",
         "exportConversation": "Export conversation text: {{title}}",
-        "exportHint": "Download a readable TXT conversation with messages, questions and your answers. Formatting markers, answer candidates and diagram code are omitted. Full data backups are available in Settings.",
+        "exportHint": "Download a readable TXT conversation with messages, questions, your answers and diagram source code. Formatting markers and answer candidates are omitted. Full data backups are available in Settings.",
         "textUser": "Me",
         "textAssistant": "Wenzhixuan",
         "textSkipped": "Skipped",
