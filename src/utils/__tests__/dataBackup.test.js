@@ -288,11 +288,11 @@ test('single export checkpoints the current conversation but allows exporting an
   const storage = memory({ chat_histories_v2: JSON.stringify([item, other]) });
   const session = { conversationId: item.id, mode: item.mode, turns: item.turns, isRunning: false };
   const view = mountHistory(storage, session);
-  const modified = [...item.turns, { ...item.turns[0], id: 'second-turn' }];
+  const modified = [...item.turns, { ...item.turns[0], id: 'second-turn', userMessage: { text: '第二轮文本' } }];
   view.update({ ...session, turns: modified });
   let result;
   act(() => { result = view.history.exportConversation(item.id); });
-  assert.equal(JSON.parse(result.backup.data.chat_histories_v2)[0].turns.length, 2);
+  assert.equal(result.text.includes('第二轮文本'), true);
   view.update({ ...session, isRunning: true });
   assert.equal(view.history.exportConversation(item.id).reason, 'busy');
   const before = [...storage.map];

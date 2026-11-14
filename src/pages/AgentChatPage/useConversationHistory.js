@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createHistoryStore } from '../../utils/historyStore.js';
 import { projectV1Record } from '../../utils/historyV1.js';
 import { createConversationBackup } from '../../utils/dataBackup.js';
+import { conversationBackupToText } from '../../utils/conversationText.js';
 
 /** 保存失败原因 → 文案键。全是 E3 新增的键，不改 `AgentChat` 里已有的键。 */
 export const SAVE_FAILURE_KEYS = Object.freeze({
@@ -174,14 +175,15 @@ export default function useConversationHistory({ session, storage } = {}) {
     return result;
   }, [ready, store]);
 
-  const exportConversation = useCallback((id) => {
+  const exportConversation = useCallback((id, labels) => {
     if (!ready) return { ok: false, reason: 'busy' };
     // Exporting another saved conversation never interrupts or checkpoints the active run.
     if (id === sessionRef.current?.conversationId) {
       const saved = checkpoint();
       if (!saved.ok) return saved;
     }
-    return createConversationBackup(storage ?? resolveStorage(), id);
+    const result = createConversationBackup(storage ?? resolveStorage(), id);
+    return result.ok ? { ok: true, text: conversationBackupToText(result.backup, labels) } : result;
   }, [ready, checkpoint, storage]);
 
   /**

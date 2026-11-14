@@ -22,7 +22,7 @@ import { levelSelectToSubmission, toAnswerCardModel } from './questionAdapter';
 import ContextWindowIndicator from './ContextWindowIndicator';
 import { contextToolDefinitions } from '../../agent/contextSchemas.js';
 import { estimateContextTokens, latestContextUsage, resolveContextWindow } from '../../utils/contextWindow.js';
-import { downloadBackupFile } from '../../utils/downloadBackup.js';
+import { downloadConversationText } from '../../utils/downloadBackup.js';
 
 /**
  * AgentChatPage — 新 Agent 运行时页面（D4：useChatSession 真实接线）
@@ -638,10 +638,13 @@ function AgentChatPage() {
         onRename={history.renameConversation}
         onDelete={history.removeConversation}
         onExport={(id) => {
-          const result = history.exportConversation(id);
+          const result = history.exportConversation(id, {
+            user: t('AgentChat.history.textUser'), assistant: t('AgentChat.history.textAssistant'),
+            skipped: t('AgentChat.history.textSkipped'), untitled: t('AgentChat.history.untitled'),
+          });
           if (!result.ok) return result;
           try {
-            downloadBackupFile(result.backup, 'wenzhixuan-conversation');
+            downloadConversationText(result.text);
             return { ok: true };
           } catch { return { ok: false, reason: 'unavailable' }; }
         }}
