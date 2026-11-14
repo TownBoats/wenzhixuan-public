@@ -1,9 +1,9 @@
 # 当前交接
 
-更新时间：2026-11-14。当前分支 `main`，本轮基准 `1c3443d` + 工作区。
-用户追加“图示代码可以保留”，本轮在 TXT 中恢复图示源码，沿用既有发布授权。
+更新时间：2026-11-14。当前分支 `main`，产品源码基准 `1f00d19`。
+用户追加“图示代码可以保留”，本轮在 TXT 中恢复图示源码，已按既有授权发布。
 用户当前目标：易读对话和作答，同时保留图示代码。
-完整 JSON 备份保持；本轮待推送部署核对，先前 TXT 已上线。
+完整 JSON 备份保持；本轮已推送 main、Vercel success；最终文档提交哈希以 Git 为准。
 
 ## 1. 当前状态
 
@@ -42,18 +42,18 @@
 - `dev-preview.cmd`
 - `dist-verify/`
 
-本轮独立测试端口 5195，收尾清理临时 Vite、模拟历史和测试页。
+本轮独立测试端口 5195 的临时 Vite、模拟历史和测试页已清理。
 5175 已有业务存储和线上站点数据未修改；原有预览任务未核验或更改。
 浏览器触发过仅含模拟数据的下载，最终下载目录未由工具核实。
-下一动作：发布图示代码保留；用户验收 TXT 中的讲解与源代码；数据恢复仍使用设置 JSON。
-此前 TXT 提交 `e62f29d1c2b5bf2d40b2e738074689c0a6d84fe8` 已普通推送 main。
-Vercel deployment `7TWFVDndP8xXc5Mq7RcDs4DiPsDe` 的 GitHub 状态为 success。
-生产域名 `https://wenzhixuan.com/` 返回 200，新 JS `/assets/index-CV4LsUpQ.js` 返回 200，
-已确认包含“导出对话文本”、TXT 操作提示和 text/plain；未在生产用户数据中执行下载。
+下一动作：用户验收 TXT 中的讲解与源代码；数据恢复仍使用设置 JSON。
+功能提交 `1f00d195e44aa61c61d792d562f865c235237334` 已普通推送 main。
+Vercel deployment `JBcHisYq58ei6MDVn3Dv9kpw9XtZ` 的 GitHub 状态为 success。
+生产域名 `https://wenzhixuan.com/` 返回 200，新 JS `/assets/index-BORiXfDc.js` 返回 200，
+已确认新提示“你的回答和图示代码”与代码保留逻辑标识；未在生产用户数据中执行下载。
 
 ## 3. 本轮验证
 
-日期：2026-11-14；源码：`1c3443d` + 本轮图示源码保留工作区。
+日期：2026-11-14；源码：`1f00d19`（实施阶段为 `1c3443d` + 工作区）。
 环境：Windows / Node v22.22.1 / pnpm 10.9.0，现有本地依赖。
 无真实模型请求；浏览器证据为 Chrome 桌面及 390×844 移动模拟，不是实体手机验收。
 详细动作、源码入口及限制见 [文本导出验证](tasks/conversation-text-export-2026-11-14.md)。
@@ -68,7 +68,7 @@ Vercel deployment `7TWFVDndP8xXc5Mq7RcDs4DiPsDe` 的 GitHub 状态为 success。
 | 浏览器图示源码下载 | 5195 模拟会话下载 TXT，SVG/HTML 与原文一致，含缩进/空行，讲解与源码次序正确 |
 | 完整备份/窄屏 | 本轮未改下载或布局，不重复浏览器验证；前轮证据维持历史身份 |
 | `git diff --check` | 通过，未暂存原有本机产物 |
-| main 推送 / Vercel / 生产资源 | 此前 TXT 已上线，本轮图示源码保留待部署确认 |
+| main 推送 / Vercel / 生产资源 | main 已推送，Vercel success；生产资源 200，含图示代码保留提示与逻辑标识 |
 
 7 项取消仍来自 `generateAnswerOptions.test.js` 的超时保活问题：
 `Promise resolution is still pending but the event loop has already resolved`。
@@ -92,7 +92,7 @@ Vercel deployment `7TWFVDndP8xXc5Mq7RcDs4DiPsDe` 的 GitHub 状态为 success。
 | C-01/C-02 旧代码/数据 | 旧源码闲置不等于可删除共享组件和用户存储 | 按引用与兼容范围另行处理 |
 | S-01 生成内容 | sandbox/CSP/来源校验保留，非完整安全审计 | 不声称所有外部请求已禁止 |
 | G-01 本机产物 | 两项本机产物保留，不随功能提交 | 如需清理，另行核对范围 |
-| G-02 发布 | TXT 已上线，新增图示代码保留待发布 | 用户阅读验收；不冒充真实模型/线上数据测试 |
+| G-02 发布 | TXT 的图示代码保留已上线 | 用户阅读验收；不冒充真实模型/线上数据测试 |
 
 ## 5. 知识和历史入口
 

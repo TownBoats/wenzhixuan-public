@@ -41,3 +41,5 @@
 - `pnpm exec eslint src/utils/conversationText.js src/utils/__tests__/conversationText.test.js` 通过；`pnpm exec vite build` 成功，Browserslist 与大 chunk 提示保留；`git diff --check` 通过。
 - Chrome 独立端口 5195 模拟会话实际点击下载：`.txt` / `text/plain;charset=utf-8`，Blob 内 SVG/HTML 与原始输入逐字相同（含缩进和连续空行），顺序为讲解 → SVG → 讲解 → HTML。没有操作生产用户数据或真实模型。
 - 临时浏览器页、模拟历史和 Vite 在收尾清理；与前次相同，未核实最终下载目录。按本会话既有授权推 main 后核对 Vercel 和生产资源，最终证据见当前交接。
+
+补充发布结果：功能提交 `1f00d195e44aa61c61d792d562f865c235237334` 已推 main；[Vercel 部署](https://vercel.com/2413250743-qqcoms-projects/wenzhixuan-public/JBcHisYq58ei6MDVn3Dv9kpw9XtZ) success。生产域名及 `/assets/index-BORiXfDc.js` HTTP 200，资源包含“你的回答和图示代码”新提示与代码原文保留标识；未在生产用户数据中操作下载。
