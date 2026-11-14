@@ -1,6 +1,6 @@
 # 完整数据导出与迁移验证
 
-日期：2026-11-14；基准：`db6fd18` + 本轮未提交工作区。环境：Windows、Node v22.22.1、pnpm 10.9.0、现有本地依赖；未改依赖、锁文件或安装布局。
+日期：2026-11-14；基准：功能提交 `86efe5e`（实施阶段为 `db6fd18` + 本轮工作区）。环境：Windows、Node v22.22.1、pnpm 10.9.0、现有本地依赖；未改依赖、锁文件或安装布局。
 
 ## 实施
 
@@ -42,4 +42,8 @@ Chrome DevTools、本地 Vite 独立端口 5187。源为 `127.0.0.1:5187`，目�
 
 ## 交付状态
 
-实现及自动验证已完成，待用户实际设备验收。用户于 2026-11-14 追加“推送部署”授权，现按 main 分支已有 Vercel Git 集成发布，完成后补记证据。原有 `dev-preview.cmd` 和 `dist-verify/` 保留；未把模拟备份或本机日志放入公共仓库。
+实现、自动验证和部署已完成，待用户实际设备验收。用户于 2026-11-14 追加“推送部署”授权，功能提交 `86efe5e786e31bb66dc528b4d8f6929b19a3fb3e` 已普通推送 main。原有 `dev-preview.cmd` 和 `dist-verify/` 保留；未把模拟备份或本机日志放入公共仓库。
+
+- Vercel GitHub commit status：`success`；[部署记录](https://vercel.com/2413250743-qqcoms-projects/wenzhixuan-public/7fZZpGyYVgmVrLi2XCSRQxevBnCS)。
+- `https://wenzhixuan.com/` HTTP 200；生产资源 `/assets/index-DzkParkH.js` HTTP 200，包含 `wenzhixuan-backup`、`数据备份与迁移`、`确认合并导入`。
+- 此证据确认生产已提供新功能资源，不表示在真实生产数据中执行过导入或模型请求；测试取消和实际设备验收限制维持上述记录。
