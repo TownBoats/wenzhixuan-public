@@ -151,11 +151,27 @@ export default function useConversationHistory({ session, storage } = {}) {
 
     const signature = buildSaveSignature(conversationId, turns);
     if (signature === lastSignatureRef.current) return;
-    lastSignatureRef.current = signature;
-
-    const result = store.saveConversation({ id: conversationId, mode, turns });
+    const loaded = store.loadById(conversationId);
+    const result = store.saveConversation({ id: conversationId, mode, turns,
+      title: loaded.ok ? loaded.record.title : '' });
+    if (result.ok) lastSignatureRef.current = signature;
     setSaveFailure(result.ok ? null : (result.reason ?? 'unknown'));
   }, [ready, store, conversationId, mode, turns]);
+
+  // Export/import must checkpoint the latest completed UI state, including retrying a failed save.
+  const checkpoint = useCallback(() => {
+    const current = sessionRef.current;
+    if (!ready || current?.isRunning) return { ok: false, reason: 'busy' };
+    if (!current?.turns?.length) return { ok: true };
+    const signature = buildSaveSignature(current.conversationId, current.turns);
+    if (signature === lastSignatureRef.current) return { ok: true };
+    const loaded = store.loadById(current.conversationId);
+    const result = store.saveConversation({ id: current.conversationId, mode: current.mode,
+      turns: current.turns, title: loaded.ok ? loaded.record.title : '' });
+    if (result.ok) lastSignatureRef.current = signature;
+    setSaveFailure(result.ok ? null : result.reason);
+    return result;
+  }, [ready, store]);
 
   /**
    * 重读侧栏列表（每次打开抽屉都调一次，避免看到过期快照）。
@@ -197,6 +213,15 @@ export default function useConversationHistory({ session, storage } = {}) {
     return true;
   }, [store]);
 
+  const refreshAfterImport = useCallback(() => {
+    const list = store.listForSidebar();
+    refreshConversations();
+    if (!list.ok) { setLoadFailure(true); return; }
+    const currentId = sessionRef.current?.conversationId;
+    const target = list.items.find((item) => item.id === currentId) ?? list.items[0];
+    if (target) openConversationById(target.id);
+  }, [store, refreshConversations, openConversationById]);
+
   /** 删除：同时作用于两个键；删的是当前会话时换一条新会话，避免页面停在已删除的内容上。 */
   const removeConversation = useCallback((id) => {
     const result = store.deleteConversation(id);
@@ -232,6 +257,8 @@ export default function useConversationHistory({ session, storage } = {}) {
 
   return {
     ready,
+    checkpoint,
+    refreshAfterImport,
     saveFailure,
     saveFailureKey: saveFailure
       ? (SAVE_FAILURE_KEYS[saveFailure] ?? 'AgentChat.history.saveFailedUnknown')

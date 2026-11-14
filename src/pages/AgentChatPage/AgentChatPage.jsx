@@ -615,6 +615,15 @@ function AgentChatPage() {
         optionConfig={configSnapshot.option}
         onMainConfigChange={handleMainConfigChange}
         onOptionConfigChange={handleOptionConfigChange}
+        transferDisabled={session.isRunning || !history.ready}
+        beforeTransfer={history.checkpoint}
+        onDataImported={() => {
+          setConfigSnapshot(readConfigSnapshot());
+          history.refreshAfterImport();
+          setOpenQuestionId(null);
+          setShowMigrationNotice(readMainPromptMigrationState({ storage: localStorage,
+            builtIns: BUILT_IN_MAIN_PROMPTS }).shouldNotify);
+        }}
       />
 
       <HistoryDrawer

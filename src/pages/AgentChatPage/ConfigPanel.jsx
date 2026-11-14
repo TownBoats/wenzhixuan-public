@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +7,7 @@ import SettingsSection from '../../components/SettingsPanel/SettingsSection';
 import AnswerWaitSettings from '../../components/SettingsPanel/AnswerWaitSettings';
 import { Button, Icon, BrandLogo, Input } from '@/components/ui';
 import { normalizeContextWindow } from '../../utils/contextWindow.js';
+import DataBackupSection from './DataBackupSection';
 
 /**
  * ConfigPanel — 新路径的配置面板（模态）
@@ -19,16 +20,18 @@ import { normalizeContextWindow } from '../../utils/contextWindow.js';
  *     ② 候选答案模型（同上，留空即降级为手动作答）
  *     ③ 答题等待时间（沿用旧版 localStorage 偏好）
  *     ④ 我的个人信息（作者邮箱 / GitHub，来自原「关于」Tab）
+ *     ⑤ 完整备份与导入，包含新旧历史、配置和偏好
  *
  * 不提供的项（有意为之）：
  *   - 主提示词编辑：新架构由 `src/agent/skills/*.md` 按教学模式固定，改了也不生效（D6 迁移提示已说明）
- *   - 历史导入导出：新路径已有历史抽屉与 `chat_histories_v2`，导入旧格式会破坏 schema 约定
  *
  * 边界：本组件只做「读当前配置 → 交给 ModelConfigPanel → 把变更回传页面」，
  * 不直接写会话状态、不调用运行层。保存落盘由页面统一处理（ConfigManager）。
  */
-function ConfigPanel({ open, onClose, mainConfig, optionConfig, onMainConfigChange, onOptionConfigChange }) {
+function ConfigPanel({ open, onClose, mainConfig, optionConfig, onMainConfigChange, onOptionConfigChange,
+  transferDisabled, beforeTransfer, onDataImported }) {
   const { t } = useTranslation();
+  const [dataRevision, setDataRevision] = useState(0);
 
   // ESC 关闭：与旧面板一致
   useEffect(() => {
@@ -85,13 +88,18 @@ function ConfigPanel({ open, onClose, mainConfig, optionConfig, onMainConfigChan
                 {t('AgentChat.config.description')}
               </p>
 
+              <DataBackupSection disabled={transferDisabled} beforeTransfer={beforeTransfer}
+                onImported={() => { onDataImported(); setDataRevision((value) => value + 1); }} />
+
               <ModelConfigPanel
+                key={`main-${dataRevision}`}
                 currentConfig={mainConfig}
                 onConfigChange={onMainConfigChange}
                 agentType="main"
               />
 
               <ModelConfigPanel
+                key={`option-${dataRevision}`}
                 currentConfig={optionConfig}
                 onConfigChange={onOptionConfigChange}
                 agentType="option"
@@ -111,7 +119,7 @@ function ConfigPanel({ open, onClose, mainConfig, optionConfig, onMainConfigChan
                 <p id="main-context-window-hint" className="mt-2 text-caption leading-relaxed text-ink-500">{t('AgentChat.context.settingsHint')}</p>
               </SettingsSection>
 
-              <AnswerWaitSettings />
+              <AnswerWaitSettings key={dataRevision} />
 
               <SettingsSection
                 icon={<Icon name="Mail" size={16} className="text-sage-700" />}
@@ -163,6 +171,9 @@ ConfigPanel.propTypes = {
   optionConfig: PropTypes.object,
   onMainConfigChange: PropTypes.func.isRequired,
   onOptionConfigChange: PropTypes.func.isRequired,
+  transferDisabled: PropTypes.bool.isRequired,
+  beforeTransfer: PropTypes.func.isRequired,
+  onDataImported: PropTypes.func.isRequired,
 };
 
 export default ConfigPanel;

@@ -165,6 +165,35 @@
         "optionModelMissing": "The option model is not configured, so answer options will be unavailable; you can still answer the questions manually. Configure the option model in settings if you need options (recommended: deepseek-flash).",
         "migrationNotice": "A custom teaching prompt was detected. In the new architecture the system prompt is managed by the teaching mode, so the custom text no longer takes effect; the original is still saved in the old path's settings."
       },
+      "backup": {
+        "title": "Backup and transfer",
+        "description": "Export current and legacy conversations (including answers, visuals and pending questions), model settings, prompts and preferences. Import on another device to continue learning. Transfers use files, with no automatic cloud upload. Unsent drafts and temporary reasoning are excluded.",
+        "includeCredentials": "Include connection URLs and API keys (complete transfer)",
+        "sensitiveHint": "Backups are unencrypted JSON and may contain API keys and private conversations. Store or transfer them only to your own devices.",
+        "redactedHint": "Removes model credentials and connection URLs, keeping model names and parameters. Import preserves the destination's connection settings. Conversations and custom prompts may still contain private content.",
+        "export": "Export backup",
+        "import": "Choose backup to import",
+        "reading": "Reading…",
+        "running": "Wait for generation to finish or stop it before exporting or importing.",
+        "exported": "Backup download started. Check your browser downloads to confirm the file was saved.",
+        "preview": "Import preview",
+        "summary": "Conversation records: {{added}} new, {{updated}} updated, {{kept}} local versions kept; {{settings}} settings applied; {{archived}} legacy learning records preserved.",
+        "mergeHint": "Conversations merge by ID. The newer timestamp wins; ties keep the local version. Current-format records take precedence over legacy ones. Settings in the file replace matching local settings; omitted data stays unchanged. Legacy chat JSON is supported. Export a local backup before importing.",
+        "confirm": "Merge and import",
+        "cancel": "Cancel import",
+        "imported": "Data imported. Conversations, the current conversation and settings have been refreshed.",
+        "errors": {
+          "invalid": "Invalid file or damaged records. Nothing was imported. Choose a JSON backup exported by Wenzhixuan.",
+          "version": "Unsupported backup version. Use a matching version of Wenzhixuan.",
+          "too_large": "The backup exceeds the 50 MB import limit.",
+          "local_corrupt": "Matching local data is damaged. Import was stopped to avoid overwriting it. Export a local backup to preserve the raw data first.",
+          "corrupt": "Local conversation storage is damaged. The current conversation could not be saved; the operation was stopped.",
+          "quota": "Browser storage is full. The operation did not finish; import writes were rolled back. Back up and free space before retrying.",
+          "unavailable": "Unable to read, download or write data. Check browser storage and file permissions, then retry.",
+          "rollback_failed": "Import failed and some changes could not be rolled back. Keep the original backup, avoid further edits, and check storage access and space before importing again.",
+          "busy": "The conversation is loading or generating. Please retry when it is ready."
+        }
+      },
       "history": {
         "openHistory": "History",
         "title": "Conversation history",
