@@ -1,6 +1,6 @@
 # 单个对话导出
 
-日期：2026-11-14；源码基准：`c18eeee` + 本轮工作区。Windows / Node v22.22.1 / pnpm 10.9.0，沿用现有依赖。用户在全量备份上线后要求增加单个对话导出，沿用本会话既有推送部署授权交付。
+日期：2026-11-14；源码基准：`690d2ff`（实施阶段为 `c18eeee` + 本轮工作区）。Windows / Node v22.22.1 / pnpm 10.9.0，沿用现有依赖。用户在全量备份上线后要求增加单个对话导出，沿用本会话既有推送部署授权交付。
 
 ## 实施与判据
 
@@ -29,4 +29,6 @@ Chrome DevTools 使用独立测试端口 5191 的两套 origin 存储和模拟�
 
 ## 发布
 
-完成本地验证后，通过 main 分支既有 Vercel 集成发布；提交、部署状态与生产资源确认见当前交接。原有 `dev-preview.cmd`、`dist-verify/` 保留，不随本轮提交。
+完成本地验证后，功能提交 `690d2ff186cefe16520709bd45dea469de1d3429` 已普通推送 main；[Vercel 部署](https://vercel.com/2413250743-qqcoms-projects/wenzhixuan-public/CG469Qzh7qr8H5iPe2sugh2V7Kup) 的 GitHub 状态为 success。
+
+`https://wenzhixuan.com/` 与新生产资源 `/assets/index-q4TE1NvI.js` 均返回 HTTP 200；bundle 含 `wenzhixuan-conversation`、`导出对话：`、`点击下载图标可导出单个对话`，确认新功能资源已提供。此证据不等于在真实生产数据中执行过下载/导入。原有 `dev-preview.cmd`、`dist-verify/` 保留，不随本轮提交。
