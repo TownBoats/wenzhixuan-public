@@ -95,15 +95,26 @@ const plainTextResponse = () =>
     { status: 200, headers: { 'content-type': 'application/json' } },
   );
 
-/** 挂起的请求：靠 SDK 传入的 signal 收尾；兜底 5s 自毁，宁可测试失败也不能挂死。 */
+/**
+ * 挂起的请求：靠 SDK 传入的 signal 收尾；兜底 5s 自毁，宁可测试失败也不能挂死。
+ *
+ * 兜底计时器必须保持 ref、在 abort 时清除：Node 中 AbortSignal.timeout 的计时器是
+ * unref 的，若兜底计时器也 unref，等待期间事件循环没有活跃句柄，进程会提前退出，
+ * 用例报 "Promise resolution is still pending but the event loop has already resolved"
+ * 并连带取消后续用例。只影响测试进程，生产代码无需改动。
+ */
 function hangingFetch(input, init) {
   return new Promise((_, reject) => {
-    const onAbort = () => reject(new DOMException('The operation was aborted.', 'AbortError'));
+    let guard;
+    const onAbort = () => {
+      clearTimeout(guard);
+      reject(new DOMException('The operation was aborted.', 'AbortError'));
+    };
     // 信号可能在 listener 挂上之前就已中止（测试同步 abort 的情形），
     // 与原生 fetch 对齐：已中止的信号要立刻拒绝
     if (init?.signal?.aborted) return onAbort();
-    init?.signal?.addEventListener('abort', onAbort);
-    setTimeout(() => reject(new Error('hangingFetch 未被 abort 收尾，signal 链路断了')), 5000).unref();
+    guard = setTimeout(() => reject(new Error('hangingFetch 未被 abort 收尾，signal 链路断了')), 5000);
+    init?.signal?.addEventListener('abort', onAbort, { once: true });
   });
 }
 
