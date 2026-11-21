@@ -93,17 +93,29 @@
       "context": {
         "label": "Context",
         "details": "Context window",
-        "estimated": "Estimate",
+        "source": {
+          "measured": "Measured",
+          "mixed": "Measured + estimate",
+          "estimated": "Estimate"
+        },
         "unknown": "Unknown",
         "unset": "Limit not set",
         "noModel": "No main model configured",
-        "accessible": "Estimated context: {{used}} tokens out of {{total}} tokens. View details",
-        "percent": "Estimated usage: {{percent}}%",
-        "estimateHint": "A rough character estimate of instructions, tool definitions, eligible conversation and draft. During generation, only visible content is estimated; thinking is excluded. Actual model tokenization differs.",
-        "lastRequest": "Latest main model request · API reported",
-        "measured": "Input {{input}} · output {{output}} tokens",
-        "nearLimit": "Estimated usage is approaching the limit. Consider a new conversation. History is not automatically compacted.",
-        "overLimit": "Estimated usage has reached the limit. Sending may exceed it. Start a new conversation or check the limit setting.",
+        "accessible": {
+          "measured": "Measured context: {{used}} tokens out of {{total}} tokens. View details",
+          "mixed": "Context: about {{used}} tokens (measured plus estimated additions) out of {{total}} tokens. View details",
+          "estimated": "Estimated context: {{used}} tokens out of {{total}} tokens. View details"
+        },
+        "percent": "Usage: {{percent}}%",
+        "hint": {
+          "measured": "Based on the latest main model request as reported by the API: input plus output, minus thinking that is not sent back.",
+          "mixed": "Based on the latest main model request as reported by the API (minus thinking that is not sent back). Conversation, generation and draft added since then are estimated from characters.",
+          "estimated": "No API-reported usage for this model yet (new conversation, model switch or older records). A rough character estimate of instructions, tool definitions, conversation and draft; actual tokenization differs."
+        },
+        "measured": "Last request: in {{input}} · out {{output}}",
+        "reasoning": "thinking {{reasoning}} (not resent)",
+        "nearLimit": "Usage is approaching the limit. Consider a new conversation. History is not automatically compacted.",
+        "overLimit": "Usage has reached the limit. Sending may exceed it. Start a new conversation or check the limit setting.",
         "configure": "Set context limit",
         "settingsTitle": "Main model context window",
         "settingsLabel": "Total capacity (tokens)",
@@ -115,9 +127,10 @@
           "unknown": "Capacity is unknown for this endpoint and model. Set it using your provider's documentation."
         },
         "parts": {
+          "measured": "Up to latest request (measured)",
           "system": "System instructions",
           "tools": "Tool definitions",
-          "conversation": "Conversation and current input",
+          "conversation": "Conversation and new input",
           "generating": "Current generation",
           "draft": "Unsent draft"
         }

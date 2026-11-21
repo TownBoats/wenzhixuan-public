@@ -93,17 +93,29 @@
       "context": {
         "label": "上下文",
         "details": "上下文窗口",
-        "estimated": "估算",
+        "source": {
+          "measured": "实测",
+          "mixed": "实测 + 估算",
+          "estimated": "估算"
+        },
         "unknown": "未知",
         "unset": "总量未设置",
         "noModel": "未配置主模型",
-        "accessible": "上下文估算占用 {{used}} tokens，总容量 {{total}} tokens，查看详情",
-        "percent": "估算已用 {{percent}}%",
-        "estimateHint": "按中英文字符粗略估算，包含系统指令、工具定义、可发送的对话和草稿；生成中只估算可见内容，不含思考。与模型实际分词会有差异。",
-        "lastRequest": "最近一次主模型请求 · 接口实测",
-        "measured": "输入 {{input}} · 输出 {{output}} tokens",
-        "nearLimit": "估算接近窗口上限，可考虑新建对话。目前不会自动压缩历史。",
-        "overLimit": "估算已达到窗口上限，继续发送可能超限。可新建对话或检查容量设置。",
+        "accessible": {
+          "measured": "上下文实测占用 {{used}} tokens，总容量 {{total}} tokens，查看详情",
+          "mixed": "上下文占用约 {{used}} tokens（实测加新增估算），总容量 {{total}} tokens，查看详情",
+          "estimated": "上下文估算占用 {{used}} tokens，总容量 {{total}} tokens，查看详情"
+        },
+        "percent": "已用 {{percent}}%",
+        "hint": {
+          "measured": "以最近一次主模型请求的接口实测为准：输入加输出，扣除不会回传的思考。",
+          "mixed": "以最近一次主模型请求的接口实测为基准（扣除不会回传的思考），之后新增的对话、生成内容和草稿按字符估算。",
+          "estimated": "暂无本模型的接口实测（新会话、切换模型或旧记录），按中英文字符粗略估算系统指令、工具定义、对话和草稿，与模型实际分词会有差异。"
+        },
+        "measured": "上次请求：输入 {{input}} · 输出 {{output}}",
+        "reasoning": "思考 {{reasoning}}（不回传）",
+        "nearLimit": "接近窗口上限，可考虑新建对话。目前不会自动压缩历史。",
+        "overLimit": "已达到窗口上限，继续发送可能超限。可新建对话或检查容量设置。",
         "configure": "设置总容量",
         "settingsTitle": "主模型上下文窗口",
         "settingsLabel": "总容量（tokens）",
@@ -115,9 +127,10 @@
           "unknown": "尚未识别这个端点与模型的总窗口，请按提供商资料设置。"
         },
         "parts": {
+          "measured": "截至上次请求（实测）",
           "system": "系统指令",
           "tools": "工具定义",
-          "conversation": "对话历史与当前输入",
+          "conversation": "对话历史与新增输入",
           "generating": "本轮正在生成",
           "draft": "待发送草稿"
         }

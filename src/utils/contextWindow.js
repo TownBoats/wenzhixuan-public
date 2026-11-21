@@ -60,6 +60,52 @@ export function estimateContextTokens({ turns = [], system = '', tools = [], dra
   return { tokens: Object.values(breakdown).reduce((sum, count) => sum + count, 0), breakdown };
 }
 
+const MEASURABLE_STATUSES = new Set(['completed', 'awaiting_user']);
+
+/**
+ * Context occupancy anchored on real API usage.
+ *
+ * Anchor = the latest context-eligible turn whose last request reported usage for the
+ * current model. Its `input + output − reasoning` is what the provider actually counted
+ * for everything up to and including that turn (reasoning is never resent). Only content
+ * after the anchor — later turns, the active generation and the draft — is estimated.
+ * Without an anchor (new conversation, model switch, old records) this falls back to the
+ * full character estimate, labelled as such.
+ *
+ * Known approximation: the anchor reflects the system prompt and tools of that request;
+ * a later mode switch is not re-counted. Tool results of the anchor's final step are tiny
+ * and are not added.
+ */
+export function measureContextTokens({ turns = [], model, system = '', tools = [], draft = '' } = {}) {
+  let anchorIndex = -1;
+  let usage = null;
+  for (let index = turns.length - 1; index >= 0; index -= 1) {
+    const turn = turns[index];
+    if (!MEASURABLE_STATUSES.has(turn?.status) || !model || turn.usageModel !== model) continue;
+    usage = sanitizeTokenUsage(turn.contextUsage);
+    if (usage) { anchorIndex = index; break; }
+  }
+
+  if (!usage) {
+    return { source: 'estimated', ...estimateContextTokens({ turns, system, tools, draft }) };
+  }
+
+  const measured = usage.inputTokens + usage.outputTokens - (usage.reasoningTokens ?? 0);
+  const delta = estimateContextTokens({ turns: turns.slice(anchorIndex + 1), draft }).breakdown;
+  const breakdown = {
+    measured,
+    conversation: delta.conversation,
+    generating: delta.generating,
+    draft: delta.draft,
+  };
+  const estimatedPart = breakdown.conversation + breakdown.generating + breakdown.draft;
+  return {
+    source: estimatedPart > 0 ? 'mixed' : 'measured',
+    tokens: measured + estimatedPart,
+    breakdown,
+  };
+}
+
 export function latestContextUsage(turns, model) {
   // Only the latest turn: never show an older run as the current request after a retry/failure.
   const turn = turns?.at(-1);

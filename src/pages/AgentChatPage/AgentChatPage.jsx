@@ -21,7 +21,7 @@ import { classifyTurnError } from './errorAdapter';
 import { levelSelectToSubmission, toAnswerCardModel } from './questionAdapter';
 import ContextWindowIndicator from './ContextWindowIndicator';
 import { contextToolDefinitions } from '../../agent/contextSchemas.js';
-import { estimateContextTokens, latestContextUsage, resolveContextWindow } from '../../utils/contextWindow.js';
+import { latestContextUsage, measureContextTokens, resolveContextWindow } from '../../utils/contextWindow.js';
 import { downloadConversationText } from '../../utils/downloadBackup.js';
 
 /**
@@ -176,9 +176,9 @@ function AgentChatPage() {
   const contextTools = useMemo(() => contextToolDefinitions(MODES[session.mode]), [session.mode]);
   const deferredInput = useDeferredValue(inputText);
   const contextTurns = useDeferredValue(session.turns);
-  const contextEstimate = useMemo(() => estimateContextTokens({
-    turns: contextTurns, system: MODES[session.mode]?.teaching ?? '', tools: contextTools, draft: deferredInput,
-  }), [contextTurns, session.mode, contextTools, deferredInput]);
+  const contextEstimate = useMemo(() => measureContextTokens({
+    turns: contextTurns, model: config.model, system: MODES[session.mode]?.teaching ?? '', tools: contextTools, draft: deferredInput,
+  }), [contextTurns, config.model, session.mode, contextTools, deferredInput]);
   const contextCapacity = resolveContextWindow(config);
   const contextUsage = latestContextUsage(session.turns, config.model);
 
@@ -555,6 +555,14 @@ function AgentChatPage() {
               aria-label={t('AgentChat.page.inputAriaLabel')}
               className="border-0 bg-transparent px-2 py-1.5 focus:ring-0"
             />
+            {/* 上下文占用：输入胶囊内的低存在感圆环，点开看详情 */}
+            <ContextWindowIndicator
+              estimate={contextEstimate}
+              capacity={contextCapacity}
+              usage={contextUsage}
+              model={config.model}
+              onConfigure={() => setConfigOpen(true)}
+            />
             {/* shrink-0 + nowrap：窄屏下按钮被压缩会让「发送」两字折行（D8 走查发现） */}
             {session.canCancel ? (
               <Button
@@ -579,13 +587,6 @@ function AgentChatPage() {
               </Button>
             )}
           </div>
-          <ContextWindowIndicator
-            estimate={contextEstimate}
-            capacity={contextCapacity}
-            usage={contextUsage}
-            model={config.model}
-            onConfigure={() => setConfigOpen(true)}
-          />
         </div>
       </footer>
 

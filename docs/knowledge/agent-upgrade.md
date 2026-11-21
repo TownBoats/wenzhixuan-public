@@ -169,13 +169,19 @@ ExplainCard 就绪态使用空 sandbox 和限制性 CSP，不给模型脚本执�
 
 用户要求撤销学习链路；`eab0f12` 的实现与 ADR-001 已整体撤回，原设计及验证证据保留于该提交的 Git 历史，其“已接受、等待验收”结论由本次撤销取代。当前页面不展示链路，不再调度副模型提取或读写 `learning_journals_v1`。源码撤销不清除已有浏览器学习记录，也不迁移或删除会话、模型配置；如果将来恢复功能或清理该键，需另行评估已有数据兼容。
 
-原提交捆绑的 `node-linker=hoisted` 配置与候选服务超时测试保活修复一并撤销，现有安装目录未重建。当前依赖安装可用性不能外推为重新安装后的可用性；完整自动验证的结果与测试取消限制见当前交接。
+原提交捆绑的 `node-linker=hoisted` 配置与候选服务超时测试保活修复一并撤销，现有安装目录未重建。当前依赖安装可用性不能外推为重新安装后的可用性；超时用例的保活问题已于 2026-11-21 在测试辅助 `hangingFetch` 内独立修复（计时器保持 ref、abort 时清除），完整自动验证结果见当前交接。
 
 ### 上下文窗口显示（2026-11-03）
 
 输入框下方常驻上下文估算占用、总容量与占比，点击查看分类和最近主模型请求的实测 input/output。估算基于当前模式系统指令、实际工具 schema、`buildModelContext` 的合格历史、正在生成的可见内容与草稿；不是模型 tokenizer，不含 reasoning、旧运行片段、失败历史或临时预览，不进入模型消息或存储。
 
 运行层只取 SDK 最后一步 usage，避免多步工具循环重复累加 prompt；v2 turn 可选保存经过数字白名单清洗的 `contextUsage` 和 `usageModel`，旧记录缺省为 null，schemaVersion 与历史键不变。重试清空、迟到事件沿用原守卫；缺实测时不显示假零值。当前估算与最近请求实测是两个口径。
+
+### 上下文占用改为实测基准（2026-11-21）
+
+主显示数字由 `measureContextTokens` 计算，替代 11-03 的纯字符估算口径。基准取最近一个可进上下文（completed / awaiting_user）、`usageModel` 等于当前主模型且有合法 usage 的轮次，取值 `input + output − reasoning`（思考不回传模型）；只有基准之后的轮次、生成中的可见内容和草稿按原字符估算叠加。界面为输入胶囊内发送按钮左侧的低存在感圆环（窄屏只显示圆环，sm 起附百分比或 token 数，≥80% 才变暖色），不再单独占一行；点开面板按 `measured` / `mixed` / `estimated` 标注口径，说明文字移入口径标签的悬停提示，有估算成分时保留“≈”。无基准（新会话、切换模型、旧记录）时退回完整估算。
+
+`sanitizeTokenUsage` 新增可选 `reasoningTokens`（来自 SDK `outputTokenDetails.reasoningTokens` 或旧字段），仅保留大于 0 且不超过 output 的整数；OpenAI provider 缺少明细时报 0，不存储。旧记录缺该字段仍合法，schemaVersion 与历史键不变，不迁移数据。已知近似：基准反映当次请求的系统指令与工具，之后切换模式不重算；基准最后一步的工具结果未加入。
 
 容量优先主模型配置 `contextWindow`；只为核实过的官方 DeepSeek HTTPS 端点和准确模型名提供静态默认值，其余未知且不计算百分比。模型或端点切换清除手动容量；配置与旧版本兼容，不批量迁移、不清空数据、不自动压缩或截断。实现入口为 `utils/contextWindow.js`、`utils/tokenUsage.js`、`agent/contextSchemas.js` 与 `AgentChatPage/ContextWindowIndicator.jsx`；来源和验证见 [调研与实施](../research_context_window/report.md)。
 
