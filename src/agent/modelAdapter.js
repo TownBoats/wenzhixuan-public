@@ -11,7 +11,8 @@ import { sanitizeTokenUsage } from '../utils/tokenUsage.js';
  *   3. 净化：开闸标记（U+200B）在「出口」两处清掉；reasoning 只展示、不回传
  *   4. 交账：返回整轮的 responseMessages（来自 SDK，不手工拼）与传输层结束原因
  *
- * 边界（见 `docs/agent-mvp/决策记录.md` B-1 ~ B-7 与 `01-核心协议.md` §4）：
+ * 边界（现行知识见 `docs/knowledge/agent-upgrade.md`；历史理由见
+ * `docs/archive/agent-upgrade-2026-11-01/agent-mvp/` 的 `决策记录.md` B-1 ~ B-7 与 `01-核心协议.md` §4）：
  *   - 不决定「下一步做不做」：stopWhen 由上层构造后传入，本模块只透传
  *   - 不重试：maxRetries 固定 0（工具可能已执行，重放不幂等；重试是上层策略）
  *   - 不发 run-started / run-finished：那是整轮语义，由 B5 统一发出

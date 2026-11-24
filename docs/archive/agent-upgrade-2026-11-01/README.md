@@ -48,6 +48,10 @@
 9. 归档中的 `react-markdown@10` 叙述与当前依赖不符：本轮读取 `package.json` 为 `^9.0.3`，用户重装输出为 `9.1.0`。实际解析以锁文件为准。
 10. 静态 `dist` 走查未关联可核验的当前源码构建基准，不作为当前 HEAD 新构建成功的证据。
 
+## 2026-11-24 追加
+
+`docs/agent-mvp/` 与 `docs/AGENT_MVP_PLAN.md` 的重复原件已删除，旧目录只留指路页；快照之后追加的 ARCHIVE-1/2 移入 [ADDENDUM](ADDENDUM.md)。manifest 的 `source` 字段为当时来源路径。
+
 ## 新的活动入口
 
 - [当前交接](../../HANDOFF.md)

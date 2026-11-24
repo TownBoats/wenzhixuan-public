@@ -1,6 +1,6 @@
 # 项目知识与开发资料
 
-更新日期：2026-11-01。本目录把“当前状态、开发方法、现行业务知识、历史过程”分开维护。源码基准见 [HANDOFF](HANDOFF.md)；A–G 已验收关闭，归档与方法提取已形成文档交付。
+更新日期：2026-11-24。本目录把“当前状态、开发方法、现行业务知识、历史过程”分开维护。源码基准见 [HANDOFF](HANDOFF.md)；A–G 已验收关闭，归档与方法提取已形成文档交付。
 
 ## 活动入口
 
@@ -14,6 +14,15 @@
 | [业务与架构知识](knowledge/agent-upgrade.md) | 当前教学闭环、状态、工具、存储、兼容与安全边界 |
 | [阶段总结](knowledge/agent-upgrade-summary.md) | 整个 Agent 升级的交付、代码量、决策和验证范围 |
 | [原始历史归档](archive/agent-upgrade-2026-11-01/README.md) | A–G 原始工作包、长交接、决策和规则快照，含完整性清单与勘误 |
+| [ADR-002：完整文件备份](decisions/ADR-002-data-backup.md) | 备份格式与取舍；ADR-001 仅存于 Git 历史（`eab0f12`，已撤销） |
+| [上下文窗口调研](research_context_window/report.md) | 2026-11-03 调研与实施，含 [计划](research_context_window/research_plan.md)、[Agent 调研](research_context_window/findings_agents.md)、[组件调研](research_context_window/findings_components.md) |
+| [文本导出验证](tasks/conversation-text-export-2026-11-14.md) | 对话 TXT 与图示源码导出的证据及发布 |
+| [全量备份验证](tasks/data-backup-2026-11-14.md) | JSON 备份与导入的证据 |
+| [单条 JSON 导出验证](tasks/single-conversation-export-2026-11-14.md) | 已被 TXT 替代的下载形式，历史证据 |
+| [测试保活与上下文实测验证](tasks/context-usage-2026-11-21.md) | 2026-11-21 回归结果与未验范围 |
+| [改动点整理](tasks/improvement-points-2026-11-24.md) | 2026-11-24 待排期的界面与教学引擎需求 |
+
+源码、测试和脚本注释中的 `决策记录.md`、`01-核心协议.md` 及各阶段文档，均指 [归档 agent-mvp](archive/agent-upgrade-2026-11-01/agent-mvp/README.md) 中的版本，仅用于追溯理由。
 
 ## 使用原则
 

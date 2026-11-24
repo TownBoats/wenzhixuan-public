@@ -2,7 +2,7 @@
 
 Agent 升级 A–G 已完成阶段收尾。开发从 [当前交接](docs/HANDOFF.md) 和根 `AGENTS.md` 开始；[文档索引](docs/README.md) 提供 [开发 Harness](docs/harness/README.md)、[过程复盘](docs/harness/RETROSPECTIVE.md)、[业务知识](docs/knowledge/agent-upgrade.md) 与 [阶段总结](docs/knowledge/agent-upgrade-summary.md)。[完整历史归档](docs/archive/agent-upgrade-2026-11-01/README.md) 保留原始工作包、交接和决策。
 
-这些资料已纳入版本控制。下方产品介绍仍含升级前的模式入口与试用信息，当前行为以业务知识和源码为准。
+这些资料已纳入版本控制。当前行为以业务知识和源码为准。
 
 ## 项目基本信息
 - **项目名称**：问知轩/WisClick-会问，才会学；会答，更会想。
@@ -19,8 +19,10 @@ Agent 升级 A–G 已完成阶段收尾。开发从 [当前交接](docs/HANDOFF
   ![回答卡片2](./imgs/AnswerCard2.png)
 - 自定义模型：支持自己填入baseurl和apikey。
 - 纯前端，无需后端，即插即用
-- 采用localstorage保存数据到本地，apikey不会泄露，支持保存历史对话。
-- 支持公式渲染，支持Markdown语法。
+- 历史、偏好和模型配置（含 apikey）保存在浏览器 localStorage，支持保存历史对话；模型请求直达你配置的端点。浏览器存储未加密，请勿在公共设备上保存 apikey。
+- 支持完整 JSON 备份与导入，以及单个对话的 TXT 导出。默认备份包含 apikey 且未加密，可取消勾选。
+- 支持Markdown语法；候选答案卡支持公式渲染，教学正文和问题磁贴暂不支持。
+- 支持静态 SVG 讲解卡片与可交互的 HTML 可视化。
 - 双语支持
 
 ## 安装和使用
@@ -47,22 +49,20 @@ Agent 升级 A–G 已完成阶段收尾。开发从 [当前交接](docs/HANDOFF
   - React 18.x，React DOM 18.x
   - React Router DOM 7.x
   - Tailwind CSS 3.x
-  - 其他：i18next、react-i18next、styled-components、framer-motion、react-markdown 等
+  - 其他：i18next、react-i18next、framer-motion、react-markdown 等
 - 其他说明：
   - 本项目为纯前端应用，无需后端即可运行.
 
 
 ## 直接体验
 - **在线演示**：访问[项目在线演示](https://wenzhixuan.com)
-- 提供限时的690万tokens glm4.5试用，模型配置面板点击“加载默认配置”即可
-  ![model](./imgs/model.png)
+- 需要自备模型 API：在模型配置面板填写接口地址、模型名和 apikey；“加载默认配置”只填入 DeepSeek 地址与模型名，不含 apikey
 
 ## 使用方法
 - 打开项目在线演示[项目在线演示](https://wenzhixuan.com)
-- 点击“加载默认配置”，可使用glm4.5模型（token有限，并发有限，推荐使用自己的api）
+- 在模型配置面板填写自己的 API 配置
 - 输入讨论的问题，点击“发送”，即可与AI对话
-- 设置面板中的“智能体设置”选择“苏格拉底追问”即打开追问模式，选择“随意闲聊”即关闭追问，打开普通聊天模式。
-![模型配置](./imgs/agent-settings.png)
+- 默认使用苏格拉底追问；当前界面没有模式切换入口
 
 
 ## 其他

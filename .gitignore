@@ -13,7 +13,7 @@ dist-ssr
 *.local
 .pnpm-store
 
-# 仅使用 pnpm-lock.yaml 作为唯一锁文件（参见 CLAUDE.md）
+# 仅使用 pnpm-lock.yaml 作为唯一锁文件（参见 AGENTS.md）
 package-lock.json
 yarn.lock
 
