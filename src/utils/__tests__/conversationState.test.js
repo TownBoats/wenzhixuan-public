@@ -760,3 +760,59 @@ test('RETRY_LAST_TURN：旧问题作废，只显示、不可作答、不进答�
   // 端点复用 toolCallId 时，新题必须可作答
   assert.deepEqual(deriveViewState(retry('old-call')).pendingQuestions.map((item) => item.id), ['new-q']);
 });
+
+/** 一轮两问的待答状态。 */
+function awaitingTwoQuestions() {
+  let state = runningState();
+  for (const [toolCallId, questionId, question] of [['c1', 'q1', '题一'], ['c2', 'q2', '题二']]) {
+    state = reduceSession(state, {
+      type: 'TOOL_COMPLETED',
+      runId: 'r1',
+      toolCallId,
+      toolName: 'ask_question',
+      output: { status: 'ready', nextAction: 'await_user', questionId, question, options: [] },
+    });
+  }
+  return reduceSession(state, { type: 'RUN_FINISHED', runId: 'r1', reason: 'awaiting_user', responseMessages: [] });
+}
+const explain = (questionId) => ({ type: 'EXPLAIN_QUESTION', questionId, turnId: 't2', runId: 'r2' });
+
+test('EXPLAIN_QUESTION：多题时立即起新一轮，其余待答题暂缓，重复点击只生效一次', () => {
+  const next = reduceSession(awaitingTwoQuestions(), explain('q1'));
+  assert.equal(next.turns.length, 2);
+  assert.equal(next.turns[0].status, TURN_STATUS.COMPLETED);
+  assert.deepEqual(next.turns[0].questions.map((item) => [item.state, item.resolution]), [
+    ['skipped', 'explain'],
+    ['skipped', 'deferred'],
+  ]);
+  assert.equal(
+    next.turns[1].userMessage.text,
+    '针对问题「题一」：（学生想不出来，希望直接讲解这一点，未作答）\n\n' +
+      '针对问题「题二」：（学生暂未作答，先处理其他请求；之后可按需重新提问）',
+  );
+  assert.equal(next.turns[1].userMessage.source, 'answer');
+  assert.equal(reduceSession(next, explain('q1')), next);
+  assert.equal(reduceSession(next, explain('q2')), next);
+});
+
+test('EXPLAIN_QUESTION：已答题照常进汇总，普通跳过文案不变', () => {
+  const answered = reduceSession(awaitingTwoQuestions(), {
+    type: 'SUBMIT_ANSWER', questionId: 'q1', answer: '我的答案', turnId: 'x', runId: 'x',
+  });
+  const text = reduceSession(answered, explain('q2')).turns[1].userMessage.text;
+  assert.match(text, /题一」，我的回答是：我的答案/);
+  assert.match(text, /题二」：（学生想不出来/);
+
+  const skipped = reduceSession(awaitingTwoQuestions(), {
+    type: 'SKIP_QUESTION', questionId: 'q1', turnId: 'x', runId: 'x',
+  });
+  assert.match(reduceSession(skipped, explain('q2')).turns[1].userMessage.text, /题一」：（学生选择了跳过，未作答）/);
+});
+
+test('EXPLAIN_QUESTION：运行中、未知题、缺身份都是空操作', () => {
+  const running = runningState();
+  assert.equal(reduceSession(running, explain('q1')), running);
+  const waiting = awaitingTwoQuestions();
+  assert.equal(reduceSession(waiting, explain('nope')), waiting);
+  assert.equal(reduceSession(waiting, { ...explain('q1'), runId: '' }), waiting);
+});

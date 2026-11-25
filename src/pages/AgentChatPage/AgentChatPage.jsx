@@ -29,7 +29,7 @@ import { downloadConversationText } from '../../utils/downloadBackup.js';
  *
  * - 只通过 session 命令改变会话，没有 setter / dispatch
  * - 只渲染 `renderedTurns` 投影，不自行拼 turn.parts
- * - 答案只经 submitAnswer / skipQuestion，页面不拼答案、不触发下一轮
+ * - 答案只经 submitAnswer / skipQuestion / explainQuestion，页面不拼答案、不触发下一轮
  */
 
 /** ConfigManager 的配置形状 → 运行层 { endpoint, apiKey, model }（与探针脚本同形）。 */
@@ -231,6 +231,12 @@ function AgentChatPage() {
     if (!openQuestion) return;
     session.submitAnswer(levelSelectToSubmission(openQuestion.id, level, content));
     setOpenQuestionId(null);
+  };
+
+  /** 立即讲解：其余题会暂缓，因此关闭当前打开的答题卡。 */
+  const handleExplain = (questionId) => {
+    setOpenQuestionId(null);
+    session.explainQuestion({ questionId });
   };
 
   // ── 历史抽屉 ──
@@ -464,6 +470,7 @@ function AgentChatPage() {
                 blocks={turn.blocks}
                 onOpen={setOpenQuestionId}
                 onSkip={(questionId) => session.skipQuestion({ questionId })}
+                onExplain={handleExplain}
               />
 
               {turn.error && (
@@ -601,6 +608,7 @@ function AgentChatPage() {
             question={toAnswerCardModel(openQuestion)}
             answerSettled
             onLevelSelect={handleLevelSelect}
+            onExplain={() => handleExplain(openQuestion.id)}
             onClose={() => setOpenQuestionId(null)}
           />
         </div>
@@ -637,7 +645,8 @@ function AgentChatPage() {
         onExport={(id) => {
           const result = history.exportConversation(id, {
             user: t('AgentChat.history.textUser'), assistant: t('AgentChat.history.textAssistant'),
-            skipped: t('AgentChat.history.textSkipped'), untitled: t('AgentChat.history.untitled'),
+            skipped: t('AgentChat.history.textSkipped'), explain: t('AgentChat.history.textExplain'),
+            deferred: t('AgentChat.history.textDeferred'), untitled: t('AgentChat.history.untitled'),
           });
           if (!result.ok) return result;
           try {

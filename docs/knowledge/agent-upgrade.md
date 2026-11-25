@@ -151,6 +151,10 @@ turn 状态为 streaming / awaiting_user / completed / failed / cancelled / inte
 
 `historyStore` 的结构白名单用于正常业务数据清洗，不应称为对任意嵌套文本或工具 payload 中秘密的通用 DLP。模型配置有独立的本地存储，不能把“历史不含 apiKey”说成“整个浏览器不存 apiKey”。
 
+### 直接讲解（2026-11-25）
+
+未作答问题的处理方式由可选字段 `resolution` 表示，状态仍是 skipped：`superseded`（重试作废）、`explain`（请求直接讲解）、`deferred`（因该请求而暂缓），缺省为普通跳过。`EXPLAIN_QUESTION` 在一次转换中处理目标题与同轮其余待答题并立即续轮，是“全部处理完才续轮”的例外；正常作答与跳过不变。三者的汇总文案、界面标签与 TXT 各自区分，见 [ADR-004](../decisions/ADR-004-direct-guidance.md)。
+
 ### 公式渲染（2026-11-25）
 
 教学正文、问题磁贴与答题卡共用 `utils/markdownMath.js` 的插件配置。KaTeX 样式由 `main.jsx` 打包引入，不再加载 CDN 样式；`katex` 按锁定版本列为直接依赖。`escapeCurrency` 只改渲染输入，避免 `$5，$10` 被当成公式，不改动已存内容、模型上下文或 TXT 导出。判断是启发式的：以数字开头，且下一个 `$` 前为空白、后跟数字或中间夹普通中文时视为货币；因此 `$5 $` 这类写法会按原文显示。未支持 `\( \)`、`\[ \]` 定界符。

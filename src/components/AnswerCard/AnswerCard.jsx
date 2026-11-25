@@ -28,6 +28,8 @@ const AnswerCard = ({
   question,
   onLevelSelect,
   onClose,
+  // 可选：传入时显示「直接讲给我」
+  onExplain,
   // 可选：调用方声明「这一轮已结束」。不传时按答案是否为空判断
   answerSettled,
   // eslint-disable-next-line no-unused-vars
@@ -182,6 +184,13 @@ const AnswerCard = ({
     }
   };
 
+  // 想不出来时不必等倒计时
+  const handleExplain = () => {
+    if (submittedRef.current) return;
+    submittedRef.current = true;
+    onExplain();
+  };
+
   // ── Card body：mobile / desktop 共用 ──
   const cardBody = (
         <div
@@ -273,6 +282,12 @@ const AnswerCard = ({
                       <div className="font-sans text-body font-medium leading-relaxed text-ink-900">
                         <MarkdownRenderer content={question.question} />
                       </div>
+                      {onExplain && (
+                        <Button intent="ghost" size="sm" className="-ml-3 mt-1 text-sage-700" onClick={handleExplain}>
+                          <Icon name="Lightbulb" size={14} className="text-current" />
+                          {t('AnswerCard.explain')}
+                        </Button>
+                      )}
                     </div>
 
                     {/* 答案档位列 */}
@@ -411,6 +426,7 @@ AnswerCard.propTypes = {
   question: PropTypes.object,
   onLevelSelect: PropTypes.func,
   onClose: PropTypes.func,
+  onExplain: PropTypes.func,
   answerSettled: PropTypes.bool,
   theme: PropTypes.string,
 };

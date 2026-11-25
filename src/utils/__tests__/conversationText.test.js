@@ -109,3 +109,11 @@ test('重试后作废的旧题保留题干，不写成学生跳过', () => {
   assert.match(text, /旧问题/);
   assert.doesNotMatch(text, /跳过/);
 });
+
+test('请求讲解、暂缓与普通跳过在文本中可区分', () => {
+  const build = (resolution) =>
+    formatConversationText({ turns: [{ parts: [], questions: [{ id: 'q', text: '题', state: 'skipped', resolution }] }] });
+  assert.match(build('explain'), /请直接讲解/);
+  assert.match(build('deferred'), /暂未作答/);
+  assert.match(build(undefined), /跳过/);
+});

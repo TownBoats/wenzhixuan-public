@@ -2,7 +2,12 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Icon, cn } from '@/components/ui';
 import MarkdownContent from '../../components/MessageContent/MarkdownContent';
-import { QUESTION_STATE, RESOLUTION_SUPERSEDED } from '../../utils/conversationState';
+import {
+  QUESTION_STATE,
+  RESOLUTION_DEFERRED,
+  RESOLUTION_EXPLAIN,
+  RESOLUTION_SUPERSEDED,
+} from '../../utils/conversationState';
 import { extractPartialStringField } from '../../utils/partialJsonField';
 
 /**
@@ -40,6 +45,16 @@ const STATE_META = {
   },
   [SUPERSEDED]: {
     labelKey: 'AgentChat.questionGroup.superseded',
+    pillClass: 'bg-paper-200 text-ink-500',
+    ringClass: 'border-paper-200/70 bg-paper-100/40',
+  },
+  [RESOLUTION_EXPLAIN]: {
+    labelKey: 'AgentChat.questionGroup.explained',
+    pillClass: 'bg-sun-300/40 text-sun-700',
+    ringClass: 'border-paper-200/70 bg-paper-100/40',
+  },
+  [RESOLUTION_DEFERRED]: {
+    labelKey: 'AgentChat.questionGroup.deferred',
     pillClass: 'bg-paper-200 text-ink-500',
     ringClass: 'border-paper-200/70 bg-paper-100/40',
   },
@@ -90,11 +105,13 @@ function mergeQuestions(questions, blocks) {
   return merged;
 }
 
-function QuestionTile({ question, index, onOpen, onSkip }) {
+function QuestionTile({ question, index, onOpen, onSkip, onExplain }) {
   const { t } = useTranslation();
   const isSuperseded = question.resolution === SUPERSEDED;
   const meta =
-    STATE_META[isSuperseded ? SUPERSEDED : question.state] ?? STATE_META[QUESTION_STATE.PENDING];
+    STATE_META[question.resolution] ??
+    STATE_META[question.state] ??
+    STATE_META[QUESTION_STATE.PENDING];
   const isPreparing = question.state === PREPARING;
   const isPending = !isSuperseded && question.state === QUESTION_STATE.PENDING;
   const isAnswered = question.state === QUESTION_STATE.ANSWERED;
@@ -113,7 +130,8 @@ function QuestionTile({ question, index, onOpen, onSkip }) {
       aria-busy={isPreparing || undefined}
       onClick={handleOpen}
       onKeyDown={(event) => {
-        if (!isPending) return;
+        // 内部按钮的按键不冒泡成「打开题目」
+        if (!isPending || event.target !== event.currentTarget) return;
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
           handleOpen();
@@ -173,7 +191,7 @@ function QuestionTile({ question, index, onOpen, onSkip }) {
       ) : null}
 
       {isPending ? (
-        <div className="mt-2 flex items-center justify-between">
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-y-1">
           <span className="inline-flex items-center gap-1 text-caption font-medium text-sage-700">
             {t('AgentChat.questionGroup.open')}
             <Icon
@@ -182,21 +200,38 @@ function QuestionTile({ question, index, onOpen, onSkip }) {
               className="text-current transition-transform duration-fast group-hover:translate-x-0.5"
             />
           </span>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              onSkip(question.id);
-            }}
-            className={cn(
-              'inline-flex items-center gap-1 rounded-pill px-2 py-1 text-caption text-ink-500',
-              'transition-colors duration-fast hover:bg-paper-200 hover:text-ink-700',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/30',
-            )}
-          >
-            <Icon name="SkipForward" size={12} className="text-current" />
-            {t('AgentChat.questionGroup.skip')}
-          </button>
+          <span className="flex flex-wrap items-center gap-1">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onExplain(question.id);
+              }}
+              className={cn(
+                'inline-flex items-center gap-1 rounded-pill px-2 py-1 text-caption text-sage-700',
+                'transition-colors duration-fast hover:bg-sage-50 hover:text-sage-900',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/30',
+              )}
+            >
+              <Icon name="Lightbulb" size={12} className="text-current" />
+              {t('AgentChat.questionGroup.explain')}
+            </button>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onSkip(question.id);
+              }}
+              className={cn(
+                'inline-flex items-center gap-1 rounded-pill px-2 py-1 text-caption text-ink-500',
+                'transition-colors duration-fast hover:bg-paper-200 hover:text-ink-700',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-500/30',
+              )}
+            >
+              <Icon name="SkipForward" size={12} className="text-current" />
+              {t('AgentChat.questionGroup.skip')}
+            </button>
+          </span>
         </div>
       ) : null}
     </div>
@@ -217,9 +252,10 @@ QuestionTile.propTypes = {
   index: PropTypes.number.isRequired,
   onOpen: PropTypes.func.isRequired,
   onSkip: PropTypes.func.isRequired,
+  onExplain: PropTypes.func.isRequired,
 };
 
-function QuestionGroup({ questions, blocks, onOpen, onSkip }) {
+function QuestionGroup({ questions, blocks, onOpen, onSkip, onExplain }) {
   const { t } = useTranslation();
   const merged = mergeQuestions(questions, blocks);
   if (merged.length === 0) return null;
@@ -244,6 +280,7 @@ function QuestionGroup({ questions, blocks, onOpen, onSkip }) {
             index={index}
             onOpen={onOpen}
             onSkip={onSkip}
+            onExplain={onExplain}
           />
         ))}
       </div>
@@ -276,6 +313,7 @@ QuestionGroup.propTypes = {
   ),
   onOpen: PropTypes.func.isRequired,
   onSkip: PropTypes.func.isRequired,
+  onExplain: PropTypes.func.isRequired,
 };
 
 export default QuestionGroup;

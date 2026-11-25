@@ -28,10 +28,15 @@ export const QUESTION_STATE = Object.freeze({
 });
 
 /**
- * 重试后作废的旧问题：只保留显示，不可作答，也不进入答案汇总。
+ * 未作答问题的处理方式（附加在 skipped 上，缺省即普通跳过）。
  * 用附加字段而不是新状态：旧版本会把未知状态还原成 pending。
+ *   - superseded：重试后作废，只保留显示，不进入答案汇总
+ *   - explain：学生请求直接讲解这一点
+ *   - deferred：同轮其他题因学生的请求而暂缓
  */
 export const RESOLUTION_SUPERSEDED = 'superseded';
+export const RESOLUTION_EXPLAIN = 'explain';
+export const RESOLUTION_DEFERRED = 'deferred';
 
 const isSuperseded = (question) => question?.resolution === RESOLUTION_SUPERSEDED;
 
@@ -200,6 +205,12 @@ function serializeAnswers(questions) {
   return questions
     .map((question) => {
       const text = stripGate(question.text);
+      if (question.resolution === RESOLUTION_EXPLAIN) {
+        return `针对问题「${text}」：（学生想不出来，希望直接讲解这一点，未作答）`;
+      }
+      if (question.resolution === RESOLUTION_DEFERRED) {
+        return `针对问题「${text}」：（学生暂未作答，先处理其他请求；之后可按需重新提问）`;
+      }
       if (question.state === QUESTION_STATE.SKIPPED) {
         return `针对问题「${text}」：（学生选择了跳过，未作答）`;
       }
@@ -553,17 +564,48 @@ function resolveAnswer(state, action, questionState) {
   // 还有问题没答：只更新，不起新运行
   if (!allResolved) return replaceLastTurn(state, answeredTurn);
 
-  // 全部结束：需要新轮次的身份；缺失说明调用方有 bug，宁可不动也不能造出没有身份的 turn
+  return startAnswerTurn(state, answeredTurn, action);
+}
+
+/**
+ * 「直接讲给我」：目标题标为 explain，同轮其余待答题标为 deferred，立即起新一轮。
+ * 一次转换内完成，第二次点击时已不是待答状态，直接原样返回。
+ */
+function explainQuestion(state, action) {
+  const turn = currentTurn(state);
+  if (!turn || turn.status !== TURN_STATUS.AWAITING_USER) return state;
+
+  const isPending = (question) => question.state === QUESTION_STATE.PENDING;
+  if (!turn.questions.some((question) => question.id === action.questionId && isPending(question))) {
+    return state;
+  }
+
+  const questions = turn.questions.map((question) =>
+    isPending(question)
+      ? {
+          ...question,
+          state: QUESTION_STATE.SKIPPED,
+          resolution:
+            question.id === action.questionId ? RESOLUTION_EXPLAIN : RESOLUTION_DEFERRED,
+        }
+      : question,
+  );
+  return startAnswerTurn(state, { ...turn, questions }, action);
+}
+
+/** 该轮问题全部处理完：收尾本轮，并以答案汇总开启下一轮。 */
+function startAnswerTurn(state, answeredTurn, action) {
+  // 需要新轮次的身份；缺失说明调用方有 bug，宁可不动也不能造出没有身份的 turn
   if (typeof action.turnId !== 'string' || !action.turnId || typeof action.runId !== 'string' || !action.runId) {
     return state;
   }
 
-  const activeQuestions = questions.filter((question) => !isSuperseded(question));
+  const activeQuestions = answeredTurn.questions.filter((question) => !isSuperseded(question));
   const single = activeQuestions.length === 1 ? activeQuestions[0] : null;
   const nextTurn = createTurn({
     id: action.turnId,
     runId: action.runId,
-    modeSnapshot: action.mode ?? turn.modeSnapshot ?? state.mode,
+    modeSnapshot: action.mode ?? answeredTurn.modeSnapshot ?? state.mode,
     userMessage: {
       text: serializeAnswers(activeQuestions),
       source: 'answer',
@@ -630,6 +672,9 @@ export function reduceSession(state, action) {
 
     case 'SKIP_QUESTION':
       return resolveAnswer(state, action, QUESTION_STATE.SKIPPED);
+
+    case 'EXPLAIN_QUESTION':
+      return explainQuestion(state, action);
 
     /**
      * 取消只是**标记意图**：真正中断运行由 hook 持有 `AbortController` 完成，

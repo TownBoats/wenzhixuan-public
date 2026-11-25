@@ -40,7 +40,7 @@ const TURN_STATUSES = new Set([
   'interrupted',
 ]);
 const QUESTION_STATES = new Set(['pending', 'answered', 'skipped']);
-const QUESTION_RESOLUTIONS = new Set(['superseded']);
+const QUESTION_RESOLUTIONS = new Set(['superseded', 'explain', 'deferred']);
 const TOOL_STATUSES = new Set(['running', 'completed', 'failed']);
 const USER_MESSAGE_SOURCES = new Set(['input', 'answer']);
 /** 失败类别：只落地运行层会产出的值，未知值归 null。 */

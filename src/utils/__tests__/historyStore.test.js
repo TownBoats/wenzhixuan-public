@@ -505,13 +505,13 @@ describe('createHistoryStore · 失败类别', () => {
   });
 });
 
-it('问题的作废标记可往返保存，未知值不落地', () => {
+it('问题的处理方式可往返保存，未知值不落地', () => {
   const clean = (resolution) =>
     sanitizeConversation({
       id: 'c',
       turns: [{ id: 't', status: 'completed', questions: [{ id: 'q', text: '题', state: 'skipped', resolution }] }],
     }).turns[0].questions[0];
-  assert.equal(clean('superseded').resolution, 'superseded');
+  for (const value of ['superseded', 'explain', 'deferred']) assert.equal(clean(value).resolution, value);
   assert.equal('resolution' in clean('unknown'), false);
   assert.equal('resolution' in clean(undefined), false);
 });

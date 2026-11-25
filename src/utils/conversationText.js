@@ -67,7 +67,7 @@ function readableLegacyContent(content) {
 }
 
 /** A reading projection of dialogue and ready diagram sources, without configuration or protocol metadata. */
-export function formatConversationText(record, { user = '我', assistant = '问知轩', skipped = '跳过', untitled = '对话记录' } = {}) {
+export function formatConversationText(record, { user = '我', assistant = '问知轩', skipped = '跳过', explain = '请直接讲解', deferred = '暂未作答', untitled = '对话记录' } = {}) {
   const blocks = [];
   const say = (role, value) => {
     const text = plainText(value);
@@ -105,7 +105,7 @@ export function formatConversationText(record, { user = '我', assistant = '问�
         // 重试后作废的旧题：学生没有作答，也没有主动跳过
         if (question?.resolution === 'superseded') continue;
         if (question?.state === 'answered') say(user, question.answer);
-        if (question?.state === 'skipped') say(user, skipped);
+        if (question?.state === 'skipped') say(user, { explain, deferred }[question.resolution] ?? skipped);
       }
     });
   } else {

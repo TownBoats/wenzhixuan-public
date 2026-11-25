@@ -253,6 +253,12 @@ export function useChatSession({
     [resolveQuestion],
   );
 
+  /** 「直接讲给我」：立即起新一轮，同轮其余待答题暂缓。 */
+  const explainQuestion = useCallback(
+    (payload) => resolveQuestion('EXPLAIN_QUESTION', payload ?? {}),
+    [resolveQuestion],
+  );
+
   /**
    * 只重试最后一轮：换新 `runId` 重跑，旧内容保留到新运行产出。
    * 重试的上下文由「该轮之前的已完成 turn + 该轮自己的用户消息」组成。
@@ -343,6 +349,7 @@ export function useChatSession({
     sendMessage,
     submitAnswer,
     skipQuestion,
+    explainQuestion,
     cancelRun,
     retryLastTurn,
     setMode,
