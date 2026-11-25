@@ -4,6 +4,8 @@
 
 ## T1 公式渲染
 
+**状态（2026-11-25）：已实现，用户已验收（“ok，修好了”）。** 基准 `156b95b` + 工作区；Windows / Node v22.22.1 / Chrome headless。单元测试 236/236（新增 7），`vite build` 与改动文件 eslint 通过；浏览器用临时页渲染实际组件，桌面 900px 与 390px iframe，长公式在自身范围滚动、页面不横溢。未用真实模型，未在实体手机或完整答题流程中验证。答题卡的 CDN 样式一并换成本地样式。
+
 **现状：** `MarkdownContent.jsx` 只启用 `remark-gfm`，供教学正文和问题磁贴使用；`MarkdownRenderer` 已启用 `remark-math` 与 `rehype-katex`，供答题卡使用。教学指令要求模型用 `$` 写公式。
 
 **做法：**

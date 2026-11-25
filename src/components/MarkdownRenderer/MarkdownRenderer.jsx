@@ -1,12 +1,10 @@
 import { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Icon, cn } from '@/components/ui';
+import { MATH_REHYPE_PLUGINS, MATH_REMARK_PLUGINS, escapeCurrency } from '../../utils/markdownMath';
 
 /**
  * MarkdownRenderer — Markdown 内容渲染（设计 token 重写版）
@@ -19,8 +17,6 @@ import { Icon, cn } from '@/components/ui';
  *   - 表格 divide-gray-200           → divide-paper-200
  *   - 表头 bg-gray-50                → bg-paper-100 + ink-900 + serif
  *   - tech 主题分支整体删除（单主题）
- *
- * 行为完全保留，包括 KaTeX CSS 注入。
  */
 
 const CodeBlock = ({ language, value }) => {
@@ -144,21 +140,15 @@ const MarkdownRenderer = ({
   );
 
   return (
-    <>
-      <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"
-      />
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex]}
-        components={markdownComponents}
-        skipHtml={false}
-        unwrapDisallowed={false}
-      >
-        {content}
-      </ReactMarkdown>
-    </>
+    <ReactMarkdown
+      remarkPlugins={MATH_REMARK_PLUGINS}
+      rehypePlugins={MATH_REHYPE_PLUGINS}
+      components={markdownComponents}
+      skipHtml={false}
+      unwrapDisallowed={false}
+    >
+      {escapeCurrency(content)}
+    </ReactMarkdown>
   );
 };
 

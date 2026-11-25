@@ -1,14 +1,14 @@
 import { memo, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { useTranslation } from 'react-i18next';
 import { Icon, cn } from '@/components/ui';
+import { MATH_REHYPE_PLUGINS, MATH_REMARK_PLUGINS, escapeCurrency } from '../../utils/markdownMath';
 
 /**
  * MarkdownContent：教学正文与题目的 Markdown 渲染。
  *
- * 与 `MarkdownRenderer` 分开：后者用于答题卡，带代码高亮等依赖；这里只启用 remark-gfm。
+ * 与 `MarkdownRenderer` 分开：后者用于答题卡，带代码高亮等依赖；这里只启用 GFM 与公式。
  * 不启用 `rehype-raw`，模型输出的 HTML 不会被执行。
  */
 
@@ -167,13 +167,18 @@ function MarkdownContent({ content, compact = false }) {
   return (
     <div
       className={cn(
-        'min-w-0 leading-[1.8] text-ink-900',
+        // 行内长分式无法换行，列表等场景在正文范围内横向滚动
+        'min-w-0 overflow-x-auto leading-[1.8] text-ink-900',
         compact ? 'text-small' : 'text-body',
         '[&>*:first-child]:mt-0 [&>*:last-child]:mb-0',
       )}
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
-        {content}
+      <ReactMarkdown
+        remarkPlugins={MATH_REMARK_PLUGINS}
+        rehypePlugins={MATH_REHYPE_PLUGINS}
+        components={components}
+      >
+        {escapeCurrency(content)}
       </ReactMarkdown>
     </div>
   );

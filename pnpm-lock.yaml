@@ -32,6 +32,9 @@ importers:
       i18next:
         specifier: ^24.2.3
         version: 24.2.3
+      katex:
+        specifier: ^0.16.45
+        version: 0.16.45
       lucide-react:
         specifier: ^0.471.1
         version: 0.471.2(react@18.3.1)

@@ -151,6 +151,10 @@ turn 状态为 streaming / awaiting_user / completed / failed / cancelled / inte
 
 `historyStore` 的结构白名单用于正常业务数据清洗，不应称为对任意嵌套文本或工具 payload 中秘密的通用 DLP。模型配置有独立的本地存储，不能把“历史不含 apiKey”说成“整个浏览器不存 apiKey”。
 
+### 公式渲染（2026-11-25）
+
+教学正文、问题磁贴与答题卡共用 `utils/markdownMath.js` 的插件配置。KaTeX 样式由 `main.jsx` 打包引入，不再加载 CDN 样式；`katex` 按锁定版本列为直接依赖。`escapeCurrency` 只改渲染输入，避免 `$5，$10` 被当成公式，不改动已存内容、模型上下文或 TXT 导出。判断是启发式的：以数字开头，且下一个 `$` 前为空白、后跟数字或中间夹普通中文时视为货币；因此 `$5 $` 这类写法会按原文显示。未支持 `\( \)`、`\[ \]` 定界符。
+
 ## 10. 生成内容的信任边界
 
 VisualizeCard 的 iframe 使用 `sandbox="allow-scripts"`，没有 allow-same-origin；CSP 禁止 connect-src，但允许指定脚本 CDN、字体和 https 图片。高度通信校验消息来源。该组合隔离宿主 origin 能力，但不是零网络环境，不能声称所有外部请求被禁止。

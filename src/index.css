@@ -27,3 +27,11 @@
   scrollbar-width: thin;
   scrollbar-color: rgba(100, 116, 139, 0.2) transparent;
 }
+
+/* 公式：长公式在自身范围内横向滚动，不撑破页面 */
+.katex-display,
+p:has(> .katex) {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 3px 0;
+}
