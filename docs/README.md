@@ -20,7 +20,7 @@
 | [全量备份验证](tasks/data-backup-2026-11-14.md) | JSON 备份与导入的证据 |
 | [单条 JSON 导出验证](tasks/single-conversation-export-2026-11-14.md) | 已被 TXT 替代的下载形式，历史证据 |
 | [测试保活与上下文实测验证](tasks/context-usage-2026-11-21.md) | 2026-11-21 回归结果与未验范围 |
-| [教学引擎一期契约](tasks/teaching-phase1/README.md)、[任务与判据](tasks/teaching-phase1/TASKS.md) | 2026-11-25 方案，待审阅，未实施 |
+| [教学引擎一期契约](tasks/teaching-phase1/README.md)、[任务与判据](tasks/teaching-phase1/TASKS.md) | 2026-11-25 方案，Q1–Q4 已定，未实施 |
 | [ADR-003](decisions/ADR-003-teaching-state.md)、[ADR-004](decisions/ADR-004-direct-guidance.md) | 教学状态与引用、直接引导；提议状态 |
 | [ADR-005](decisions/ADR-005-retry-supersedes-questions.md)、[清理盘点](tasks/cleanup-2026-11-25.md) | 重试作废旧题；旧源码与注释清理 |
 | [改动点整理](tasks/improvement-points-2026-11-24.md) | 2026-11-24 待排期的界面与教学引擎需求 |
