@@ -24,6 +24,8 @@ export const ASK_QUESTION_TOOL_NAME = 'ask_question';
 /** 参数上限：改这里要同步 `docs/knowledge/agent-upgrade.md`。 */
 export const QUESTION_MAX_LENGTH = 500;
 export const CONTEXT_MAX_LENGTH = 2000;
+/** 参考答案只作材料，超长截断而不拒绝问题。 */
+export const ANSWER_MAX_LENGTH = 1000;
 
 export const REJECT_INVALID_INPUT = 'invalid_input';
 export const REJECT_DUPLICATE_QUESTION = 'duplicate_question';
@@ -46,6 +48,12 @@ export const ASK_QUESTION_INPUT_SCHEMA = jsonSchema({
       type: 'string',
       description: `回答这个问题必需的事实、约定和前文结论，例如「本例中数组从 0 开始编号；前面已得出比较次数不超过 2log₂(n+1)」。系统会附上你本轮的讲解和学生本轮的输入，不必重复；更早的依据只能靠这里提供。确实没有依赖时写「无」（≤${CONTEXT_MAX_LENGTH} 字）`,
     },
+    answer: {
+      type: 'string',
+      description:
+        `这道题的参考答案，学生看不到，只用来约束候选答案。计算题先逐步算清再写，给出关键步骤和最终数值；` +
+        `没有标准答案的开放题或了解学生情况的题写「无」（≤${ANSWER_MAX_LENGTH} 字）`,
+    },
     refs: {
       type: 'array',
       items: { type: 'string' },
@@ -55,11 +63,11 @@ export const ASK_QUESTION_INPUT_SCHEMA = jsonSchema({
     },
   },
   // 声明必填以促使主模型填写；漏写时不拒绝问题，由材料组装兜底
-  required: ['question', 'context'],
+  required: ['question', 'context', 'answer'],
   additionalProperties: false,
 });
 
-const ALLOWED_FIELDS = new Set(['question', 'context', 'refs']);
+const ALLOWED_FIELDS = new Set(['question', 'context', 'answer', 'refs']);
 
 /** 按码点计长度，避免 emoji 之类被算成两个字符。 */
 const charLength = (text) => [...text].length;
@@ -96,7 +104,9 @@ export function validateAskQuestionInput(input) {
     return { ok: false, message: `context 不能超过 ${CONTEXT_MAX_LENGTH} 字` };
   }
 
-  return { ok: true, question, context: context || undefined, ...(input.refs === undefined ? {} : { refs: input.refs }) };
+  const answer = typeof input.answer === 'string' ? [...input.answer.trim()].slice(0, ANSWER_MAX_LENGTH).join('') : '';
+
+  return { ok: true, question, context: context || undefined, ...(answer ? { answer } : {}), ...(input.refs === undefined ? {} : { refs: input.refs }) };
 }
 
 let fallbackSequence = 0;
@@ -181,7 +191,7 @@ export function createAskQuestionTool({
       };
 
       const material =
-        typeof buildContext === 'function' ? buildContext(checked.context, refs) : { text: checked.context };
+        typeof buildContext === 'function' ? buildContext(checked.context, refs, checked.answer) : { text: checked.context };
       const startedAt = Date.now();
       const debug = (patch) => onDebug?.({ toolCallId, ...patch });
       debug({

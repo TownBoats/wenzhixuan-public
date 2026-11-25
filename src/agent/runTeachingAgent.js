@@ -270,7 +270,7 @@ export async function runTeachingAgent({
   };
 
   /** 组装失败只影响候选质量，不能连累问题本身。 */
-  const buildQuestionContext = (modelContext, refs = []) => {
+  const buildQuestionContext = (modelContext, refs = [], answer) => {
     try {
       return buildOptionContext({
         messages,
@@ -278,6 +278,7 @@ export async function runTeachingAgent({
         modelContext,
         conventions: currentPlan?.conventions,
         references: describeRefs(refs, references),
+        answer,
       });
     } catch {
       return { text: modelContext ?? '', source: CONTEXT_SOURCES.MODEL };

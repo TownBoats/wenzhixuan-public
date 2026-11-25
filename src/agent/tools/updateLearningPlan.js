@@ -45,7 +45,7 @@ export const UPDATE_LEARNING_PLAN_INPUT_SCHEMA = jsonSchema({
           requires: { type: 'array', items: { type: 'string' }, description: '前置概念的 id' },
           evidence: {
             type: 'string',
-            description: '仅 verified 需要：逐字引用学生自己写的话。点选的候选答案和「懂了」这类自评不算',
+            description: '仅 verified 需要：逐字引用学生自己写的话，且说的就是这个概念的理由。一句话只能验证一个概念；点选的候选答案、「懂了」这类自评、只背出定义都不算',
           },
         },
         required: ['id'],

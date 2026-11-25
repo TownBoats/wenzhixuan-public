@@ -4,7 +4,7 @@
  * 分工：主模型判断相关性（写 context），程序提供原文（本轮正文、学生本轮输入）。
  * 最近几轮对话只在主模型没写 context 时兜底。
  * 学习计划里的约定由程序每题附上，不依赖主模型是否填写。
- * 优先级：补充说明 > 约定 > 被引用内容 > 本轮正文 > 学生本轮输入 > 兜底历史；超预算时从低优先级开始截断。
+ * 优先级：参考答案 > 补充说明 > 约定 > 被引用内容 > 本轮正文 > 学生本轮输入 > 兜底历史；超预算时从低优先级开始截断。
  * 图只取标题，工具结果、源码、候选项和 reasoning 不进入材料。
  */
 
@@ -82,6 +82,7 @@ function fit(text, max, keep) {
  * @param {string} [params.currentText]  本轮已生成的正文
  * @param {string} [params.modelContext] 主模型随问题给出的补充说明
  * @param {string[]} [params.conventions] 学习计划中的全程约定
+ * @param {string} [params.answer] 主模型给出的参考答案
  * @param {string} [params.references] 题目引用的图与讲解
  * @param {number} [params.maxChars]
  * @returns {{ text: string, source: string }} 没有可用材料时 text 为空串
@@ -92,6 +93,7 @@ export function buildOptionContext({
   modelContext,
   conventions,
   references,
+  answer,
   maxChars = OPTION_CONTEXT_MAX_CHARS,
 } = {}) {
   const list = Array.isArray(messages) ? messages : [];
@@ -114,6 +116,8 @@ export function buildOptionContext({
 
   const lastUser = list.findLastIndex((message) => message?.role === 'user');
 
+  const expected = clean(answer);
+  const solution = NO_CONTEXT_RE.test(expected) ? '' : take('【参考答案】', expected, 'start');
   const note = declaredNone ? '' : take('【老师的补充说明】', written, 'start');
   const rules = (Array.isArray(conventions) ? conventions : []).map(clean).filter(Boolean);
   const agreed = take('【全程约定】', rules.map((item) => `- ${item}`).join('\n'), 'start');
@@ -137,7 +141,7 @@ export function buildOptionContext({
     if (picked.length > 0) history = `${title}\n${picked.join('\n')}`;
   }
 
-  return { text: [history, input, current, quoted, agreed, note].filter(Boolean).join('\n\n'), source };
+  return { text: [history, input, current, quoted, agreed, note, solution].filter(Boolean).join('\n\n'), source };
 }
 
 export default buildOptionContext;

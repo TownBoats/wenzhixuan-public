@@ -6,7 +6,7 @@ import { createDataBackup, createConversationBackup, parseDataBackup, planDataIm
   BACKUP_FORMAT, BACKUP_VERSION, MAX_BACKUP_BYTES } from '../dataBackup.js';
 import { createHistoryStore, sanitizeConversation } from '../historyStore.js';
 import { projectV1Record } from '../historyV1.js';
-import { buildModelContext, createInitialState, reduceSession } from '../conversationState.js';
+import { buildModelContext, createInitialState, projectLearningPlan, projectReferences, reduceSession } from '../conversationState.js';
 import useConversationHistory from '../../pages/AgentChatPage/useConversationHistory.js';
 
 const { act, create } = ReactTestRenderer;
@@ -301,4 +301,27 @@ test('single export checkpoints the current conversation but allows exporting an
   assert.deepEqual([...storage.map], before);
   assert.equal(view.opened.length, openedBefore, 'export must not switch the active conversation');
   view.close();
+});
+
+test('备份往返：学习计划、图编号、题目引用与调整计划的原话保持', () => {
+  const plan = { goal: 'g', conventions: ['下标从 1 开始'], currentConceptId: 'a', nextStep: '', concepts: [{ id: 'a', name: '甲', status: 'verified', requires: [], evidence: '学生的原话' }] };
+  const current = record();
+  const turn = current.turns[0];
+  turn.status = 'completed';
+  turn.parts[1].output = { status: 'ready', refId: 'fig-aaaaaa', title: '图', html: '<p>x</p>' };
+  turn.questions[0] = { ...turn.questions[0], state: 'skipped', resolution: 'deferred', refs: ['fig-aaaaaa'] };
+  turn.modelMessages = [
+    { role: 'assistant', content: [{ type: 'tool-call', toolCallId: 'p', toolName: 'update_learning_plan', input: { goal: 'g' } }] },
+    { role: 'tool', content: [{ type: 'tool-result', toolCallId: 'p', toolName: 'update_learning_plan', output: { type: 'json', value: { status: 'ready', plan } } }] },
+  ];
+  current.turns.push({ ...turn, id: 't2', runId: 'r2', parts: [], questions: [], modelMessages: [],
+    userMessage: { text: '要求调整学习计划：跳过', source: 'plan_request', requestText: '跳过' } });
+  const source = memory({ chat_histories_v2: JSON.stringify([sanitizeConversation(current)]) });
+  const destination = memory();
+  assert.equal(importDataBackup(destination, JSON.stringify(createDataBackup(source).backup)).ok, true);
+  const { turns } = createHistoryStore(destination).loadById('c1').record;
+  assert.deepEqual(projectLearningPlan(turns), plan);
+  assert.equal(projectReferences(turns).get('fig-aaaaaa').number, 1);
+  assert.deepEqual(turns[0].questions[0].refs, ['fig-aaaaaa']);
+  assert.equal(turns[1].userMessage.requestText, '跳过');
 });

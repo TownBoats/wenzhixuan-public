@@ -52,6 +52,20 @@ function createTool({
   });
 }
 
+test('参考答案进入选项材料，不出现在工具结果；超长截断不拒绝', async () => {
+  const seen = [];
+  const askTool = createAskQuestionTool({
+    mode: SOCRATIC, optionConfig: OPTION_CONFIG, optionSystemPrompt: 'p',
+    generateOptions: createSpy({ status: 'ready', options: READY_OPTIONS }).fn,
+    buildContext: (_context, _refs, answer) => { seen.push(answer); return { text: 'm', source: 'model' }; },
+  });
+  const output = await askTool.execute({ question: '题', context: '无', answer: '秘密'.repeat(2000) }, { toolCallId: 'a' });
+  assert.equal(output.status, 'ready');
+  assert.equal(seen[0].length, 1000);
+  assert.doesNotMatch(JSON.stringify(output), /秘密/);
+  assert.equal((await askTool.execute({ question: '题二', context: '无', answer: 5 }, { toolCallId: 'b' })).status, 'ready');
+});
+
 test('引用异常只忽略，不拒绝问题；未接入解析时不带引用', async () => {
   for (const refs of ['x', 1, null, ['fig-aaaaaa']]) {
     const output = await createTool().execute({ question: '题', context: '无', refs }, { toolCallId: String(refs) });

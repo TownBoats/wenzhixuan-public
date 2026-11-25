@@ -128,6 +128,16 @@ export function evidenceProblem(evidence, studentTexts) {
 
 export const isValidEvidence = (evidence, studentTexts) => evidenceProblem(evidence, studentTexts) === null;
 
+/** 同一句话不能验证多个概念：与其他已验证概念的证据互相包含即视为同一句。 */
+function isEvidenceUsed(evidence, id, concepts) {
+  const quote = normalizeQuote(evidence);
+  return [...concepts.values()].some((item) => {
+    if (item.id === id || item.status !== 'verified' || !item.evidence) return false;
+    const used = normalizeQuote(item.evidence);
+    return used.includes(quote) || quote.includes(used);
+  });
+}
+
 // ────────────────────────────── 合并 ──────────────────────────────
 
 function hasCycle(concepts) {
@@ -232,7 +242,9 @@ export function mergePlan(current, input, studentTexts) {
     let evidence = status === 'verified' ? old?.evidence : undefined;
     if (item.status === 'verified') {
       const quote = clean(item.evidence);
-      const reason = evidenceProblem(quote, studentTexts);
+      const reason =
+        evidenceProblem(quote, studentTexts) ??
+        (isEvidenceUsed(quote, id, concepts) ? '这句话已用于验证另一个概念' : null);
       if (!reason) {
         evidence = quote;
       } else if (old?.status !== 'verified') {

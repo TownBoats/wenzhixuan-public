@@ -106,6 +106,18 @@ test('任意预算都不超限，兜底历史优先保留最近的内容', () =>
   assert.doesNotMatch(result, /很早/);
 });
 
+test('参考答案优先级最高；声明「无」或缺省时不出现；任意预算不超限', () => {
+  assert.match(buildOptionContext({ messages: HISTORY, modelContext: '无', answer: '7.5%' }).text, /【参考答案】\n7\.5%$/);
+  for (const answer of ['无', ' ', undefined, 1]) {
+    assert.doesNotMatch(buildOptionContext({ messages: HISTORY, answer }).text, /参考答案/);
+  }
+  const tight = buildOptionContext({ currentText: '讲'.repeat(9000), modelContext: '说'.repeat(9000), answer: '答'.repeat(1000) });
+  assert.equal(tight.text.match(/答/g).length, 1000 + 1);
+  for (let maxChars = 0; maxChars <= 300; maxChars += 7) {
+    assert.ok(length(buildOptionContext({ answer: '答'.repeat(100), currentText: '讲'.repeat(100), maxChars }).text) <= maxChars);
+  }
+});
+
 test('题目引用的内容：缺省不出现，任意预算不超限', () => {
   assert.match(buildOptionContext({ references: '图「一」' }).text, /^【题目引用的内容】\n图「一」$/);
   assert.doesNotMatch(buildOptionContext({ messages: HISTORY }).text, /题目引用/);

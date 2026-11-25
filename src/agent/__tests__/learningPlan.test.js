@@ -103,6 +103,19 @@ test('已有合格证据的概念不会因后续坏证据降级，但可被明�
   assert.equal('evidence' in byId(gap, 'sorted'), false);
 });
 
+test('同一句话只能验证一个概念，互相包含也算；不同的话可以', () => {
+  const said = [SAID, '每次都去掉一半，所以区间会变短'];
+  const verify = (plan, ...items) => mergePlan(plan, { concepts: items.map(([id, evidence]) => ({ id, status: 'verified', evidence })) }, said);
+  const same = verify(BASE, ['sorted', SAID], ['shrink', '目标就只能在右边']);
+  assert.equal(byId(same.plan, 'sorted').status, 'verified');
+  assert.equal(byId(same.plan, 'shrink').status, 'claimed');
+  assert.match(same.downgraded[0].reason, /另一个概念/);
+  const later = verify(same.plan, ['shrink', SAID]);
+  assert.equal(byId(later.plan, 'shrink').status, 'claimed');
+  assert.equal(byId(verify(same.plan, ['shrink', said[1]]).plan, 'shrink').status, 'verified');
+  assert.equal(byId(verify(same.plan, ['sorted', SAID]).plan, 'sorted').status, 'verified');
+});
+
 test('纯自评即使是原话也不算证据；有内容的话不误伤', () => {
   for (const text of ['我觉得我全懂了', '我已经完全明白了，谢谢老师', '懂了懂了，继续吧', '这个概念我掌握了', 'OK, I got it']) {
     assert.equal(isSelfRating(text), true, text);
