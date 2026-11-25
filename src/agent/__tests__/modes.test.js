@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs';
 import {
   ASK_QUESTION_TOOL,
   EXPLAIN_CARD_TOOL,
+  LEARNING_PLAN_TOOL,
   MODE_IDS,
   MODE_NORMAL,
   MODE_SOCRATIC,
@@ -36,18 +37,19 @@ test('normal 模式的工具集合为空（不注册工具＝代码级保证）'
   assert.equal(mode.allowsQuestions, false);
 });
 
-test('socratic 模式的工具集合恰好含 ask_question、visualize 与 explain_card', () => {
+test('socratic 模式的工具集合恰好含学习计划、ask_question、visualize 与 explain_card', () => {
   const mode = getMode(modes, MODE_SOCRATIC);
-  assert.deepEqual(mode.toolNames, [ASK_QUESTION_TOOL, VISUALIZE_TOOL, EXPLAIN_CARD_TOOL]);
+  assert.deepEqual(mode.toolNames, [LEARNING_PLAN_TOOL, ASK_QUESTION_TOOL, VISUALIZE_TOOL, EXPLAIN_CARD_TOOL]);
   assert.deepEqual(
     Object.keys(
       toolsForMode(mode, {
         [ASK_QUESTION_TOOL]: fakeAskQuestion,
         [VISUALIZE_TOOL]: fakeVisualize,
         [EXPLAIN_CARD_TOOL]: fakeExplainCard,
+        [LEARNING_PLAN_TOOL]: { name: 'fake' },
       }),
     ),
-    [ASK_QUESTION_TOOL, VISUALIZE_TOOL, EXPLAIN_CARD_TOOL],
+    [LEARNING_PLAN_TOOL, ASK_QUESTION_TOOL, VISUALIZE_TOOL, EXPLAIN_CARD_TOOL],
   );
   assert.equal(mode.allowsQuestions, true);
 });
@@ -79,7 +81,9 @@ test('socratic 的教学指令含且仅含一句工具约束', () => {
   assert.equal(socraticMd.includes(ASK_QUESTION_TOOL), false, '提示词里不应出现工具名/参数细节');
   assert.equal(socraticMd.includes(VISUALIZE_TOOL), false, '提示词里不应出现可视化工具名');
   assert.equal(socraticMd.includes(EXPLAIN_CARD_TOOL), false, '提示词里不应出现讲解卡片工具名');
+  assert.equal(socraticMd.includes(LEARNING_PLAN_TOOL), false, '提示词里不应出现学习计划工具名');
   assert.equal(socraticMd.includes('提问工具'), true);
+  assert.equal(socraticMd.includes('学习计划工具'), true);
 });
 
 test('system prompt 只由模式决定，外部塞不进自定义提示词', () => {

@@ -30,8 +30,8 @@ test('estimate: includes actual eligible model messages, instructions, tools and
   assert.equal(estimateContextTokens({ turns: [polluted, { ...turn, status: 'failed' }, { ...turn, status: 'cancelled' }] }).tokens, initial.tokens);
   const modes = createModes({ normal: 'Teach', socratic: 'Teach by asking' });
   const tools = contextToolDefinitions(modes.socratic);
-  assert.equal(tools.length, 3);
-  assert.equal(tools[0].parameters.properties.question.type, 'string');
+  assert.equal(tools.length, 4);
+  assert.equal(tools[1].parameters.properties.question.type, 'string');
   assert.deepEqual(contextToolDefinitions(modes.normal), []);
   const complete = estimateContextTokens({ turns: [turn], system: modes.socratic.teaching, tools, draft: '继续解释'.repeat(100) });
   assert.ok(complete.tokens > initial.tokens);

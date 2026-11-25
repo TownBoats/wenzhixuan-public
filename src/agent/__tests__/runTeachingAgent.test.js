@@ -600,3 +600,58 @@ test('调试回调抛错不影响运行', async () => {
   });
   assert.equal(result.reason, 'awaiting_user');
 });
+
+// ── 学习计划 ──────────────
+const planCall = (toolCallId, input) => ({
+  type: 'tool-call', toolCallId, toolName: 'update_learning_plan', input: JSON.stringify(input),
+});
+const PLAN_INPUT = {
+  goal: '学会二分',
+  conventions: ['下标从 1 开始'],
+  concepts: [{ id: 'sorted', name: '有序数组', status: 'verified', evidence: '教教我闭包' }],
+};
+
+test('计划与提问同一步：不打断、约定进入材料、伪造证据被降级、结果配对', async () => {
+  const seen = [];
+  const { result, events } = await runAgent({
+    scripts: [[
+      planCall('p1', { ...PLAN_INPUT, concepts: [{ ...PLAN_INPUT.concepts[0], evidence: '学生没说过的话' }] }),
+      { type: 'tool-call', toolCallId: 'p2', toolName: 'ask_question', input: JSON.stringify({ question: '题', context: '无' }) },
+      finish('tool-calls'),
+    ]],
+    generateOptions: async ({ context }) => {
+      seen.push(context);
+      return { status: 'ready', options: [{ level: 'basic', text: 'x' }] };
+    },
+  });
+  assert.equal(result.reason, 'awaiting_user');
+  assert.match(seen[0], /【全程约定】\n- 下标从 1 开始/);
+  const done = events.find((event) => event.type === 'tool-completed' && event.toolCallId === 'p1');
+  assert.equal(done.output.plan.concepts[0].status, 'claimed');
+  assert.match(done.output.notice, /sorted/);
+  const results = result.responseMessages.filter((item) => item.role === 'tool').flatMap((item) => item.content);
+  assert.deepEqual(results.map((item) => item.toolCallId).sort(), ['p1', 'p2']);
+});
+
+test('先前计划取自上下文，学生原话由上层传入', async () => {
+  const first = await runAgent({ scripts: [[planCall('a1', { ...PLAN_INPUT, concepts: [{ id: 'sorted', name: '有序数组' }] }), finish('tool-calls')], textScript('0', ['好'])] });
+  const model = createModel([
+    [planCall('a2', { concepts: [{ id: 'sorted', status: 'verified', evidence: '因为右边的数都更大' }] }), finish('tool-calls')],
+    textScript('0', ['好']),
+  ]);
+  const outputs = [];
+  await runTeachingAgent({
+    conversationId: 'c', turnId: 't', runId: 'r', mode: getMode(modes, 'socratic'), config: CONFIG,
+    messages: [{ role: 'user', content: 'x' }, ...first.result.responseMessages, { role: 'user', content: '因为右边的数都更大' }],
+    studentTexts: ['因为右边的数都更大'], optionConfig: OPTION_CONFIG, optionSystemPrompt: 's', model,
+    onEvent: (event) => event.type === 'tool-completed' && outputs.push(event.output),
+  });
+  assert.equal(outputs[0].plan.goal, '学会二分');
+  assert.equal(outputs[0].plan.concepts[0].status, 'verified');
+});
+
+test('普通模式没有学习计划工具', async () => {
+  const merged = [];
+  await runAgent({ scripts: [textScript('0', ['x'])], modeId: 'normal', onDebug: (record) => merged.push(record) });
+  assert.deepEqual(merged[0].tools, []);
+});

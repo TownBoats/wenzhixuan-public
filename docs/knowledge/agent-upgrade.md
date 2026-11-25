@@ -69,7 +69,7 @@ sequenceDiagram
 | 持久化 | `historyStore.js`、`historyV1.js`、`useConversationHistory.js` | 存储清洗、v1 投影、启动恢复、保存与列表 |
 | 展示 | MessageContent/ToolCallCard/QuestionGroup/AnswerCard/VisualizeCard/ExplainCard | 渲染数据和回调，工具卡不执行工具 |
 
-`normal` 模式注册零工具；`socratic` 注册 `ask_question`、`visualize`、`explain_card`。用户可见的模式切换控件已裁剪，代码中存在 normal 不代表当前 UI 有可操作入口。
+`normal` 模式注册零工具；`socratic` 注册 `update_learning_plan`、`ask_question`、`visualize`、`explain_card`。用户可见的模式切换控件已裁剪，代码中存在 normal 不代表当前 UI 有可操作入口。
 
 主教学指令由模式决定，旧 `mainAgentPrompt` 不自动合入。候选答案提示词仍从配置读取；迁移通知保留关闭状态，但旧入口文案需要修正。
 
@@ -151,9 +151,17 @@ turn 状态为 streaming / awaiting_user / completed / failed / cancelled / inte
 
 `historyStore` 的结构白名单用于正常业务数据清洗，不应称为对任意嵌套文本或工具 payload 中秘密的通用 DLP。模型配置有独立的本地存储，不能把“历史不含 apiKey”说成“整个浏览器不存 apiKey”。
 
+### 学习计划（2026-11-25）
+
+`update_learning_plan` 由主模型建立并增量更新计划（目标、约定、概念、前置关系、状态、当前位置），程序合并、校验并返回全量快照；不打断运行，`MAX_STEPS` 仍为 3。核心在 `agent/learningPlan.js`。计划没有独立存储：当前计划是状态合格轮次 `modelMessages` 中最近一份合格快照，失败、取消、中断轮不计入；运行中取本次运行已完成的更新用于显示。
+
+`verified` 须引用学生原话，只认自由输入、手答与计划调整要求（`collectStudentTexts`），点选的候选答案、少于 4 字的片段和纯自评不算；不合格降为 `claimed` 并告知原因，同一轮提示更正一次。点选正确时由教学指令要求换新例子请学生手写理由。程序不能判断学生是否真的理解。约定随每题材料发给副模型。
+
+页头下常驻行 `PlanBar` 展示计划并可提交调整。`REQUEST_PLAN_CHANGE` 立即续轮并暂缓待答题，是“有待答题不能发送”的例外；消息来源为 `plan_request`，学生原话单独存 `requestText`。旧会话无计划时按需新建。旧代码会把该来源清洗为 `input` 并丢弃 `requestText`，计划显示为通用工具卡。
+
 ### 候选答案材料与调试（2026-11-25）
 
-`services/buildOptionContext.js` 组装材料：主模型写的 `context`、本轮正文、学生本轮输入；`context` 为空时才附最近 6 轮历史兜底，写“无”视为声明无依赖。总预算 6000 字，按上述顺序优先保留。图只放标题；工具结果、源码、候选项与 reasoning 不进入。`context` 在工具声明中必填，手写校验仍允许缺省，漏写不拒绝问题。材料、问题与防编造约束放在同一条 user 消息，system prompt 仍由配置决定。学生本轮输入会发送到副模型端点。
+`services/buildOptionContext.js` 组装材料：主模型写的 `context`、学习计划的约定、本轮正文、学生本轮输入；`context` 为空时才附最近 6 轮历史兜底，写“无”视为声明无依赖。总预算 6000 字，按上述顺序优先保留。图只放标题；工具结果、源码、候选项与 reasoning 不进入。`context` 在工具声明中必填，手写校验仍允许缺省，漏写不拒绝问题。材料、问题与防编造约束放在同一条 user 消息，system prompt 仍由配置决定。学生本轮输入会发送到副模型端点。
 
 调试沿用 `developerMode` 开关键。打开后运行层经 `onDebug` 旁路回调产生记录，不进事件流、reducer、历史或备份；不含端点与密钥，只存页面内存，最多 40 条，关闭即清空。主模型记录是本轮首次请求的内容，不含后续步骤的工具往返。
 

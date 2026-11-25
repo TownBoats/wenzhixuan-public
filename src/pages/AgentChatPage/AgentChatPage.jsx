@@ -15,6 +15,7 @@ import MessageContent from '../../components/MessageContent/MessageContent';
 import { BrandLogo, Button, Icon, Textarea, cn } from '@/components/ui';
 import QuestionGroup from './QuestionGroup';
 import DebugDrawer from './DebugDrawer';
+import PlanBar from './PlanBar';
 import { useDebugLog } from './useDebugLog';
 import HistoryDrawer from './HistoryDrawer';
 import ConfigPanel from './ConfigPanel';
@@ -244,6 +245,11 @@ function AgentChatPage() {
     setOpenQuestionId(null);
   };
 
+  const handlePlanRequest = (text) => {
+    setOpenQuestionId(null);
+    session.requestPlanChange(text);
+  };
+
   /** 立即讲解：其余题会暂缓，因此关闭当前打开的答题卡。 */
   const handleExplain = (questionId) => {
     setOpenQuestionId(null);
@@ -330,6 +336,12 @@ function AgentChatPage() {
             </Button>
           </div>
         </div>
+        <PlanBar
+          key={session.conversationId ?? 'new'}
+          plan={session.learningPlan}
+          running={session.isRunning}
+          onRequestChange={handlePlanRequest}
+        />
       </header>
 
       {history.loadFailure && (

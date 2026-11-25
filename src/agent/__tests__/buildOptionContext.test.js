@@ -111,3 +111,15 @@ test('没有材料或输入异常时 text 为空串', () => {
   assert.equal(buildOptionContext({ messages: null, currentText: 1, modelContext: ' ' }).text, '');
   assert.equal(buildOptionContext({ messages: [null, {}, user('')] }).text, '');
 });
+
+test('全程约定每题附上，不受主模型是否填写影响', () => {
+  for (const modelContext of ['说明', '无', undefined]) {
+    const { text: result } = buildOptionContext({ messages: HISTORY, modelContext, conventions: ['下标从 1 开始', ' '] });
+    assert.match(result, /【全程约定】\n- 下标从 1 开始/);
+  }
+  assert.doesNotMatch(buildOptionContext({ messages: HISTORY, conventions: [] }).text, /全程约定/);
+  for (let maxChars = 0; maxChars <= 400; maxChars += 7) {
+    const { text: result } = buildOptionContext({ messages: HISTORY, modelContext: '说明'.repeat(30), conventions: ['约'.repeat(80)], maxChars });
+    assert.ok(length(result) <= maxChars);
+  }
+});

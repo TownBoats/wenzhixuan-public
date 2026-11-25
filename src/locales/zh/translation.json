@@ -90,6 +90,30 @@
       "optionDefault": "请选择模式"
     },
     "AgentChat": {
+      "plan": {
+        "title": "学习计划",
+        "toggle": "查看学习计划",
+        "updated": "学习计划已更新",
+        "current": "正在学：{{name}}",
+        "progress": "已验证 {{done}}/{{total}}",
+        "nextStep": "接下来：{{text}}",
+        "conventions": "约定",
+        "concepts": "概念",
+        "requires": "前置：{{names}}",
+        "evidence": "依据：「{{text}}」",
+        "status": {
+          "unknown": "未学",
+          "gap": "有缺口",
+          "claimed": "自称会",
+          "verified": "已验证"
+        },
+        "claimedHint": "点选不算验证。在答题卡或聊天框里用自己的话写出理由，就可能变为「已验证」。",
+        "adjustLabel": "想调整计划？",
+        "adjustPlaceholder": "例如：我已经会条件概率，跳过它；或者先从例子讲起",
+        "adjustHint": "提交后立即开始，没答的题会暂缓。",
+        "adjustRunning": "正在生成，结束后可以提交。",
+        "adjustSubmit": "提交调整"
+      },
       "debug": {
         "open": "调试",
         "title": "调试：模型上下文",

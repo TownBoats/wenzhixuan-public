@@ -15,6 +15,9 @@ export const VISUALIZE_TOOL = 'visualize';
 /** 讲解卡片工具名：模型产出纯 SVG 静态图，空 sandbox 渲染（无脚本）。 */
 export const EXPLAIN_CARD_TOOL = 'explain_card';
 
+/** 学习计划工具名：模型维护结构化计划，程序合并与校验。 */
+export const LEARNING_PLAN_TOOL = 'update_learning_plan';
+
 /** 无工具兜底模式。名字与 `modeSnapshot` 取值一致，不另起别名。 */
 export const MODE_NORMAL = 'normal';
 
@@ -26,7 +29,12 @@ export const MODE_IDS = Object.freeze([MODE_NORMAL, MODE_SOCRATIC]);
 /** 每种模式允许注册的工具名（顺序即声明顺序）。 */
 const TOOL_NAMES_BY_MODE = Object.freeze({
   [MODE_NORMAL]: Object.freeze([]),
-  [MODE_SOCRATIC]: Object.freeze([ASK_QUESTION_TOOL, VISUALIZE_TOOL, EXPLAIN_CARD_TOOL]),
+  [MODE_SOCRATIC]: Object.freeze([
+    LEARNING_PLAN_TOOL,
+    ASK_QUESTION_TOOL,
+    VISUALIZE_TOOL,
+    EXPLAIN_CARD_TOOL,
+  ]),
 });
 
 /**

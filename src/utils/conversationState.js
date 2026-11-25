@@ -8,6 +8,7 @@
  * - 模型上下文由 `buildModelContext` 显式组装，答案用固定模板，不做通用拼接
  */
 
+import { PLAN_TOOL_NAME, planFromMessages, planFromToolOutput } from '../agent/learningPlan.js';
 import { sanitizeTokenUsage } from './tokenUsage.js';
 
 /** turn 状态。`interrupted` 只在恢复历史时出现。 */
@@ -593,6 +594,44 @@ function explainQuestion(state, action) {
   return startAnswerTurn(state, { ...turn, questions }, action);
 }
 
+/**
+ * 学生要求调整学习计划：待答题全部暂缓，立即起新一轮。
+ * `requestText` 单独保存学生原话，`text` 里还有答案汇总，不能整体当作原话。
+ */
+function requestPlanChange(state, action) {
+  const turn = currentTurn(state);
+  if (!turn || turn.status === TURN_STATUS.STREAMING) return state;
+  if (!action.turnId || !action.runId) return state;
+  const request = stripGate(action.text ?? '').trim();
+  if (!request) return state;
+
+  const awaiting = turn.status === TURN_STATUS.AWAITING_USER;
+  const questions = awaiting
+    ? turn.questions.map((question) =>
+        question.state === QUESTION_STATE.PENDING
+          ? { ...question, state: QUESTION_STATE.SKIPPED, resolution: RESOLUTION_DEFERRED }
+          : question,
+      )
+    : turn.questions;
+  // 已完成的轮次此前已汇总过答案，不重复发送
+  const active = awaiting ? questions.filter((question) => !isSuperseded(question)) : [];
+  const text = [`要求调整学习计划：${request}`, serializeAnswers(active)].filter(Boolean).join('\n\n');
+
+  return {
+    ...state,
+    turns: [
+      ...state.turns.slice(0, -1),
+      awaiting ? { ...turn, questions, status: TURN_STATUS.COMPLETED } : turn,
+      createTurn({
+        id: action.turnId,
+        runId: action.runId,
+        modeSnapshot: action.mode ?? turn.modeSnapshot ?? state.mode,
+        userMessage: { text, source: 'plan_request', requestText: request },
+      }),
+    ],
+  };
+}
+
 /** 该轮问题全部处理完：收尾本轮，并以答案汇总开启下一轮。 */
 function startAnswerTurn(state, answeredTurn, action) {
   // 需要新轮次的身份；缺失说明调用方有 bug，宁可不动也不能造出没有身份的 turn
@@ -675,6 +714,9 @@ export function reduceSession(state, action) {
 
     case 'EXPLAIN_QUESTION':
       return explainQuestion(state, action);
+
+    case 'REQUEST_PLAN_CHANGE':
+      return requestPlanChange(state, action);
 
     /**
      * 取消只是**标记意图**：真正中断运行由 hook 持有 `AbortController` 完成，
@@ -942,6 +984,49 @@ export function projectTurns(turns) {
       errorKind: turn.errorKind ?? null,
     };
   });
+}
+
+/**
+ * 学生自己写的原文：自由输入、计划调整要求、手动作答。
+ * 点选的候选答案由副模型生成，不算学生原话。
+ */
+export function collectStudentTexts(turns) {
+  const texts = [];
+  for (const turn of Array.isArray(turns) ? turns : []) {
+    const message = turn?.userMessage;
+    if (message?.source === 'input') texts.push(message.text);
+    if (message?.source === 'plan_request') texts.push(message.requestText);
+    for (const question of Array.isArray(turn?.questions) ? turn.questions : []) {
+      if (question?.state === QUESTION_STATE.ANSWERED && !question.selectedLevel) texts.push(question.answer);
+    }
+  }
+  return texts.map((text) => stripGate(text).trim()).filter(Boolean);
+}
+
+/**
+ * 当前学习计划的投影，与模型上下文同口径：只认状态合格的轮次。
+ * 正在运行的轮次取本次运行已完成的更新，便于实时显示；取消或失败后自动回到上一份。
+ */
+export function projectLearningPlan(turns) {
+  const list = Array.isArray(turns) ? turns : [];
+  for (let i = list.length - 1; i >= 0; i -= 1) {
+    const turn = list[i];
+    let plan = null;
+    if (turn?.status === TURN_STATUS.STREAMING) {
+      const part = (turn.parts ?? []).findLast(
+        (item) =>
+          item?.type === 'tool' &&
+          item.toolName === PLAN_TOOL_NAME &&
+          item.runId === turn.runId &&
+          planFromToolOutput(item.output),
+      );
+      plan = part ? planFromToolOutput(part.output) : null;
+    } else if (CONTEXT_ELIGIBLE_STATUSES.has(turn?.status)) {
+      plan = planFromMessages(turn.modelMessages);
+    }
+    if (plan) return plan;
+  }
+  return null;
 }
 
 /**

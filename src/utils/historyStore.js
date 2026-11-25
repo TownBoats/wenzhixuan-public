@@ -42,7 +42,7 @@ const TURN_STATUSES = new Set([
 const QUESTION_STATES = new Set(['pending', 'answered', 'skipped']);
 const QUESTION_RESOLUTIONS = new Set(['superseded', 'explain', 'deferred']);
 const TOOL_STATUSES = new Set(['running', 'completed', 'failed']);
-const USER_MESSAGE_SOURCES = new Set(['input', 'answer']);
+const USER_MESSAGE_SOURCES = new Set(['input', 'answer', 'plan_request']);
 /** 失败类别：只落地运行层会产出的值，未知值归 null。 */
 const ERROR_KINDS = new Set(['timeout', 'failed']);
 
@@ -166,6 +166,9 @@ function sanitizeUserMessage(message) {
     source: USER_MESSAGE_SOURCES.has(message.source) ? message.source : 'input',
     questionId: isNonEmptyString(message.questionId) ? message.questionId : null,
     selectedLevel: isNonEmptyString(message.selectedLevel) ? message.selectedLevel : null,
+    ...(message.source === 'plan_request' && isNonEmptyString(message.requestText)
+      ? { requestText: stripGate(message.requestText).trim() }
+      : {}),
   };
 }
 

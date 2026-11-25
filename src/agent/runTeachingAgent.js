@@ -15,6 +15,7 @@ import { runModelTurn } from './modelAdapter.js';
 import {
   ASK_QUESTION_TOOL,
   EXPLAIN_CARD_TOOL,
+  LEARNING_PLAN_TOOL,
   VISUALIZE_TOOL,
   buildSystemPrompt,
   toolsForMode,
@@ -22,7 +23,9 @@ import {
 import { REJECT_INTERNAL_ERROR, createAskQuestionTool } from './tools/askQuestion.js';
 import { CONTEXT_SOURCES, buildOptionContext, visualTitle } from './services/buildOptionContext.js';
 import { createExplainCardTool } from './tools/explainCard.js';
+import { createUpdateLearningPlanTool } from './tools/updateLearningPlan.js';
 import { createVisualizeTool } from './tools/visualize.js';
+import { planFromMessages } from './learningPlan.js';
 
 /** 每轮最多 3 步（安全上限，防模型跑飞）。 */
 export const MAX_STEPS = 3;
@@ -172,6 +175,7 @@ export function resolveRunReason({ endedBy, finishReason }, awaitingUser) {
  * @param {Array}  params.messages        已配对、已完成的上下文消息
  * @param {Object} [params.optionConfig]  副模型配置快照 `{ endpoint, apiKey, model }`
  * @param {string} [params.optionSystemPrompt] 副模型提示词（上层从配置层读出后传入）
+ * @param {string[]} [params.studentTexts] 学生手写的原文，用于计划的证据校验
  * @param {AbortSignal} [params.abortSignal]
  * @param {(event: Object) => void} params.onEvent 规范事件回调
  * @param {(record: Object) => void} [params.onDebug] 调试记录回调，缺省时不产生记录
@@ -193,6 +197,7 @@ export async function runTeachingAgent({
   optionConfig,
   optionSystemPrompt,
   abortSignal,
+  studentTexts,
   onEvent,
   onDebug,
   generateOptions,
@@ -213,6 +218,9 @@ export async function runTeachingAgent({
   const getRemainingMs = () => Math.max(1, deadline - Date.now());
 
   let awaitingUser = false;
+
+  /** 当前学习计划：本轮开始时取自上下文，本轮更新后取最新。 */
+  let currentPlan = planFromMessages(messages);
 
   /**
    * 停止条件之一：最后一步的**任一**工具结果带 `nextAction:'await_user'`。
@@ -252,7 +260,12 @@ export async function runTeachingAgent({
   /** 组装失败只影响候选质量，不能连累问题本身。 */
   const buildQuestionContext = (modelContext) => {
     try {
-      return buildOptionContext({ messages, currentText: runText, modelContext });
+      return buildOptionContext({
+        messages,
+        currentText: runText,
+        modelContext,
+        conventions: currentPlan?.conventions,
+      });
     } catch {
       return { text: modelContext ?? '', source: CONTEXT_SOURCES.MODEL };
     }
@@ -282,6 +295,13 @@ export async function runTeachingAgent({
     limiter,
   );
   const tools = toolsForMode(mode, {
+    [LEARNING_PLAN_TOOL]: createUpdateLearningPlanTool({
+      initialPlan: currentPlan,
+      studentTexts,
+      onPlan: (plan) => {
+        currentPlan = plan;
+      },
+    }),
     [ASK_QUESTION_TOOL]: askQuestionTool,
     // visualize / explain_card 无外部依赖、不打断运行，无需并发闸门，每轮新实例保证幂等表不跨轮。
     [VISUALIZE_TOOL]: createVisualizeTool(),

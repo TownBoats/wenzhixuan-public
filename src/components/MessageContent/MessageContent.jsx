@@ -62,6 +62,22 @@ function AskQuestionTrace({ block }) {
   );
 }
 
+/** 学习计划由页头常驻行展示，消息流里只在更新成功时留一行提示。 */
+function LearningPlanTrace({ block }) {
+  const { t } = useTranslation();
+  if (block.status !== 'completed' || block.output?.status !== 'ready') return null;
+  return (
+    <p className="flex items-center gap-1.5 px-1 text-caption text-ink-300">
+      <Icon name="Map" size={12} className="text-current" />
+      {t('AgentChat.plan.updated')}
+    </p>
+  );
+}
+
+LearningPlanTrace.propTypes = {
+  block: PropTypes.shape({ status: PropTypes.string, output: PropTypes.object }).isRequired,
+};
+
 AskQuestionTrace.propTypes = {
   block: PropTypes.shape({
     status: PropTypes.string,
@@ -159,6 +175,9 @@ function MessageContent({ blocks }) {
                 block={block}
               />
             );
+          }
+          if (block.toolName === 'update_learning_plan') {
+            return <LearningPlanTrace key={block.toolCallId ?? `tool-${index}`} block={block} />;
           }
           if (isReadyVisualizeBlock(block)) {
             return (

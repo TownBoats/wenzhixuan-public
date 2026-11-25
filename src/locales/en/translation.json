@@ -90,6 +90,30 @@
       "optionDefault": "Please select a mode"
     },
     "AgentChat": {
+      "plan": {
+        "title": "Learning plan",
+        "toggle": "View learning plan",
+        "updated": "Learning plan updated",
+        "current": "Now: {{name}}",
+        "progress": "Verified {{done}}/{{total}}",
+        "nextStep": "Next: {{text}}",
+        "conventions": "Conventions",
+        "concepts": "Concepts",
+        "requires": "Requires: {{names}}",
+        "evidence": "Evidence: \"{{text}}\"",
+        "status": {
+          "unknown": "Not yet",
+          "gap": "Gap",
+          "claimed": "Self-reported",
+          "verified": "Verified"
+        },
+        "claimedHint": "Picking an option does not verify a concept. Explain the reason in your own words to get it verified.",
+        "adjustLabel": "Want to adjust the plan?",
+        "adjustPlaceholder": "e.g. I already know conditional probability, skip it",
+        "adjustHint": "Starts immediately; unanswered questions are deferred.",
+        "adjustRunning": "Generating. You can submit when it finishes.",
+        "adjustSubmit": "Submit"
+      },
       "debug": {
         "open": "Debug",
         "title": "Debug: model context",

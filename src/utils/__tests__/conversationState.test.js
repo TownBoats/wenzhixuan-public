@@ -10,7 +10,9 @@ import {
   TURN_STATUS,
   buildModelContext,
   createInitialState,
+  collectStudentTexts,
   deriveViewState,
+  projectLearningPlan,
   projectTurns,
   reduceSession,
 } from '../conversationState.js';
@@ -815,4 +817,61 @@ test('EXPLAIN_QUESTION：运行中、未知题、缺身份都是空操作', () =
   const waiting = awaitingTwoQuestions();
   assert.equal(reduceSession(waiting, explain('nope')), waiting);
   assert.equal(reduceSession(waiting, { ...explain('q1'), runId: '' }), waiting);
+});
+
+const PLAN = { goal: '目标', conventions: [], currentConceptId: '', nextStep: '', concepts: [] };
+const planMessages = (plan) => [
+  { role: 'assistant', content: [{ type: 'tool-call', toolCallId: 'p', toolName: 'update_learning_plan', input: {} }] },
+  { role: 'tool', content: [{ type: 'tool-result', toolCallId: 'p', toolName: 'update_learning_plan', output: { type: 'json', value: { status: 'ready', plan } } }] },
+];
+const planTurn = (status, goal, extra = {}) => ({ id: goal, runId: 'r', status, questions: [], parts: [], modelMessages: planMessages({ ...PLAN, goal }), ...extra });
+
+test('projectLearningPlan：只认合格轮次；运行中取本次运行，旧运行不算', () => {
+  assert.equal(projectLearningPlan([]), null);
+  assert.equal(projectLearningPlan([planTurn('completed', '一'), planTurn('awaiting_user', '二')]).goal, '二');
+  for (const status of ['failed', 'cancelled', 'interrupted']) {
+    assert.equal(projectLearningPlan([planTurn('completed', '一'), planTurn(status, '坏')]).goal, '一');
+  }
+  const part = (runId, goal) => ({ type: 'tool', toolName: 'update_learning_plan', toolCallId: goal, runId, status: 'completed', output: { status: 'ready', plan: { ...PLAN, goal } } });
+  const streaming = (parts) => planTurn('streaming', '旧协议', { runId: 'r2', parts });
+  assert.equal(projectLearningPlan([planTurn('completed', '一'), streaming([part('r2', '新')])]).goal, '新');
+  assert.equal(projectLearningPlan([planTurn('completed', '一'), streaming([part('r1', '重试前')])]).goal, '一');
+});
+
+test('collectStudentTexts：自由输入、手答与调整要求算，点选候选和答案汇总不算', () => {
+  assert.deepEqual(
+    collectStudentTexts([
+      { userMessage: { source: 'input', text: '自由输入' }, questions: [
+        { state: 'answered', answer: '手答', selectedLevel: null },
+        { state: 'answered', answer: '候选文本', selectedLevel: 'expert' },
+        { state: 'skipped', answer: null },
+      ] },
+      { userMessage: { source: 'answer', text: '汇总模板' }, questions: [] },
+      { userMessage: { source: 'plan_request', text: '整条消息', requestText: '调整要求' }, questions: [] },
+    ]),
+    ['自由输入', '手答', '调整要求'],
+  );
+});
+
+test('REQUEST_PLAN_CHANGE：待答题暂缓并立即续轮，原话单独保存，重复提交只生效一次', () => {
+  const action = { type: 'REQUEST_PLAN_CHANGE', text: ' 跳过条件概率 ', turnId: 't2', runId: 'r2' };
+  const waiting = awaitingTwoQuestions();
+  const answered = reduceSession(waiting, { type: 'SUBMIT_ANSWER', questionId: 'q1', answer: '我的答案', turnId: 'x', runId: 'x' });
+  const next = reduceSession(answered, action);
+  assert.equal(next.turns.length, 2);
+  assert.equal(next.turns[0].status, TURN_STATUS.COMPLETED);
+  assert.deepEqual(next.turns[0].questions.map((item) => item.resolution), [undefined, 'deferred']);
+  assert.equal(next.turns[1].userMessage.source, 'plan_request');
+  assert.equal(next.turns[1].userMessage.requestText, '跳过条件概率');
+  assert.match(next.turns[1].userMessage.text, /^要求调整学习计划：跳过条件概率\n\n针对问题「题一」，我的回答是：我的答案[^]*题二」：（学生暂未作答/);
+  assert.equal(reduceSession(next, action), next, '运行中是空操作');
+  assert.equal(reduceSession(waiting, { ...action, text: ' ' }), waiting);
+  assert.equal(reduceSession(waiting, { ...action, runId: '' }), waiting);
+  assert.deepEqual(collectStudentTexts(next.turns).slice(-2), ['我的答案', '跳过条件概率']);
+});
+
+test('REQUEST_PLAN_CHANGE：没有待答题时不重复发送旧答案', () => {
+  const done = reduceSession(runningState(), { type: 'RUN_FINISHED', runId: 'r1', reason: 'completed', responseMessages: [] });
+  const next = reduceSession(done, { type: 'REQUEST_PLAN_CHANGE', text: '先讲例子', turnId: 't2', runId: 'r2' });
+  assert.equal(next.turns[1].userMessage.text, '要求调整学习计划：先讲例子');
 });

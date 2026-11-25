@@ -13,6 +13,8 @@ import { MODE_SOCRATIC } from '../agent/modes.js';
 import { runTeachingAgent } from '../agent/runTeachingAgent.js';
 import {
   buildModelContext,
+  collectStudentTexts,
+  projectLearningPlan,
   createInitialState,
   deriveViewState,
   projectTurns,
@@ -157,6 +159,7 @@ export function useChatSession({
           mode: modeObject,
           config,
           messages,
+          studentTexts: collectStudentTexts(stateRef.current.turns),
           optionConfig,
           optionSystemPrompt,
           abortSignal: controller.signal,
@@ -266,6 +269,24 @@ export function useChatSession({
     [resolveQuestion],
   );
 
+  /** 要求调整学习计划：立即起新一轮，待答题暂缓。运行中或空文本是空操作。 */
+  const requestPlanChange = useCallback(
+    (text) => {
+      const turnId = createId();
+      const runId = createId();
+      const nextState = apply({
+        type: 'REQUEST_PLAN_CHANGE',
+        text,
+        turnId,
+        runId,
+        mode: stateRef.current.mode,
+      });
+      if (!nextState) return null;
+      return startRun({ turnId, runId, messages: contextForRun(nextState) });
+    },
+    [apply, startRun],
+  );
+
   /**
    * 只重试最后一轮：换新 `runId` 重跑，旧内容保留到新运行产出。
    * 重试的上下文由「该轮之前的已完成 turn + 该轮自己的用户消息」组成。
@@ -337,6 +358,7 @@ export function useChatSession({
 
   const view = deriveViewState(state);
   const renderedTurns = useMemo(() => projectTurns(state.turns), [state.turns]);
+  const learningPlan = useMemo(() => projectLearningPlan(state.turns), [state.turns]);
 
   return {
     // ── 数据（只读投影，页面不持有任何可写状态）──
@@ -344,6 +366,7 @@ export function useChatSession({
     mode: view.mode,
     turns: view.turns,
     renderedTurns,
+    learningPlan,
     pendingQuestions: view.pendingQuestions,
     isRunning: view.isRunning,
     isAwaitingUser: view.isAwaitingUser,
@@ -357,6 +380,7 @@ export function useChatSession({
     submitAnswer,
     skipQuestion,
     explainQuestion,
+    requestPlanChange,
     cancelRun,
     retryLastTurn,
     setMode,

@@ -15,6 +15,7 @@ import {
   deriveTitle,
   sanitizeConversation,
 } from '../historyStore.js';
+import { projectLearningPlan } from '../conversationState.js';
 
 const GATE = '\u200B';
 
@@ -514,4 +515,27 @@ it('问题的处理方式可往返保存，未知值不落地', () => {
   for (const value of ['superseded', 'explain', 'deferred']) assert.equal(clean(value).resolution, value);
   assert.equal('resolution' in clean('unknown'), false);
   assert.equal('resolution' in clean(undefined), false);
+});
+
+it('学习计划与调整要求经存储往返不变（不触及深度上限）', () => {
+  const plan = {
+    goal: '目标', conventions: ['约定'], currentConceptId: 'a', nextStep: '下一步',
+    concepts: [{ id: 'a', name: '甲', status: 'verified', requires: [], evidence: '学生原话' }, { id: 'b', name: '乙', status: 'gap', requires: ['a'] }],
+  };
+  const record = sanitizeConversation({
+    id: 'c',
+    turns: [{
+      id: 't', runId: 'r', status: 'completed', questions: [], parts: [],
+      userMessage: { text: '要求调整学习计划：x', source: 'plan_request', requestText: 'x', other: 1 },
+      modelMessages: [
+        { role: 'assistant', content: [{ type: 'tool-call', toolCallId: 'p', toolName: 'update_learning_plan', input: { concepts: [{ id: 'b', requires: ['a'] }] } }] },
+        { role: 'tool', content: [{ type: 'tool-result', toolCallId: 'p', toolName: 'update_learning_plan', output: { type: 'json', value: { status: 'ready', plan } } }] },
+      ],
+    }],
+  });
+  const restored = JSON.parse(JSON.stringify(record));
+  assert.deepEqual(projectLearningPlan(restored.turns), plan);
+  assert.deepEqual(restored.turns[0].modelMessages[0].content[0].input.concepts[0].requires, ['a']);
+  assert.equal(restored.turns[0].userMessage.requestText, 'x');
+  assert.equal('other' in restored.turns[0].userMessage, false);
 });

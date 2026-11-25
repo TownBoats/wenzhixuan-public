@@ -79,7 +79,9 @@ export function formatConversationText(record, { user = '我', assistant = '问�
       const isRepeatedSummary = turn?.userMessage?.source === 'answer' && previousQuestions.length > 0
         && previousQuestions.every((question) => ['answered', 'skipped'].includes(question?.state));
       if (!isRepeatedSummary) {
-        const value = turn?.userMessage?.text;
+        // 调整计划的消息只取学生原话，答案汇总在上一轮已按题导出
+        const value = turn?.userMessage?.source === 'plan_request'
+          ? turn.userMessage.requestText ?? turn.userMessage.text : turn?.userMessage?.text;
         say(user, turn?.userMessage?.source === 'answer' && typeof value === 'string'
           ? value.replace(/\n?[（(]来自选项[：:][^）)\n]*[）)]/g, '') : value);
       }

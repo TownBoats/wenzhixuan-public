@@ -117,3 +117,12 @@ test('请求讲解、暂缓与普通跳过在文本中可区分', () => {
   assert.match(build('deferred'), /暂未作答/);
   assert.match(build(undefined), /跳过/);
 });
+
+test('调整计划只导出学生原话，计划原始数据不导出', () => {
+  const text = formatConversationText({ turns: [
+    { userMessage: { source: 'plan_request', text: '要求调整学习计划：先讲例子\n\n针对问题「x」：（…）', requestText: '先讲例子' },
+      questions: [], parts: [{ type: 'tool', toolName: 'update_learning_plan', status: 'completed', output: { status: 'ready', plan: { goal: '内部目标' } } }] },
+  ] });
+  assert.match(text, /先讲例子/);
+  assert.doesNotMatch(text, /针对问题|内部目标|要求调整/);
+});

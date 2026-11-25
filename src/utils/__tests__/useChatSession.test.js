@@ -121,7 +121,7 @@ test('返回清单只有只读数据与命令，没有 setter / dispatch', () =>
   for (const key of ['turns', 'pendingQuestions', 'isRunning', 'isAwaitingUser', 'mode', 'error']) {
     assert.ok(keys.includes(key), `缺少数据字段 ${key}`);
   }
-  for (const key of ['sendMessage', 'submitAnswer', 'skipQuestion', 'explainQuestion', 'cancelRun', 'retryLastTurn']) {
+  for (const key of ['sendMessage', 'submitAnswer', 'skipQuestion', 'explainQuestion', 'requestPlanChange', 'cancelRun', 'retryLastTurn']) {
     assert.equal(typeof session[key], 'function', `${key} 不是函数`);
   }
 
