@@ -1,20 +1,12 @@
 /**
- * 运行层 · `ask_question` 工具（阶段 B · 任务 B4）
+ * `ask_question` 工具：生成问题数据后立即返回，不等待学生作答。
+ * 学生的回答是下一轮 user 消息，不是工具结果。
  *
- * 这个工具只做一件事：把「模型想提问」翻译成「问题数据已就绪」，然后**立刻返回**。
- * 它不接收学生的答案，也不等学生——学生的回答在语义上是**下一轮的 user 消息**（协议 §2.2）。
+ * 校验分三层：SDK schema、手写校验（长度/字段/类型）、业务校验（模式/重复/幂等）。
  *
- * 校验分三层，缺一不可：
- *   1. `jsonSchema` + `additionalProperties: false`：告诉模型参数长什么样，并在 SDK 层拦一次
- *   2. 本文件的手写校验：长度、去空白、未知字段、字段类型（schema 不保证范围，也不保证 provider 都校验）
- *   3. 业务校验：模式是否允许提问、本轮是否问过同一句话、同一 toolCallId 是否已执行
- *
- * 两张"记忆表"（`决策记录.md` B-11）只活在本轮：工具实例由 B5 每轮创建一次，
- * 轮结束即销毁。不能放模块级全局表（上一轮问过的内容，下一轮再问是合法的）。
- *
- * 状态记忆的用途：
- *   - `resultsByCallId`：同一调用被重放时直接返回上次结果，不再打第二次副模型
- *   - `askedTexts`：本轮已问过的文本（去空白后相同），用于 `duplicate_question`
+ * 每轮创建一个实例，记忆表不跨轮：
+ * - `resultsByCallId`：同一调用重放时返回上次结果
+ * - `askedTexts`：本轮已问文本，用于拒绝重复提问
  */
 import { jsonSchema, tool } from 'ai';
 
@@ -27,7 +19,7 @@ import {
 
 export const ASK_QUESTION_TOOL_NAME = 'ask_question';
 
-/** 参数上限（`决策记录.md` B-5）：改这里要同步 `01-核心协议.md` 与 RULE §6。 */
+/** 参数上限：改这里要同步 `docs/knowledge/agent-upgrade.md`。 */
 export const QUESTION_MAX_LENGTH = 500;
 export const CONTEXT_MAX_LENGTH = 2000;
 
@@ -114,7 +106,7 @@ function createQuestionId() {
  * @param {Object} params.mode                 模式对象（`modes.js` 的产物），读 `allowsQuestions`
  * @param {Object} params.optionConfig         副模型配置快照 `{ endpoint, apiKey, model }`
  * @param {string} params.optionSystemPrompt   副模型提示词（上层从配置层读取后传入）
- * @param {Function} [params.generateOptions]  副模型服务，默认 B3；测试注入假函数
+ * @param {Function} [params.generateOptions]  副模型服务，默认 `generateAnswerOptions`；测试注入假函数
  * @param {Function} [params.getRemainingMs]   主运行剩余时间，用于夹住副模型预算
  * @returns {Object} AI SDK 工具对象
  */

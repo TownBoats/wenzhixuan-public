@@ -1,8 +1,5 @@
 /**
- * 存储层单测（阶段 E · 任务 E4）
- *
- * 全部是纯函数用例：假 storage（内存 Map），不联网、不渲染、不碰真实 localStorage。
- * 断言对应 `决策记录.md` E-1 与 `E-开发指导.md` E4 的六项判据。
+ * v2 历史存储。使用内存 storage，不碰真实 localStorage。
  */
 
 import { describe, it } from 'node:test';
@@ -250,7 +247,7 @@ describe('createHistoryStore · 保存与读取', () => {
     assert.equal(items[0].title, '新标题');
   });
 
-  it('旧键条目原样返回（保留 messages / uiMessages，供 E2 投影）', () => {
+  it('旧键条目原样返回（保留 messages / uiMessages，供 v1 投影）', () => {
     const legacy = {
       id: 'old1',
       title: '旧会话',
@@ -489,7 +486,7 @@ describe('createHistoryStore · 脏字段白名单', () => {
   });
 });
 
-describe('createHistoryStore · 失败类别（F3，协议 §5）', () => {
+describe('createHistoryStore · 失败类别', () => {
   it('errorKind 只落地 timeout / failed，其余归 null，写入后可原样读回', () => {
     const store = createHistoryStore(fakeStorage());
 
@@ -506,4 +503,15 @@ describe('createHistoryStore · 失败类别（F3，协议 §5）', () => {
     );
     assert.equal(store.loadById('c1').record.turns[0].errorKind, null);
   });
+});
+
+it('问题的作废标记可往返保存，未知值不落地', () => {
+  const clean = (resolution) =>
+    sanitizeConversation({
+      id: 'c',
+      turns: [{ id: 't', status: 'completed', questions: [{ id: 'q', text: '题', state: 'skipped', resolution }] }],
+    }).turns[0].questions[0];
+  assert.equal(clean('superseded').resolution, 'superseded');
+  assert.equal('resolution' in clean('unknown'), false);
+  assert.equal('resolution' in clean(undefined), false);
 });

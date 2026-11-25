@@ -2,34 +2,20 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Icon, cn } from '@/components/ui';
 import MarkdownContent from '../../components/MessageContent/MarkdownContent';
-import { QUESTION_STATE } from '../../utils/conversationState';
+import { QUESTION_STATE, RESOLUTION_SUPERSEDED } from '../../utils/conversationState';
 import { extractPartialStringField } from '../../utils/partialJsonField';
 
 /**
- * QuestionGroup — 本轮问题卡组（D4 行为 / G2 视觉改版 / 2026-10-20 准备态融合）
+ * QuestionGroup：本轮问题卡组。
  *
- * 「准备中」与「待作答」融合（2026-10-20 与用户拍板）：
- * 准备中的提问（ask_question 工具还在跑）不再是消息流里的占位卡，而是直接在本组里
- * 渲染成磁贴——问题文本随工具参数逐字流出（partialInput + extractPartialStringField，
- * 与 explain_card 流式预览同一套机制）。准备中的磁贴与就绪问题共享同一个 toolCallId，
- * 用它做 key：就绪时 React 复用同一 DOM 节点，磁贴**原地**从「准备中」变成「待作答」
- * （tailwind 的 question-ready 动效），位置不跳、内容不闪。等待感靠「看着问题被打出来」
- * 消解，而不是进度条。
- *
- * 顺序恒等于模型调用顺序（按 blocks 里的工具卡顺序合并，与状态层 questions 的排序口径
- * 一致）：工具先完成的一方不会插队，就绪转化永远发生在原位。
- *
- * 交互契约不变：
- *   - 只有 `pending` 的问题可点开（onOpen），已答/已跳过/准备中不可点
- *   - 跳过按钮只在 `pending` 出现，点击调 onSkip，不冒泡到整卡
- *   - 不在这里拼答案、不触发下一轮（C-3：答案只经 submitAnswer / skipQuestion）
- *
- * 2026-10-19 调整（用户反馈「排列紧凑一点」）：外层 p-3→p-2.5、
- * grid gap-2.5→2、磁贴 p-3.5→3、头行 mb-2→1.5、底行 mt-3→2。
+ * - 准备中与就绪的问题共用 toolCallId 作 key，就绪时原地转化，不跳位
+ * - 顺序等于模型调用顺序，不按完成先后
+ * - 只有待答问题可打开和跳过；不拼答案、不触发下一轮
  */
 
 /** 仅展示层使用的「准备中」态：问题尚未进入 turn.questions，正在从工具参数流里生长。 */
 const PREPARING = 'preparing';
+const SUPERSEDED = RESOLUTION_SUPERSEDED;
 
 const STATE_META = {
   [PREPARING]: {
@@ -49,6 +35,11 @@ const STATE_META = {
   },
   [QUESTION_STATE.SKIPPED]: {
     labelKey: 'AgentChat.questionGroup.skipped',
+    pillClass: 'bg-paper-200 text-ink-500',
+    ringClass: 'border-paper-200/70 bg-paper-100/40',
+  },
+  [SUPERSEDED]: {
+    labelKey: 'AgentChat.questionGroup.superseded',
     pillClass: 'bg-paper-200 text-ink-500',
     ringClass: 'border-paper-200/70 bg-paper-100/40',
   },
@@ -101,9 +92,11 @@ function mergeQuestions(questions, blocks) {
 
 function QuestionTile({ question, index, onOpen, onSkip }) {
   const { t } = useTranslation();
-  const meta = STATE_META[question.state] ?? STATE_META[QUESTION_STATE.PENDING];
+  const isSuperseded = question.resolution === SUPERSEDED;
+  const meta =
+    STATE_META[isSuperseded ? SUPERSEDED : question.state] ?? STATE_META[QUESTION_STATE.PENDING];
   const isPreparing = question.state === PREPARING;
-  const isPending = question.state === QUESTION_STATE.PENDING;
+  const isPending = !isSuperseded && question.state === QUESTION_STATE.PENDING;
   const isAnswered = question.state === QUESTION_STATE.ANSWERED;
   const hasOptions = question.optionsStatus === 'ready';
   const optionsCount = Array.isArray(question.options) ? question.options.length : 0;
@@ -152,7 +145,7 @@ function QuestionTile({ question, index, onOpen, onSkip }) {
           )}
           {t(meta.labelKey)}
         </span>
-        {!isPreparing && (
+        {!isPreparing && !isSuperseded && (
           <span className="ml-auto shrink-0 text-caption text-ink-500">
             {hasOptions
               ? t('AgentChat.questionGroup.optionsReady', { count: optionsCount })
@@ -216,6 +209,7 @@ QuestionTile.propTypes = {
     toolCallId: PropTypes.string,
     text: PropTypes.string,
     state: PropTypes.string,
+    resolution: PropTypes.string,
     optionsStatus: PropTypes.string,
     options: PropTypes.array,
     answer: PropTypes.string,
@@ -235,7 +229,9 @@ function QuestionGroup({ questions, blocks, onOpen, onSkip }) {
       <header className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <span className="flex items-center gap-1.5 text-small font-semibold text-ink-900">
           <Icon name="ListChecks" size={14} className="text-sage-700" />
-          {t('AgentChat.questionGroup.title', { count: merged.length })}
+          {t('AgentChat.questionGroup.title', {
+            count: merged.filter((question) => question.resolution !== SUPERSEDED).length,
+          })}
         </span>
         <span className="text-caption text-ink-500">{t('AgentChat.questionGroup.hint')}</span>
       </header>
@@ -263,6 +259,7 @@ QuestionGroup.propTypes = {
       text: PropTypes.string,
       optionsStatus: PropTypes.string,
       state: PropTypes.string,
+      resolution: PropTypes.string,
       answer: PropTypes.string,
       options: PropTypes.array,
     }),

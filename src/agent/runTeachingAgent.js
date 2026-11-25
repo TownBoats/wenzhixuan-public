@@ -1,18 +1,12 @@
 /**
- * 运行层 · 一次教学运行（阶段 B · 任务 B5）
+ * 教学运行入口：装配模型、模式、副模型和工具，管理整轮预算与结束原因。
  *
- * 职责：把 B1（模型执行）、B2（模式）、B3（副模型）、B4（提问工具）装配成**唯一入口**，
- * 并负责整轮语义的两件事——预算与结束原因。细粒度事件（text / reasoning / tool）由 B1 产出，
- * B5 只做「转发 + 归属过滤」，外加首尾两个边界事件。
+ * - 身份 ID 由会话层传入，缺失即抛错
+ * - 一次调用恰好一对 run-started / run-finished；重试由上层换新 runId 再调
+ * - responseMessages 一律取模型适配层的返回值，不手工拼装
+ * - 配置与提示词由上层传入，不依赖 React 与浏览器存储
  *
- * 边界（`决策记录.md` B-12）：
- *   - 不生成身份：`conversationId` / `turnId` / `runId` 必须由会话层（或 B7 脚本）传入，缺失当场抛错
- *   - 不重试：一次调用恰好一对 `run-started` / `run-finished`；重试是上层换新 `runId` 再调一次
- *   - 不拼协议消息：`responseMessages` 一律取 B1 的返回值
- *   - 不读 localStorage / 不碰 React：配置与提示词由上层传入，本文件可被 `node --test` 直接导入
- *
- * 结束原因五选一且不可合并（`01-核心协议.md` §4）：
- *   `completed | awaiting_user | limit_reached | failed | cancelled`
+ * 结束原因：completed | awaiting_user | limit_reached | failed | cancelled
  */
 
 import { stepCountIs } from 'ai';
@@ -32,10 +26,10 @@ import { createVisualizeTool } from './tools/visualize.js';
 /** 每轮最多 3 步（安全上限，防模型跑飞）。 */
 export const MAX_STEPS = 3;
 
-/** 主运行预算 120 秒。副模型预算由 B3 在 45s 与「主运行剩余」之间取小。 */
+/** 主运行预算 120 秒。副模型预算由副模型服务在 45s 与「主运行剩余」之间取小。 */
 export const MAIN_RUN_TIMEOUT_MS = 120_000;
 
-/** 副模型并发上限 4（`决策记录.md` B-3）：超出排队，失败隔离。 */
+/** 副模型并发上限 4：超出排队，失败隔离。 */
 export const OPTION_CONCURRENCY_LIMIT = 4;
 
 /** 五个业务结束原因。 */
@@ -85,10 +79,10 @@ function assertRunInputs({ mode, config, messages, onEvent }) {
 }
 
 /**
- * 本轮私有的并发限流器（不放进 B3，也不做成模块级全局状态）。
+ * 本轮私有的并发限流器（不放进副模型服务，也不做成模块级全局状态）。
  *
- * 为什么在装配层：上限属于「本轮预算」，只有 B5 知道本轮边界；
- * 放在副模型服务里会跨轮累积，取消后槽位还可能泄漏（`决策记录.md` B-12 结论 1）。
+ * 为什么在装配层：上限属于「本轮预算」，只有本文件知道本轮边界；
+ * 放在副模型服务里会跨轮累积，取消后槽位还可能泄漏。
  */
 function createLimiter(limit) {
   let active = 0;
@@ -115,9 +109,9 @@ function createLimiter(limit) {
 }
 
 /**
- * 给 B4 的工具套一层并发闸门。
+ * 给 `ask_question` 工具套一层并发闸门。
  *
- * **不改 B4**：对象展开保留 `description` / `inputSchema`，只覆写 `execute`
+ * **不改工具本身**：对象展开保留 `description` / `inputSchema`，只覆写 `execute`
  * （实测 `tool()` 返回的就是 `{ description, inputSchema, execute }` 纯对象）。
  * 缺 `execute` 时不包装——漏掉 `inputSchema` 会让 SDK 失去参数校验，
  * 所以这里只做「加一层」，不做「重造」。
@@ -148,7 +142,7 @@ function withOptionConcurrency(baseTool, limiter) {
 }
 
 /**
- * 业务结束原因（`决策记录.md` B-12 结论 3 / 5）。
+ * 业务结束原因。
  *
  * 顺序即优先级：
  *   取消 → 取消；其余传输层失败（含超时）→ 失败；
@@ -169,7 +163,7 @@ export function resolveRunReason({ endedBy, finishReason }, awaitingUser) {
  * 跑一次教学运行。
  *
  * @param {Object} params
- * @param {string} params.conversationId  会话身份（会话层 / B7 脚本分配）
+ * @param {string} params.conversationId  会话身份（会话层或脚本分配）
  * @param {string} params.turnId          本轮身份（同上）
  * @param {string} params.runId           本次运行身份（同上；事件归属与迟到丢弃都以它为准）
  * @param {Object} params.mode            模式对象（`modes.js` 的产物）
@@ -179,10 +173,10 @@ export function resolveRunReason({ endedBy, finishReason }, awaitingUser) {
  * @param {string} [params.optionSystemPrompt] 副模型提示词（上层从配置层读出后传入）
  * @param {AbortSignal} [params.abortSignal]
  * @param {(event: Object) => void} params.onEvent 规范事件回调
- * @param {Function} [params.generateOptions] 副模型服务（默认 B3；测试注入假函数）
+ * @param {Function} [params.generateOptions] 副模型服务（默认 `generateAnswerOptions`；测试注入假函数）
  * @param {Function} [params.baseFetch]       主模型 fetch 注入（测试用）
  * @param {Object} [params.model]             主模型对象注入（测试用 `ai/test` 的 MockLanguageModelV3）；
- *   生产路径永远不传（`决策记录.md` B-13）
+ *   生产路径永远不传
  * @returns {Promise<{ runId: string, conversationId: string, turnId: string,
  *   reason: string, endedBy: string|null, finishReason: string|null, stepCount: number,
  *   awaitingUser: boolean, responseMessages: Array, error: Error|null }>}
@@ -210,7 +204,7 @@ export async function runTeachingAgent({
   const deadline = startedAt + MAIN_RUN_TIMEOUT_MS;
 
   /**
-   * 副模型剩余预算。**必须 ≥1**：B3 的 `resolveTimeout` 只在 `> 0` 时夹取，
+   * 副模型剩余预算。**必须 ≥1**：副模型服务的 `resolveTimeout` 只在 `> 0` 时夹取，
    * 返回 0 会回落到 45s（`generateAnswerOptions.js:76-79`）。
    */
   const getRemainingMs = () => Math.max(1, deadline - Date.now());
@@ -218,9 +212,9 @@ export async function runTeachingAgent({
   let awaitingUser = false;
 
   /**
-   * 停止条件之一（`01-核心协议.md` §3）：最后一步的**任一**工具结果带 `nextAction:'await_user'`。
+   * 停止条件之一：最后一步的**任一**工具结果带 `nextAction:'await_user'`。
    * 不用「按工具名判定停止」的内置条件：它在「模型调用了工具」时就停，参数非法也会停，
-   * 方案里「预算内允许修正一次」会直接失效（理由见协议 §3）。
+   * 方案里「预算内允许修正一次」会直接失效。
    *
    * `awaitingUser` 只在这里置位：停止原因与「为什么停」来自同一处判断，避免第二真相源。
    */
@@ -313,7 +307,7 @@ export async function runTeachingAgent({
     stepCount: result?.stepCount ?? 0,
     awaitingUser,
     contextUsage: result?.contextUsage ?? null,
-    // 一律取 B1 的返回值：手工拼装会与 SDK 内部记录重复，产生重复的 tool 消息。
+    // 一律取模型适配层的返回值：手工拼装会与 SDK 内部记录重复，产生重复的 tool 消息。
     responseMessages: result?.responseMessages ?? [],
     error: result?.error ?? null,
   };

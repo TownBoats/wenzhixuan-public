@@ -9,7 +9,7 @@ import useMediaQuery, { BREAKPOINTS } from '../../hooks/useMediaQuery';
 import { Button, Icon, BrandLogo, LevelIcon, cn } from '@/components/ui';
 import { getAnswerWaitSeconds } from '../../utils/answerPreferences';
 
-// 旧 ContentParser key → tailwind level-* token class（必须写出完整类名才能被 Tailwind 提取）
+// 档位 key → tailwind level-* token class（必须写出完整类名才能被 Tailwind 提取）
 const LEVEL_TEXT_CLASS = {
   none:     'text-ink-500',
   heard:    'text-sage-700',
@@ -19,20 +19,7 @@ const LEVEL_TEXT_CLASS = {
 };
 
 /**
- * AnswerCard — 答题浮层（P3e Susan Kare 重设计版）
- *
- * 设计规格见 docs/REDESIGN_KARE.md §3.2：五档生长链 + 倒计时小船 +
- * 自定义铅笔输入。
- *
- * 重写策略：
- *   - 拖拽 / 缩放 / 折叠 / 倒计时 / localStorage 行为完全保留
- *   - 所有 i18n key 不动；少量 defaultValue 顺手亲和化
- *   - 旧 6 个硬编码 hex 圆点              → ui/LevelIcon (5 档生长插画)
- *   - 旧 cyan/slate 配色 + 网格 reveal     → paper/sage/sun token + 同款 reveal
- *   - 紫色 #8B5CF6 自定义点                 → sun-700 Pencil 图标（"亲笔回答"）
- *   - 🤔 emoji 加载态                      → BrandLogo(thinking) + 衬线斜体
- *   - 内联 SVG 关闭/折叠/发送              → ui/Button + lucide
- *   - tech 分支整体删除（新设计单主题，未来 dark 模式由 dark: 前缀覆盖）
+ * AnswerCard：答题浮层，支持候选答案、自定义回答、倒计时、拖拽、缩放与折叠。
  */
 
 const LEVEL_ORDER = ['none', 'heard', 'basic', 'familiar', 'expert'];
@@ -41,7 +28,7 @@ const AnswerCard = ({
   question,
   onLevelSelect,
   onClose,
-  // 可选：调用方声明「这一轮已结束」（新路径传入）。不传时保持旧路径原有行为（D-5）
+  // 可选：调用方声明「这一轮已结束」。不传时按答案是否为空判断
   answerSettled,
   // eslint-disable-next-line no-unused-vars
   theme,
@@ -140,8 +127,8 @@ const AnswerCard = ({
   if (!question.question || !question.answer) return null;
 
   const isLoading = Object.values(localAnswers).every((value) => value === '');
-  // 旧路径不传 answerSettled → 下面两个派生值等于原来的 `isLoading` / `!isLoading`，行为不变。
-  // 新路径在候选答案为空时（`answer` 为 `{}`）仍要把自定义输入放出来，否则学生无法作答（D-5）。
+  // 不传 answerSettled 时，下面两个派生值等于 `isLoading` / `!isLoading`。
+  // 候选答案为空时（`answer` 为 `{}`）仍要把自定义输入放出来，否则学生无法作答。
   const hasAnswerOptions = Object.keys(localAnswers).length > 0;
   const showFailurePanel = isLoading || (Boolean(answerSettled) && !hasAnswerOptions);
   const showAnswerInput = !isLoading || Boolean(answerSettled);

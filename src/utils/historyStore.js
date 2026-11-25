@@ -1,23 +1,10 @@
 /**
- * 存储层 · v2 历史记录读写（阶段 E · 任务 E1）
+ * v2 历史存储（`chat_histories_v2`）。存储对象由参数注入，不依赖框架。
  *
- * 职责：把 `chat_histories_v2` 的读写收敛到一个**纯模块**里，对上层一律返回结果、
- * 不抛异常（`E-历史存储与恢复.md` §4；决策见 `决策记录.md` **E-1**）。
- *
- * 五条硬约束：
- *   1. 不依赖组件框架、不访问浏览器存储或全局宿主对象、不产生 JSX —— 存储对象由参数注入，
- *      Node 测试传一个内存假实现即可（E4）。
- *   2. 旧键 `chat_histories` **不被新内容改写**：`saveConversation` 只写新键。
- *      只有 `deleteConversation` / `renameConversation` 按阶段文件 E1 的要求同时作用于两个键
- *      （`E-开发指导.md` E5 判据：删除后两个键都查不到该 ID）。
- *   3. 保存失败是**预期分支**（配额满），必须通过返回值暴露给界面；
- *      不允许只有一句 `console.error` 的假成功。
- *   4. 写入前做脏字段白名单剥离：函数、`AbortController`、未知键、reasoning 原文、
- *      开闸标记（U+200B）都进不去（`01-核心协议.md` §7）。
- *   5. 读到的坏数据只**跳过**、不丢弃整键、更不写回（除用户主动删除/重命名）。
- *
- * 为什么用「返回结果」而不是抛异常：配额满、数据损坏都是预期内的分支，
- * 用返回值表达时调用方必须处理；用异常表达很容易被一个空 catch 吞成「假保存成功」。
+ * - 所有操作返回结果、不抛异常；保存失败必须由调用方处理，不能假成功
+ * - 旧键 `chat_histories` 不写入新内容；仅用户删除、重命名会作用于它
+ * - 写入前按白名单清洗：未知字段、reasoning、控制器、U+200B 不入库
+ * - 损坏数据只跳过，不丢弃整键、不写回
  */
 
 import { sanitizeTokenUsage } from './tokenUsage.js';
@@ -27,10 +14,10 @@ export const STORAGE_KEY_V2 = 'chat_histories_v2';
 /** 旧键：v1 记录数组。本模块只读（删除/重命名除外）。 */
 export const STORAGE_KEY_V1 = 'chat_histories';
 
-/** 协议 §7 的版本号，写入时强制为这个值。 */
+/** 存储版本号，写入时强制为这个值。 */
 export const SCHEMA_VERSION = 2;
 
-/** 自动标题长度：首条用户消息前 20 字（`决策记录.md` E-1 决策 4）。 */
+/** 自动标题长度：首条用户消息前 20 字。 */
 export const TITLE_MAX_LENGTH = 20;
 
 /** 失败原因。界面按这些值决定提示文案，不要在调用点写裸字符串。 */
@@ -53,9 +40,10 @@ const TURN_STATUSES = new Set([
   'interrupted',
 ]);
 const QUESTION_STATES = new Set(['pending', 'answered', 'skipped']);
+const QUESTION_RESOLUTIONS = new Set(['superseded']);
 const TOOL_STATUSES = new Set(['running', 'completed', 'failed']);
 const USER_MESSAGE_SOURCES = new Set(['input', 'answer']);
-/** 失败类别（协议 §5 / F3）：只落地运行层会产出的值，未知值归 null。 */
+/** 失败类别：只落地运行层会产出的值，未知值归 null。 */
 const ERROR_KINDS = new Set(['timeout', 'failed']);
 
 /** 递归剥离的最大深度：只在防御循环引用 / 畸形嵌套时生效。 */
@@ -214,13 +202,14 @@ function sanitizeQuestion(question) {
     answer: typeof question.answer === 'string' ? stripGate(question.answer) : null,
     selectedLevel: isNonEmptyString(question.selectedLevel) ? question.selectedLevel : null,
     state: QUESTION_STATES.has(question.state) ? question.state : 'pending',
+    ...(QUESTION_RESOLUTIONS.has(question.resolution) ? { resolution: question.resolution } : {}),
   };
 }
 
 /**
  * 展示片段。
  *
- * **reasoning 片段不入库**（协议 §7 禁止 reasoning 原文）：刷新后思考块不再出现，
+ * **reasoning 片段不入库**：刷新后思考块不再出现，
  * 这是既定取舍，不是丢数据——正文、工具卡、问题卡都在 `parts` / `questions` 里。
  */
 function sanitizePart(part) {
@@ -302,7 +291,7 @@ function sanitizeModelMessage(message) {
       });
       continue;
     }
-    // reasoning 及其它片段不进上下文、也不入库（不变量 3）
+    // reasoning 及其它片段不进上下文、也不入库
   }
 
   return parts.length > 0 ? { role, content: parts } : null;
@@ -328,7 +317,7 @@ function sanitizeTurn(turn) {
     parts: Array.isArray(turn.parts) ? turn.parts.map(sanitizePart).filter(Boolean) : [],
     questions: Array.isArray(turn.questions) ? turn.questions.map(sanitizeQuestion).filter(Boolean) : [],
     error: typeof turn.error === 'string' ? stripGate(turn.error) : null,
-    // 失败类别（协议 §5 / F3）：只接受运行层会产出的两个值，其余归 null
+    // 失败类别：只接受运行层会产出的两个值，其余归 null
     errorKind: ERROR_KINDS.has(turn.errorKind) ? turn.errorKind : null,
     contextUsage: sanitizeTokenUsage(turn.contextUsage),
     usageModel: isNonEmptyString(turn.usageModel) ? stripGate(turn.usageModel) : null,
@@ -337,7 +326,7 @@ function sanitizeTurn(turn) {
 
 /**
  * 把任意输入整理成一条可入库的 v2 记录；`id` 不合法时返回 `null`（调用方回 `invalid`）。
- * 只挑协议 §5 / §7 里的字段，未知字段一律不落地。
+ * 只挑白名单字段，未知字段一律不落地。
  */
 export function sanitizeConversation(record) {
   if (!isPlainObject(record)) return null;
@@ -452,7 +441,7 @@ function findIndexById(entries, id) {
  *   `{ ok:false, reason:'unavailable' }`，而不是抛异常。
  */
 export function createHistoryStore(storage) {
-  /** 读两个键。旧键的条目**原样**返回（E2 还要从 `messages` / `uiMessages` 里投影）。 */
+  /** 读两个键。旧键的条目**原样**返回（v1 适配还要从 `messages` / `uiMessages` 里投影）。 */
   function loadAll() {
     if (!isUsableStorage(storage)) {
       return unavailable({ v2: [], v1: [], corrupt: { v2: 0, v1: 0 } });
@@ -482,7 +471,7 @@ export function createHistoryStore(storage) {
     };
   }
 
-  /** 新键优先，找不到再查旧键（旧键返回原样记录，由 E2 投影）。 */
+  /** 新键优先，找不到再查旧键（旧键返回原样记录，由 v1 适配投影）。 */
   function loadById(id) {
     if (!isUsableStorage(storage)) return unavailable();
     if (!isNonEmptyString(id)) return { ok: false, reason: STORE_REASONS.INVALID };
@@ -541,9 +530,9 @@ export function createHistoryStore(storage) {
   }
 
   /**
-   * 保存一条会话到**新键**（决策 3 = A：旧键不被续聊内容改写）。
+   * 保存一条会话到**新键**（旧键不被续聊内容改写）。
    *
-   * - 新键整键不可解析时**拒写**并回 `corrupt`（决策点 3 = A）：交给用户抢救，不覆盖。
+   * - 新键整键不可解析时**拒写**并回 `corrupt`：交给用户抢救，不覆盖。
    * - 其他条目原样保留（含无法识别的条目），只有目标 id 这一条被替换。
    */
   function saveConversation(conversation) {
@@ -575,7 +564,7 @@ export function createHistoryStore(storage) {
   }
 
   /**
-   * 删除：**同时作用于两个键**（阶段文件 E1 / E5 判据）。
+   * 删除：**同时作用于两个键**。
    *
    * 任一个键整键损坏时直接回 `corrupt` 且不写任何东西——半删比不删更难收拾。
    */

@@ -23,8 +23,8 @@ describe('toQuestionCardModel', () => {
     assert.equal(model.hasFetchedAnswer, true);
   });
 
-  // D8 修复回归：候选不可用时原来给 'responding'，运行结束后标签会永远转「AI 回答中...」；
-  // D-6 起改用专用状态 'unavailable' → 标签「可以点击回答」，不再谎称「AI 回答完毕！」
+  // 回归：候选不可用时原来给 'responding'，运行结束后标签会永远转「AI 回答中...」；
+  // 改用专用状态 'unavailable' → 标签「可以点击回答」，不再谎称「AI 回答完毕！」
   it('待答 + 候选不可用：专用状态、可点击作答、不显示为错误', () => {
     const model = toQuestionCardModel({ id: 'q_2', text: 't', optionsStatus: 'unavailable', state: 'pending' });
     assert.equal(model.status, 'unavailable');
@@ -63,7 +63,7 @@ describe('toAnswerCardModel', () => {
     assert.equal(model.question, '问题');
   });
 
-  it('缺档只保留实际存在的档位（B-10：不得硬编码 5 行）', () => {
+  it('缺档只保留实际存在的档位（不得硬编码 5 行）', () => {
     const model = toAnswerCardModel({ id: 'q_1', text: 't', options: [{ level: 'heard', text: '听过' }] });
     assert.deepEqual(Object.keys(model.answer), ['heard']);
   });
@@ -82,7 +82,7 @@ describe('toAnswerCardModel', () => {
     assert.deepEqual(toAnswerCardModel({ id: 'q', text: 't' }).answer, {});
   });
 
-  // D8 修复回归：空 answer + 声明「已结束」→ 旧组件才会把自定义输入框放出来
+  // 回归：空 answer + 声明「已结束」→ 旧组件才会把自定义输入框放出来
   it('始终声明 answerSettled，空候选答案时也要能自定义作答', () => {
     for (const options of [[], undefined]) {
       const model = toAnswerCardModel({ id: 'q_1', text: 't', options });

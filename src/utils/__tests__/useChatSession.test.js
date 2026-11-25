@@ -1,16 +1,6 @@
 /**
- * C2 判据（`C-会话状态层.md` C2 的「判据」三条 + C-1 的原子续轮）：
- *   ① 页面层拿不到任何 `set` 开头的 **setter**（也没有 `dispatch`）；
- *   ② 取消后运行层的 `AbortSignal` 确实被触发，且状态停在 `cancelled`；
- *   ③ `isRunning` 在事件序列的任何时刻都与 `turns` 一致；
- * 另加三条来自 C-1 的行为断言：ID 由会话层分配、双击只起一次运行、答案进入下一轮上下文。
- *
- * 为什么放在 `src/utils/__tests__/`：本阶段允许改动的测试目录只有 `src/agent/__tests__/`
- * 与 `src/utils/__tests__/`，而测试命令也正是按这两个 glob 跑的（不新开目录）。
- *
- * 依赖 `react-test-renderer`（`决策记录.md` **C-2**，用户授权破例新增 devDependency）：
- * hook 必须在真实 React 运行时里跑，reducer 测试覆盖不到「控制器归属」与「派生状态时序」。
- * 运行层一律用假 runner（按脚本调 `onEvent`），不联网、不渲染 DOM。
+ * 会话 hook：不暴露 setter、取消信号、派生状态一致、ID 分配、双击与答案续轮。
+ * 用 react-test-renderer 在真实 React 运行时中执行，运行层为假 runner。
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -118,7 +108,7 @@ const firstRunMessages = [
   },
 ];
 
-test('判据①：返回清单只有只读数据与命令，没有 setter / dispatch', () => {
+test('返回清单只有只读数据与命令，没有 setter / dispatch', () => {
   const view = mount({ modes, mode: 'socratic', config, runner: createRunner([{ reason: 'completed' }]) });
   const session = view.current;
   const keys = Object.keys(session);
@@ -138,7 +128,7 @@ test('判据①：返回清单只有只读数据与命令，没有 setter / disp
   view.unmount();
 });
 
-test('判据③：ID 由会话层分配，答案进入下一轮上下文，isRunning 始终与 turns 一致', async () => {
+test('ID 由会话层分配，答案进入下一轮上下文，isRunning 始终与 turns 一致', async () => {
   const runner = createRunner([
     {
       events: [
@@ -188,7 +178,7 @@ test('判据③：ID 由会话层分配，答案进入下一轮上下文，isRun
   assert.notEqual(second.turnId, first.turnId, '新一轮必须是新 turnId');
   assert.notEqual(second.runId, first.runId, '新一轮必须是新 runId');
 
-  // 上下文＝上一轮的 user / assistant / tool + 本轮答案（协议 §6 模板）
+  // 上下文＝上一轮的 user / assistant / tool + 本轮答案（固定模板）
   assert.deepEqual(second.messages.map((message) => message.role), ['user', 'assistant', 'tool', 'user']);
   const answerText = second.messages.at(-1).content;
   assert.match(answerText, /针对问题「闭包捕获的是什么？」/);
@@ -202,7 +192,7 @@ test('判据③：ID 由会话层分配，答案进入下一轮上下文，isRun
   view.unmount();
 });
 
-test('判据②：cancelRun 触发的是本轮 AbortSignal，晚到事件不再改变状态', async () => {
+test('cancelRun 触发的是本轮 AbortSignal，晚到事件不再改变状态', async () => {
   const { runner, state } = createAbortableRunner();
   const view = mount({ modes, mode: 'socratic', config, runner });
 

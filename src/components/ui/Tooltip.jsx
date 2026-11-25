@@ -14,7 +14,7 @@ const sideClasses = {
 /**
  * Tooltip — 问知轩原子提示
  *
- * 设计规格见 docs/REDESIGN_KARE.md §2.5：
+ * 设计规格：
  *   - 深底浅字 (ink-900 / paper-50)，与全站浅色页面拉开层次
  *   - 500ms 进入延迟，避免误触发
  *   - 悬停 + 键盘聚焦双触发，可访问性默认开

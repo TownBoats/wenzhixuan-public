@@ -1,16 +1,6 @@
 /**
- * B4 判据（`B-运行层与提问工具.md` B4，按 `决策记录.md` B-11 定案）：
- *   ① 正常输入 → ready，questionId 由程序生成；
- *   ② 空 / 超长 / 未知字段 / context 超长 → rejected('invalid_input')；
- *   ③ 同一 toolCallId 重放 → 返回上次结果，且只调一次副模型；
- *   ④ 本轮已问过相同文本 → rejected('duplicate_question')；
- *   ⑤ normal 模式 → rejected('mode_not_allowed')；
- *   ⑥ 未配置副模型 → ready + unavailable + not_configured，且零请求；
- *   ⑦ 副模型失败 → ready + unavailable + failed（问题仍可用）；
- *   ⑧ 程序异常 → rejected('internal_error')，且不回传异常原文。
- * 另有两条结构保证：去重排在所有校验之前；一轮多个调用各自有结果。
- *
- * 全部直接调用工具对象的 execute，不走 SDK、不联网（`决策记录.md` B-11 决策点 3）。
+ * ask_question 工具：校验、幂等、重复提问、模式限制、副模型降级与异常处理。
+ * 直接调用 execute，不走 SDK、不联网。
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

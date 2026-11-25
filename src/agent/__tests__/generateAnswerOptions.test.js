@@ -1,19 +1,6 @@
 /**
- * B3 判据（explore/structured-options · 工具通道结构化输出）：
- *   ① 五档齐全 → ready 5 条、顺序固定、一次调用只发一次请求（maxRetries: 0）；
- *   ② 只有三档 → ready 3 条（缺档不算失败）；
- *   ③ 同一档两条 → 只保留第一条；
- *   ④ 全部条目文本为空 → unavailable + invalid_output；
- *   ⑤ 工具参数是非法 JSON / enum 违约 / 模型根本不调工具 → invalid_output；
- *   ⑥ 请求失败 → detail 白名单，且不含端点/密钥/请求头；
- *   ⑦ 未配置副模型 → not_configured 且零请求；
- *   ⑧ 超时 / 外部取消 → detail 分通道（timeout / cancelled）；
- *   ⑨ 空问题/缺 systemPrompt 抛错（调用方契约错误）；
- *   ⑩ normalizeOptions：未知档位、空文本、非数组输入一律归一化为空；
- *   ⑪ DeepSeek / 智谱端点注入 thinking:disabled，其余端点不注入。
- *
- * 全部用假 fetch 返回非流式 JSON 补全（tool_calls 形式），不联网。
- * 与旧标签协议的区别：格式约束由工具 schema + SDK 参数校验承担，不再有「标签解析」用例。
+ * 副模型服务：档位归一化、非法输出、请求失败脱敏、未配置、超时与取消、
+ * DeepSeek / 智谱关闭思考。使用假 fetch，不联网。
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

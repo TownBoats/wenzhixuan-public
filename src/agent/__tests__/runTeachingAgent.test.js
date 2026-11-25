@@ -1,20 +1,11 @@
 /**
- * B6 判据（`B-运行层与提问工具.md` B6 六条 + `决策记录.md` B-8 的四条额外覆盖）。
+ * 运行层全链路：给定模拟模型输出，断言事件序列、结束原因与协议消息。
+ * 使用 `MockLanguageModelV3` 与假 generateOptions，不联网。
  *
- * 测试对象是整条运行层链路：`runTeachingAgent` → `runModelTurn` → `streamText` → 工具执行，
- * 模型换成 `ai/test` 的 `MockLanguageModelV3`（不走 HTTP、不联网）。断言形式是
- * 「给定一串模拟模型输出 → 事件序列 / 结束原因 / 协议消息」，不是「某函数返回某值」。
- *
- * 三点实现事实（避免后来者踩坑）：
- *   1. **不要用 `doStream: [...]` 数组形式**：`MockLanguageModelV3` 内部取
- *      `doStream[this.doStreamCalls.length]`（`ai/dist/test/index.mjs:104-109`），
- *      即第一次调用读数组的**第 2 个元素**（1 基偏移）。此处改用函数 + 自增游标按次序回放。
- *   2. 模型的流片段是 V3 方言：`text-start/text-delta/text-end`、`tool-call`（`input` 是**字符串化 JSON**）、
- *      `finish`（`finishReason` 是 `{ unified, raw }` 对象、`usage` 是嵌套对象）。
- *   3. `runTeachingAgent` 的 `model` / `generateOptions` 两个注入口只给测试用，生产路径永远不传（B-13）。
- *
- * 副模型一律注入假 `generateOptions`（B-11 决策点 3）：B6 只验证运行层的编排与降级，
- * 不重复 B3 的解析行为。
+ * 注意：
+ * - 不用 `doStream: [...]` 数组形式，其下标从第 2 个元素开始；改用函数 + 自增游标
+ * - 流片段是 V3 方言：tool-call 的 input 是字符串化 JSON，finishReason 是对象
+ * - `model` / `generateOptions` 注入口只供测试使用
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -27,7 +18,7 @@ import { createModes, getMode } from '../modes.js';
 import { resolveRunReason, runTeachingAgent } from '../runTeachingAgent.js';
 import { runModelTurn } from '../modelAdapter.js';
 
-/** Node 侧不能 import `modePrompts.js`（含 `?raw`，`决策记录.md` B-9），只能自己读 md 再装配。 */
+/** Node 侧不能 import `modePrompts.js`（含 `?raw`），只能自己读 md 再装配。 */
 const modes = createModes({
   normal: readFileSync(new URL('../skills/normal.md', import.meta.url), 'utf8'),
   socratic: readFileSync(new URL('../skills/socratic.md', import.meta.url), 'utf8'),
@@ -67,7 +58,7 @@ const textScript = (id, deltas, unified = 'stop') => [
 
 /**
  * 一步里发起若干 `ask_question` 调用。
- * `toolCallId` 必须**跨步全局唯一**：B4 的幂等表按 `toolCallId` 记忆，
+ * `toolCallId` 必须**跨步全局唯一**：`ask_question` 的幂等表按 `toolCallId` 记忆，
  * 复用一个 id 会让第二步直接拿回第一步的结果（真实模型每次调用都会生成新 id）。
  */
 let callSequence = 0;
@@ -121,9 +112,9 @@ test('provider without usage leaves measured context unknown, not zero', async (
 });
 
 /**
- * 跑一次 B5，回放给定脚本。
+ * 跑一次 `runTeachingAgent`，回放给定脚本。
  *
- * `useRealOptions`：走真实的 B3 `generateAnswerOptions`（F1 取证用），
+ * `useRealOptions`：走真实的 `generateAnswerOptions`（取消取证用），
  * 此时 `generateOptions` 传 `undefined`，由 `createAskQuestionTool` 的默认参数装配。
  */
 async function runAgent({
@@ -158,7 +149,7 @@ async function runAgent({
 
 const typesOf = (events) => events.map((event) => event.type);
 
-// ── 用例 1（B6 判据第 1 条）：提问后停止，不再有第二步生成 ──────────────
+// ── 用例 1：提问后停止，不再有第二步生成 ──────────────
 test('提问后停止：收到 tool-completed 立刻 run-finished{awaiting_user}，只请求 1 次', async () => {
   const { result, events, calls } = await runAgent({
     scripts: [toolScript([{ input: { question: '什么是闭包？' } }])],
@@ -172,7 +163,7 @@ test('提问后停止：收到 tool-completed 立刻 run-finished{awaiting_user}
   assert.equal(events[0].runId, 'r1');
   assert.equal(events.at(-1).reason, 'awaiting_user');
 
-  // 每个调用都有配对结果（不变量 1）
+  // 每个调用都有配对结果
   const callIds = events.filter((e) => e.type === 'tool-started').map((e) => e.toolCallId);
   const resultIds = events.filter((e) => e.type === 'tool-completed').map((e) => e.toolCallId);
   assert.deepEqual(callIds, resultIds);
@@ -183,7 +174,7 @@ test('提问后停止：收到 tool-completed 立刻 run-finished{awaiting_user}
   assert.equal(result.responseMessages[1].content[0].output.value.nextAction, 'await_user');
 });
 
-// ── 用例 2（B6 判据第 2 条）：副模型失败降级，结束原因仍是 awaiting_user ──
+// ── 用例 2：副模型失败降级，结束原因仍是 awaiting_user ──
 test('副模型失败降级：optionsStatus=unavailable、问题文本仍在、原因仍是 awaiting_user', async () => {
   const { result, events, calls } = await runAgent({
     scripts: [toolScript([{ input: { question: '你了解作用域吗？' } }])],
@@ -205,7 +196,7 @@ test('副模型失败降级：optionsStatus=unavailable、问题文本仍在、�
   assert.equal(calls, 1);
 });
 
-// ── 用例 3（B6 判据第 3 条）：一轮多个问题，全部执行、各得结果、顺序不变 ──
+// ── 用例 3：一轮多个问题，全部执行、各得结果、顺序不变 ──
 test('一轮多个问题：两个不同文本 + 一个重复 → 2 条 ready + 1 条 duplicate_question', async () => {
   const { result, events, calls } = await runAgent({
     scripts: [
@@ -235,7 +226,7 @@ test('一轮多个问题：两个不同文本 + 一个重复 → 2 条 ready + 1
   assert.equal(result.reason, 'awaiting_user');
 });
 
-// ── 用例 4（B6 判据第 4 条）：参数非法一次后可修正，不立即停止 ─────────
+// ── 用例 4：参数非法一次后可修正，不立即停止 ─────────
 test('无效参数修正一次：第一次非法不停、第二次合法才停', async () => {
   const { result, events, calls } = await runAgent({
     scripts: [
@@ -254,7 +245,7 @@ test('无效参数修正一次：第一次非法不停、第二次合法才停',
   assert.equal(result.stepCount, 2);
 });
 
-// ── 用例 5（B6 判据第 5 条）：超步数 → limit_reached，已完成内容保留 ────
+// ── 用例 5：超步数 → limit_reached，已完成内容保留 ────
 test('超步数：连续三步拿不到 await_user → limit_reached，协议消息保留', async () => {
   // 为什么不用「合法调用」构造：合法调用在第 1 步就带 nextAction:'await_user'，
   // askQuestionReady 立即停止，永远到不了第 3 步。所以每步都给非法参数（缺 question）。
@@ -277,7 +268,7 @@ test('超步数：连续三步拿不到 await_user → limit_reached，协议消
   assert.equal(result.responseMessages.length > 0, true, '已完成的内容要保留');
 });
 
-// ── 用例 6（B6 判据第 6 条 + B-8 ③）：取消后不再产生事件 ──────────────
+// ── 用例 6：取消后不再产生事件 ──────────────
 test('取消：收到首个 text-delta 即 abort → cancelled，之后事件不增长', async () => {
   const controller = new AbortController();
   const { result, events, calls } = await runAgent({
@@ -297,10 +288,10 @@ test('取消：收到首个 text-delta 即 abort → cancelled，之后事件不
 
   const countAtFinish = events.length;
   await new Promise((resolve) => setTimeout(resolve, 30));
-  assert.equal(events.length, countAtFinish, '取消后事件数不再增长（B-8 ③）');
+  assert.equal(events.length, countAtFinish, '取消后事件数不再增长');
 });
 
-// ── 用例 7（B-8 ①）：同一段文本的多个 delta 共用一个 partId ────────────
+// ── 用例 7：同一段文本的多个 delta 共用一个 partId ────────────
 test('partId 稳定：同一段文本的多个 delta 落在同一个 partId 上', async () => {
   const { events } = await runAgent({
     scripts: [textScript('block-1', ['闭包', '是', '函数与其词法环境的组合。'])],
@@ -312,7 +303,7 @@ test('partId 稳定：同一段文本的多个 delta 落在同一个 partId 上'
   assert.equal(deltas.map((e) => e.delta).join(''), '闭包是函数与其词法环境的组合。');
 });
 
-// ── 用例 8（B-8 ②）：开闸标记两处都清，清空的文本块被丢弃 ─────────────
+// ── 用例 8：开闸标记两处都清，清空的文本块被丢弃 ─────────────
 test('开闸标记：事件与 responseMessages 两处都清，清空后的文本块被丢弃', async () => {
   const gate = '\u200B';
   const { result, events } = await runAgent({
@@ -342,7 +333,7 @@ test('开闸标记：事件与 responseMessages 两处都清，清空后的文�
   );
 });
 
-// ── 用例 9（B-8 ④）：请求次数 = 步数（工具多步场景为 2 次）─────────────
+// ── 用例 9：请求次数 = 步数（工具多步场景为 2 次）─────────────
 test('请求次数＝步数：一次工具往返必须是 2 次模型调用', async () => {
   const { result, events, calls } = await runAgent({
     scripts: [
@@ -372,10 +363,10 @@ test('normal 模式：不注册 ask_question，纯文本收尾即 completed', as
 });
 
 // ══════════════════════════════════════════════════════════════════════
-// F1 · 取消（`F-取消重试与验收.md` F1 判据 / `决策记录.md` F-2 取证方式 A）
+// 取消
 //
 // 为什么用**真实的本机 HTTP 服务**而不是注入一个假 fetch：
-// 判据要回答的是「副模型那边还在跑吗」，只有 socket 层面才能证明——
+// 要回答的是「副模型那边还在跑吗」，只有 socket 层面才能证明——
 // 请求被发出（计数 1）、取消后服务端观察到连接关闭（不是「代码里传了 signal」）。
 // 服务只监听 127.0.0.1 的临时端口，不出网、不校验密钥。
 // ══════════════════════════════════════════════════════════════════════
@@ -454,7 +445,7 @@ function hangingFetch() {
   return new Response(body, { status: 200, headers: { 'content-type': 'text/event-stream' } });
 }
 
-// ── 用例 11（F1 判据①）：取消时副模型的连接确实被断开 ──────────────────
+// ── 用例 11：取消时副模型的连接确实被断开 ──────────────────
 test('取消：副模型请求在跑时 abort → 端点看到连接关闭、只有 1 次请求、不产生工具卡', async () => {
   const controller = new AbortController();
   const optionServer = await startHangingOptionServer();
@@ -502,7 +493,7 @@ test('取消：副模型请求在跑时 abort → 端点看到连接关闭、只
   }
 });
 
-// ── 用例 12（F1 判据④）：取消与超时是两条不同的结束原因 ────────────────
+// ── 用例 12：取消与超时是两条不同的结束原因 ────────────────
 test('取消与超时区分：主运行超时 → failed，用户取消 → cancelled', async () => {
   const timedOut = await runModelTurn({
     runId: 'r-timeout',

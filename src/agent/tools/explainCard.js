@@ -1,19 +1,10 @@
 /**
- * 运行层 · `explain_card` 工具（explore/visualize 分支 · 讲解卡片）
+ * `explain_card` 工具：校验并返回一张静态 SVG 讲解图，不打断运行。
+ * 需要交互时使用 `visualize`。
  *
- * 与 `visualize` 的分工（规范速查表第 08 模块「图表类型路由」）：
- *   - explain_card：纯 SVG 静态图（示意图 / 结构图 / 流程图），无脚本、无交互、无网络；
- *   - visualize：需要交互的 HTML 片段（分步器 / 滑杆 / Chart.js 图表）。
- *
- * 「轻量」落在三处：
- *   1. 渲染不需要脚本：规范把 viewBox 固定为 "0 0 680 H"（第 06 模块），
- *      本工具执行时解析出宽高，展示层用 CSS aspect-ratio 定高——
- *      iframe 用空 sandbox（连 allow-scripts 都不给），文档里一行脚本都没有；
- *   2. 体积上限 30K 字符（visualize 的一半），静态图本就不该超过这个量级；
- *   3. 校验可以在文本层做硬约束：单根 <svg>、必须有 viewBox、禁止 <script>。
- *
- * 纪律与 ask_question / visualize 一致：每轮一个实例、按 toolCallId 幂等、
- * 异常不回传原文。本文件不碰 React / localStorage，可被 node --test 直接导入。
+ * - 要求单根 `<svg>` 与合法 viewBox，拒绝 `<script>`，上限 30K 字符
+ * - 展示层用空 sandbox 渲染，并按 viewBox 定高
+ * - 每轮一个实例，按 toolCallId 幂等；异常不回传原文
  */
 import { jsonSchema, tool } from 'ai';
 

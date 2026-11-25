@@ -1,8 +1,6 @@
 /**
- * A3 · 端点探针（一次性脚本，不进 src/、不被 Vite 打包）
- *
- * 目的：用真实端点回答「这个端点支不支持『模型调工具 → 工具结果回传 → 继续生成』的闭环」，
- *      并顺带确认 DeepSeek「带 tools 时 reasoning_content 必须回传」这条规则是否真实生效。
+ * 端点探针：验证「模型调工具 → 结果回传 → 继续生成」，
+ * 以及 DeepSeek 带 tools 时是否要求回传 reasoning_content。仅验证端点，不作产品代码复用。
  *
  * 用法：
  *   PROBE_BASE_URL=https://api.deepseek.com/v1
@@ -10,12 +8,7 @@
  *   PROBE_MODEL=deepseek-flash
  *   node scripts/probe-tools.mjs
  *
- * 输出：控制台打印每个用例的判读要点；完整结果写入 scripts/probe-tools.output.json。
- * 安全：密钥只在内存中使用，打印时打码，不写入任何文件。
- *
- * 本脚本是"最小版机制"的探针：设置 thinking / reasoning_effort、提取 reasoning_content、
- * 以及把 reasoning_content 回填到后续请求的 assistant 消息上——这三件事在 B 阶段要由运行层正式实现，
- * 这里只用来验证端点行为，不作为产品代码复用。
+ * 完整结果写入 scripts/probe-tools.output.json。密钥只在内存中使用，打印时打码，不落盘。
  */
 
 import fs from 'node:fs';
@@ -37,7 +30,7 @@ if (!BASE_URL || !API_KEY || !MODEL) {
 const mask = (s) => (typeof s === 'string' && s.length > 8 ? `${s.slice(0, 4)}****${s.slice(-4)}` : '****');
 const preview = (s, n = 120) => (typeof s === 'string' ? s.replace(/\s+/g, ' ').slice(0, n) : '');
 
-console.log('=== A3 端点探针 ===');
+console.log('=== 端点探针 ===');
 console.log(`base URL : ${BASE_URL}`);
 console.log(`model    : ${MODEL}`);
 console.log(`api key  : ${mask(API_KEY)}`);
@@ -66,7 +59,7 @@ function makeProbeFetch(state) {
           record.injectedExtras = Object.keys(state.extras);
         }
         // 关键观测：SDK 自己组装的 assistant 消息里，有没有原生带上 reasoning_content
-        // （如果带了，说明"reasoning 不进模型上下文"这条不变量在当前实现下已经不成立）
+        // （如果带了，说明"reasoning 不进模型上下文"这条约束在当前实现下已经不成立）
         record.nativeAssistantReasoning = (body.messages ?? []).filter(
           (m) =>
             m.role === 'assistant' &&
@@ -232,7 +225,7 @@ await runCase({
   },
 });
 
-// ── ② 工具结果回传后继续生成：B 阶段的核心假设 ──
+// ── ② 工具结果回传后继续生成 ──
 await runCase({
   id: '②',
   title: '工具结果回传后继续生成（thinking 关闭，目标 2 步）',
@@ -502,7 +495,7 @@ const verdict = (id) => {
   const e = results.find((r) => r.id === id);
   console.log(`${id.padEnd(4)} ${verdict(id).padEnd(18)} ${e?.title ?? ''}`);
 });
-console.log('\n判据提示：A 阶段通过要求 ① 与 ② 都成功；③a/③b 的对比决定 B 阶段能否保留思考能力。');
+console.log('\n判据提示：① 与 ② 都须成功；③a/③b 的对比决定能否保留思考能力。');
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const outFile = path.join(here, 'probe-tools.output.json');

@@ -18,9 +18,9 @@ import { Icon, cn } from '@/components/ui';
  *   - 复制按钮 bg-slate-700          → ui Icon(Copy/Check) + ghost hover
  *   - 表格 divide-gray-200           → divide-paper-200
  *   - 表头 bg-gray-50                → bg-paper-100 + ink-900 + serif
- *   - tech 主题分支整体删除（新设计单主题；P5 后用 dark: 接管）
+ *   - tech 主题分支整体删除（单主题）
  *
- * 行为完全保留，包括 KaTeX CSS 注入（已在 P2 注释为待 P3 优化）。
+ * 行为完全保留，包括 KaTeX CSS 注入。
  */
 
 const CodeBlock = ({ language, value }) => {

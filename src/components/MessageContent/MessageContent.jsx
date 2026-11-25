@@ -70,25 +70,11 @@ AskQuestionTrace.propTypes = {
 };
 
 /**
- * MessageContent — 按 blocks 顺序渲染一条 assistant 消息（D3 / G2 排版改版）
+ * MessageContent：按 `projectTurns` 的 blocks 顺序渲染一条助手消息，不拼数据。
  *
- * blocks 来自 `projectTurns` 投影，只渲染、不拼数据（C-3 结论 2）：
- *   { type:'text',      partId, runId, text }
- *   { type:'reasoning', partId, runId, text }
- *   { type:'tool',      toolCallId, toolName, status, input, output, error }
- *
- * 文本块的 key 必须带 `runId`：AI SDK 的片段 id 是每次流内自增的（两次运行都可能是 `0`），
- * 重试后同一轮里会有两个 `partId` 相同的块，只用 `partId` 会触发 React 重复 key（F2）。
- *
- * 顺序即实际发生顺序，工具卡不挪到末尾（协议保留有序 parts 的直接原因）。
- * reasoning 只显示接口真实返回的内容，默认折叠（2026-10-17 与用户拍板）。
- * ask_question 不走通用工具卡：就绪不渲染、准备中由 QuestionGroup 的融合磁贴接管，
- * 只有 rejected / failed 在这里留一行灰字（2026-10-20 与用户拍板，见 AskQuestionTrace）。
- *
- * G2 的改动只在展示层：
- *   - 正文改 Markdown 渲染（此前是 `whitespace-pre-wrap` 纯文本，模型输出的列表 / 代码 / 表格全成了字面量）
- *   - 思考块改成「纸色折叠条」，展开区限高、可滚动，不把整段推理顶到正文上面
- *   - 块之间的间距从 8px 放宽到 12px，正文与卡片不再挤在一起
+ * - key 必须带 runId：SDK 的 partId 每次流内自增，重试后会重复
+ * - reasoning 默认折叠
+ * - 就绪的 ask_question 由 QuestionGroup 展示，这里只在被拒绝或失败时留一行提示
  */
 
 function ThinkingBlock({ text }) {

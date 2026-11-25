@@ -1,5 +1,5 @@
 /**
- * 增量 JSON 字符串字段提取器判据（explore/streaming-cards）：
+ * 增量 JSON 字符串字段提取器判据：
  *   ① 字段未出现 → not found；
  *   ② 完整字段 → complete，值解码正确（含 \" \\ \n \uXXXX 转义）；
  *   ③ 半截字段（JSON 未闭合）→ found 且 complete=false，值为已到达部分；

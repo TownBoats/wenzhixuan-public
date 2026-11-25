@@ -6,7 +6,7 @@ import { buttonVariants } from './Button.variants';
 /**
  * Button — 问知轩原子按钮（Susan Kare 触感）
  *
- * 设计规格见 docs/REDESIGN_KARE.md §2.1：
+ * 设计规格：
  *   - 4 种意图：primary / secondary / ghost / accent
  *   - 3 种尺寸：sm (32) / md (36) / lg (44)
  *   - 按下态：scale 0.98 + 1px 下沉位移，模仿物理按键

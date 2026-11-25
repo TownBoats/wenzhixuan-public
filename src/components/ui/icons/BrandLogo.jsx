@@ -11,8 +11,6 @@ import { baseSvgProps } from './svgProps';
  *   - error    歪嘴 + 一只眼睛眨着
  *   - happy    开心眯眼大笑
  *
- * 设计规格见 docs/REDESIGN_KARE.md §3.3 / §2 (R1 资产)。
- *
  * @example
  *   <BrandLogo size={48} />
  *   <BrandLogo size={32} expression="thinking" />

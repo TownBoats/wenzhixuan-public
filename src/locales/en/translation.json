@@ -174,9 +174,9 @@
         "profileEmail": "Email:",
         "profileGithub": "GitHub:",
         "notFilled": "not set",
-        "mainModelMissing": "The main model is not configured yet. Fill in the endpoint, API key and model name in settings first (recommended: endpoint https://api.deepseek.com, model deepseek-flash; the new and old paths share the same settings).",
+        "mainModelMissing": "The main model is not configured yet. Fill in the endpoint, API key and model name in settings first (recommended: endpoint https://api.deepseek.com, model deepseek-flash).",
         "optionModelMissing": "The option model is not configured, so answer options will be unavailable; you can still answer the questions manually. Configure the option model in settings if you need options (recommended: deepseek-flash).",
-        "migrationNotice": "A custom teaching prompt was detected. In the new architecture the system prompt is managed by the teaching mode, so the custom text no longer takes effect; the original is still saved in the old path's settings."
+        "migrationNotice": "A custom teaching prompt was detected. In the new architecture the system prompt is managed by the teaching mode, so the custom text no longer takes effect; the original is still kept in this browser and is included in the full JSON backup in settings."
       },
       "backup": {
         "title": "Backup and transfer",
@@ -294,6 +294,7 @@
         "pending": "To answer",
         "answered": "Answered",
         "skipped": "Skipped",
+        "superseded": "Superseded",
         "optionsReady": "{{count}} options",
         "manual": "Answer manually",
         "open": "Answer",
@@ -324,6 +325,7 @@
       "aiErrorTips": "You can provide a custom answer on the right side",
       "placeholder": "Enter your insights here... (Press Enter to send, Shift + Enter to newline)",
       "customAnswer": "Custom",
+      "send": "Send",
       "tips1": "Take a moment to pause, reflection has its time. Just ",
       "tips2": " seconds until the answer finds you.",
       "tips3": "Tap to view answer",

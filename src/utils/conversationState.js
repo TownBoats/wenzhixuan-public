@@ -1,29 +1,16 @@
 /**
- * 会话层 · 纯函数状态机（阶段 C · 任务 C1）
+ * 会话状态机：`reduceSession(state, action)` 是会话状态变更的唯一实现（纯函数）。
+ * 协议说明见 `docs/knowledge/agent-upgrade.md`。
  *
- * 本文件是「谁在什么时候改会话状态」的唯一实现：`reduceSession(state, action)` 把
- * 运行层推来的规范事件翻译成一次原子转换。它**没有副作用**：
- *   - 不依赖组件框架，不访问浏览器存储、全局宿主对象或 DOM
- *   - 不产生随机 ID（`turnId` / `runId` 由 hook 生成后作为 action 字段传入）
- *   - 不读时间、不打日志、不抛异常（迟到事件是正常现象，见下文「守卫」）
- *
- * 现行数据结构与协议见 `docs/knowledge/agent-upgrade.md`，以源码核对为准。
- * 注释中的「协议 §x」指历史协议 `docs/archive/agent-upgrade-2026-11-01/agent-mvp/01-核心协议.md`，
- * `决策记录.md` 在同一归档目录，仅用于追溯当时的理由。
- *
- * 三条硬约束（`决策记录.md` C-1 + C 阶段开发指导）：
- *   1. 每个运行事件最前面先做 `runId` 守卫，不匹配就 `return state`（不报错、不记日志）。
- *      额外要求该 turn 仍处于 `streaming`——取消或结束后到达的片段一律丢弃，
- *      这就是 C3「abort 后运行层再吐事件，状态不变」的机制。
- *   2. 待答状态是**数组**（一轮可以有多个问题），且不独立存储：只在 turn 里，
- *      由 `deriveViewState` 派生。
- *   3. 上下文显式组装（`buildModelContext`），用户答案用协议 §6 的固定模板；
- *      **禁止**「遍历对象所有值再拼成字符串」这类通用拼接。
+ * - 不访问框架、DOM 或存储，不产生随机 ID，不读时间、不打日志、不抛异常
+ * - 运行事件先校验 `runId`，且该轮须仍在运行；迟到片段原样丢弃
+ * - 待答问题是数组，只存在 turn 里，由 `deriveViewState` 派生
+ * - 模型上下文由 `buildModelContext` 显式组装，答案用固定模板，不做通用拼接
  */
 
 import { sanitizeTokenUsage } from './tokenUsage.js';
 
-/** turn 状态（协议 §5）。`interrupted` 只在恢复历史时出现（E 阶段写入）。 */
+/** turn 状态。`interrupted` 只在恢复历史时出现。 */
 export const TURN_STATUS = Object.freeze({
   STREAMING: 'streaming',
   AWAITING_USER: 'awaiting_user',
@@ -33,12 +20,28 @@ export const TURN_STATUS = Object.freeze({
   INTERRUPTED: 'interrupted',
 });
 
-/** 问题的三种状态（协议 §5）。 */
+/** 问题的三种状态。 */
 export const QUESTION_STATE = Object.freeze({
   PENDING: 'pending',
   ANSWERED: 'answered',
   SKIPPED: 'skipped',
 });
+
+/**
+ * 重试后作废的旧问题：只保留显示，不可作答，也不进入答案汇总。
+ * 用附加字段而不是新状态：旧版本会把未知状态还原成 pending。
+ */
+export const RESOLUTION_SUPERSEDED = 'superseded';
+
+const isSuperseded = (question) => question?.resolution === RESOLUTION_SUPERSEDED;
+
+function supersedeQuestion(question) {
+  return {
+    ...question,
+    state: question.state === QUESTION_STATE.PENDING ? QUESTION_STATE.SKIPPED : question.state,
+    resolution: RESOLUTION_SUPERSEDED,
+  };
+}
 
 /** 工具的三种状态（只用于 `parts` 里的卡片展示，不进协议消息）。 */
 export const TOOL_PART_STATUS = Object.freeze({
@@ -50,9 +53,9 @@ export const TOOL_PART_STATUS = Object.freeze({
 /**
  * 单个工具的挂起标记（U+200B）。
  *
- * 清洗的第一现场在运行层适配器（B1）。这里再清一次是**防御性**的：本层是协议消息
+ * 清洗的第一现场在模型适配层。这里再清一次是**防御性**的：本层是协议消息
  * 进入上下文的最后一道关口，而 `parts` / `userMessage` 里的文本也可能来自别处
- * （历史恢复、测试、将来的迁移脚本）。代价是一次字符串扫描，收益是不变量 2 不会被绕过。
+ * （历史恢复、测试、将来的迁移脚本）。代价是一次字符串扫描，收益是「上下文无 U+200B」不会被绕过。
  */
 const GATE_MARKER = '\u200B';
 
@@ -62,7 +65,7 @@ function stripGate(text) {
   return text.split(GATE_MARKER).join('');
 }
 
-/** 只有这两种状态的 turn 才进上下文（协议不变量 8：已配对、已完成）。 */
+/** 只有这两种状态的 turn 才进上下文（已配对、已完成）。 */
 const CONTEXT_ELIGIBLE_STATUSES = new Set([TURN_STATUS.AWAITING_USER, TURN_STATUS.COMPLETED]);
 
 /** `run-finished` 的结束原因 → turn 状态。 */
@@ -71,7 +74,7 @@ const REASON_TO_STATUS = Object.freeze({
   awaiting_user: TURN_STATUS.AWAITING_USER,
   failed: TURN_STATUS.FAILED,
   cancelled: TURN_STATUS.CANCELLED,
-  // 协议 §5 的状态里没有 limit_reached：被步数上限截断属于「正常收尾但没问完」，
+  // turn 状态里没有 limit_reached：被步数上限截断属于「正常收尾但没问完」，
   // 界面表现为一段可继续的正文，因此归到 completed，不新造状态。
   limit_reached: TURN_STATUS.COMPLETED,
 });
@@ -139,7 +142,7 @@ function createTurn({ id, runId, modeSnapshot, userMessage, status }) {
     parts: [],
     questions: [],
     error: null,
-    // 失败类别（协议 §5 / F3）：'timeout' | 'failed' | null。取消一律 null（取消不是错误）
+    // 失败类别：'timeout' | 'failed' | null。取消一律 null（取消不是错误）
     errorKind: null,
     contextUsage: null,
     usageModel: null,
@@ -165,7 +168,7 @@ function toErrorText(error) {
 }
 
 /**
- * 把 `ask_question` 的工具结果翻译成问题记录（协议 §2.3 / §5）。
+ * 把 `ask_question` 的工具结果翻译成问题记录。
  * 只有 `status:'ready'` 且 `nextAction:'await_user'` 才算「问题已就绪」；
  * `rejected` 不产生卡片，理由留在工具卡的 `output.reason` 里。
  */
@@ -187,7 +190,7 @@ function questionFromToolResult(toolCallId, output) {
 }
 
 /**
- * 一轮的答案按协议 §6 的模板连续排列。跳过必须写成**显式**的一条记录，
+ * 一轮的答案按固定模板连续排列。跳过必须写成**显式**的一条记录，
  * 不能留缺口——否则模型会把「没有回应」读成默认同意。
  *
  * 注意这里不用「遍历对象所有值再拼成字符串」这类通用拼接：
@@ -214,7 +217,7 @@ function appendDelta(state, action, type) {
   if (!isStreamingRun(state, action)) return state;
 
   const delta = stripGate(action.delta);
-  if (!delta) return state; // 空片段不产生空块（不变量 2 的另一半：不留空文本）
+  if (!delta) return state; // 空片段不产生空块
 
   const turn = currentTurn(state);
   const partId = action.partId ?? `${type}:${turn.runId}`;
@@ -240,7 +243,7 @@ function appendDelta(state, action, type) {
  * `run-started`：确认身份并固定本轮模式。
  *
  * 正常情况下 turn 已由 `SEND_MESSAGE` / `SUBMIT_ANSWER` 创建；只有事件先到时才补建
- * （C4 的假运行层会直接推事件）。**若已有 turn 但 `runId` 不同则丢弃**——
+ * （脚本的假运行层会直接推事件）。**若已有 turn 但 `runId` 不同则丢弃**——
  * 否则一个迟到的旧运行会凭空造出第二条 turn。
  */
 function handleRunStarted(state, action) {
@@ -274,7 +277,7 @@ function handleRunStarted(state, action) {
 }
 
 /**
- * `tool-input-started`（explore/streaming-cards）：参数开始流出，比 `tool-call` 早得多。
+ * `tool-input-started`：参数开始流出，比 `tool-call` 早得多。
  * 提前把「运行中」卡片摆出来；完整 input 要等 TOOL_STARTED 才有。
  */
 function handleToolInputStarted(state, action) {
@@ -341,7 +344,7 @@ function handleToolInputDelta(state, action) {
   return replaceLastTurn(state, { ...turn, parts });
 }
 
-/** `tool-started`：同一 `toolCallId` 视为更新，不追加第二张卡（不变量 5）。 */
+/** `tool-started`：同一 `toolCallId` 视为更新，不追加第二张卡。 */
 function handleToolStarted(state, action) {  if (!isStreamingRun(state, action)) return state;
 
   const turn = currentTurn(state);
@@ -391,7 +394,7 @@ function handleToolCompleted(state, action) {
     status: TOOL_PART_STATUS.COMPLETED,
     output: action.output ?? null,
     error: null,
-    // 瞬态增量用完即清：不进投影、不进历史（不变量：持久化只留最终态）
+    // 瞬态增量用完即清：不进投影、不进历史（持久化只留最终态）
     partialInput: null,
   };
 
@@ -419,17 +422,20 @@ function handleToolCompleted(state, action) {
       // 重复事件：只刷新描述性字段，答案与状态不能被覆盖
       const existing = questions[existingIndex];
       questions = [...questions];
-      questions[existingIndex] = {
-        ...incoming,
-        answer: existing.answer,
-        selectedLevel: existing.selectedLevel,
-        state: existing.state,
-      };
+      // 端点可能在重试中复用 toolCallId：作废的旧题由新题取代，不能继承其状态
+      questions[existingIndex] = isSuperseded(existing)
+        ? incoming
+        : {
+            ...incoming,
+            answer: existing.answer,
+            selectedLevel: existing.selectedLevel,
+            state: existing.state,
+          };
     } else {
       /**
-       * 顺序＝模型调用顺序（协议 §5），**不是完成顺序**。
+       * 顺序＝模型调用顺序，**不是完成顺序**。
        *
-       * 真实端点上两者会不一致：B7 的 `response.messages` 里 tool 结果顺序是
+       * 真实端点上两者会不一致：实测 `response.messages` 里 tool 结果顺序是
        * `call_00 / call_02 / call_01`，而 assistant 里的调用是 `00 / 01 / 02`
        * （`scripts/socratic-once.output.json`）。若按完成顺序追加，问题卡就会排成 1/3/2。
        *
@@ -482,7 +488,7 @@ function handleToolFailed(state, action) {
 /**
  * `run-finished`：提交协议消息与结束状态。
  *
- * `modelMessages` **只能取运行层返回值**（B1 已清 U+200B、已丢空块、已配对）；
+ * `modelMessages` **只能取运行层返回值**（模型适配层已清 U+200B、已丢空块、已配对）；
  * 这里不拼任何协议消息。
  */
 function handleRunFinished(state, action) {
@@ -507,7 +513,7 @@ function handleRunFinished(state, action) {
 }
 
 /**
- * 作答 / 跳过的统一处理（`决策记录.md` C-1 结论 2 / 4）。
+ * 作答 / 跳过的统一处理。
  *
  * 一个 action 内完成四件事，顺序重要：
  *   写答案 → 问题改已答 → （该轮问题全部结束才）追加用户 turn → 起新运行
@@ -516,7 +522,7 @@ function handleRunFinished(state, action) {
  * 防双击靠的是这里的条件——第一次处理完问题已不是 pending，第二次直接原样返回，
  * 而不是按钮上的 `disabled`。
  *
- * 为什么「全部结束」才起新一轮：一轮的几个问题是一个整体（协议 §6），
+ * 为什么「全部结束」才起新一轮：一轮的几个问题是一个整体，
  * 模型要一次看到全部答案；否则每条答案都会单独触发一轮，问题会被拆散追问。
  */
 function resolveAnswer(state, action, questionState) {
@@ -552,13 +558,14 @@ function resolveAnswer(state, action, questionState) {
     return state;
   }
 
-  const single = questions.length === 1 ? questions[0] : null;
+  const activeQuestions = questions.filter((question) => !isSuperseded(question));
+  const single = activeQuestions.length === 1 ? activeQuestions[0] : null;
   const nextTurn = createTurn({
     id: action.turnId,
     runId: action.runId,
     modeSnapshot: action.mode ?? turn.modeSnapshot ?? state.mode,
     userMessage: {
-      text: serializeAnswers(questions),
+      text: serializeAnswers(activeQuestions),
       source: 'answer',
       // 单题时带上来源问题，便于展示「这条回答对应哪张卡」；多题时没有单一问题可指。
       questionId: single ? single.id : null,
@@ -593,7 +600,7 @@ export function reduceSession(state, action) {
     // ── 用户命令 ──
     case 'SEND_MESSAGE': {
       const turn = currentTurn(state);
-      // 运行中不接第二条输入；还有待答问题时不开始新一轮（协议 §6：答完或显式跳过才续轮）
+      // 运行中不接第二条输入；还有待答问题时不开始新一轮（答完或显式跳过才续轮）
       if (turn && turn.status === TURN_STATUS.STREAMING) return state;
       if (turn && turn.status === TURN_STATUS.AWAITING_USER) {
         if (turn.questions.some((question) => question.state === QUESTION_STATE.PENDING)) return state;
@@ -636,9 +643,9 @@ export function reduceSession(state, action) {
     }
 
     /**
-     * 只允许重试最后一轮（`决策记录.md` C-1 结论 3）：换新 `runId` 重跑，
+     * 只允许重试最后一轮：换新 `runId` 重跑，
      * **保留原内容**（`parts` / `modelMessages` / `questions` 都不清空），
-     * 新运行的片段因 `runId` 不同而另起一块。
+     * 新运行的片段因 `runId` 不同而另起一块。旧运行的问题作废，只保留显示。
      */
     case 'RETRY_LAST_TURN': {
       const turn = currentTurn(state);
@@ -648,6 +655,7 @@ export function reduceSession(state, action) {
         ...turn,
         runId: action.runId,
         status: TURN_STATUS.STREAMING,
+        questions: turn.questions.map(supersedeQuestion),
         contextUsage: null,
         usageModel: null,
         error: null,
@@ -657,7 +665,7 @@ export function reduceSession(state, action) {
 
     /**
      * 切换模式。运行中或还有待答问题时不变更——问题是用某一轮的模式与提示词生成的，
-     * 中途换模式会让「卡片属于哪种教学」说不清（HANDOFF 第 4 节该条仍待最终确认）。
+     * 中途换模式会让「卡片属于哪种教学」说不清。
      */
     case 'SET_MODE': {
       const turn = currentTurn(state);
@@ -669,7 +677,7 @@ export function reduceSession(state, action) {
       return { ...state, mode: action.mode };
     }
 
-    /** 打开既有会话（E 阶段从存储读出的 turns）。`streaming` 一律降级为 `interrupted`。 */
+    /** 打开既有会话（从存储读出的 turns）。`streaming` 一律降级为 `interrupted`。 */
     case 'OPEN_CONVERSATION': {
       const turns = Array.isArray(action.turns) ? action.turns : [];
       return {
@@ -729,7 +737,7 @@ export function reduceSession(state, action) {
 /**
  * 只保留**已配对**的调用与结果，并丢掉 reasoning 与未知片段。
  *
- * 未配对的调用留在 `parts` 里展示与诊断，但不发送（协议不变量 1 / 8）：
+ * 未配对的调用留在 `parts` 里展示与诊断，但不发送：
  * 只有 call 没有 result 的消息在某些端点会直接 400。
  */
 function sanitizeModelMessages(messages) {
@@ -786,7 +794,7 @@ function sanitizeModelMessages(messages) {
         });
         continue;
       }
-      // reasoning 及其它片段一律不进上下文（不变量 3）
+      // reasoning 及其它片段一律不进上下文
     }
 
     if (parts.length > 0) output.push({ role: message.role, content: parts });
@@ -796,7 +804,7 @@ function sanitizeModelMessages(messages) {
 }
 
 /**
- * 组装下一轮的模型上下文（协议 §6）。
+ * 组装下一轮的模型上下文。
  *
  * 顺序严格为：turn 的用户消息 → 该轮的 assistant/tool 消息 → 下一轮……
  * 只纳入状态为 `awaiting_user` / `completed` 的 turn（运行失败、被取消、
@@ -836,7 +844,7 @@ export function projectTurns(turns) {
       if (part.type === 'text' || part.type === 'reasoning') {
         const last = blocks[blocks.length - 1];
         // 合并键必须带 `runId`：AI SDK 的 text 片段 id 是**每次流内自增**的（实测两次独立运行
-        // 都是 `0`），只比 `partId` 会让重试后的新正文被拼到旧正文后面（F2 判据④）。
+        // 都是 `0`），只比 `partId` 会让重试后的新正文被拼到旧正文后面。
         const sameRun = last?.runId === (part.runId ?? null);
         if (last && last.type === part.type && last.partId === part.partId && sameRun) {
           last.text += part.text ?? '';
@@ -873,7 +881,7 @@ export function projectTurns(turns) {
       userText: turn.userMessage?.text ?? '',
       userSource: turn.userMessage?.source ?? null,
       blocks,
-      // 问题卡按 questions 顺序渲染，数量与调用数一致（B-3 / D4）
+      // 问题卡按 questions 顺序渲染，数量与调用数一致
       questions: (Array.isArray(turn.questions) ? turn.questions : []).map((question) => ({
         id: question.id,
         toolCallId: question.toolCallId,
@@ -883,6 +891,7 @@ export function projectTurns(turns) {
         answer: question.answer,
         selectedLevel: question.selectedLevel,
         state: question.state,
+        resolution: question.resolution ?? null,
       })),
       error: turn.error ?? null,
       errorKind: turn.errorKind ?? null,

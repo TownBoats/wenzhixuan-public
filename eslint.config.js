@@ -5,7 +5,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
 // ─── 设计 token 强制规则 ────────────────────────────────────────────
-// 详见 docs/REDESIGN_KARE.md 与 docs/REDESIGN_KARE_FEASIBILITY.md
+// 详见 src/components/ui/README.md
 //
 // 现阶段策略：
 //   1. 全仓 className 出现的 hex 字面量 → 仅 warn，不阻塞构建（旧代码迁移期）
@@ -19,13 +19,13 @@ const BANNED_COLOR_FAMILY = '(cyan|sky|blue|indigo|violet|purple|fuchsia|pink|ro
 const hexInClassNameRule = {
   selector: `JSXAttribute[name.name='className'] Literal[value=/#[0-9a-fA-F]{3,8}/]`,
   message:
-    'Inline hex color in className is forbidden. Use Tailwind tokens from the design system (ink/paper/sage/sun/level/state). See docs/REDESIGN_KARE.md.',
+    'Inline hex color in className is forbidden. Use Tailwind tokens from the design system (ink/paper/sage/sun/level/state). See src/components/ui/README.md.',
 }
 
 const tailwindFamilyInClassNameRule = {
   selector: `JSXAttribute[name.name='className'] Literal[value=/(^|\\s)(bg|text|border|ring|from|to|via|fill|stroke|divide|placeholder|caret|accent|outline|shadow)-${BANNED_COLOR_FAMILY}-/]`,
   message:
-    'Legacy Tailwind color family is forbidden in new code. Migrate to ink/paper/sage/sun/level/state tokens. See docs/REDESIGN_KARE.md.',
+    'Legacy Tailwind color family is forbidden in new code. Migrate to ink/paper/sage/sun/level/state tokens. See src/components/ui/README.md.',
 }
 
 export default [

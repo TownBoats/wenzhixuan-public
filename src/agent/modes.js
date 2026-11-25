@@ -1,30 +1,21 @@
 /**
- * 运行层 · 教学模式（阶段 B · 任务 B2）
+ * 教学模式：决定每种模式的教学指令与可用工具（纯数据 + 纯函数）。
  *
- * 本文件只做一件事：把「这一轮给模型看什么指令、给它哪些工具」表达成**纯数据 + 纯函数**。
- * 它不读文件、不 import Markdown、不碰 React / localStorage，因此可以被 `node --test` 直接导入。
- * 教学指令的文本由调用方注入；唯一把 `.md` 变成字符串的入口是 `modePrompts.js`（Vite 的 `?raw`）。
- *
- * 为什么工具只存**名字**而不是工具实现（`决策记录.md` B-9）：
- *   - B2 不应提前依赖 B4 的 `askQuestion.js`，否则 B2 无法独立交付；
- *   - 「某个模式不注册工具」这件事，在数据层只需一个空数组就能被断言；
- *   - 名字映射成实现的动作放在装配层，缺实现时**直接抛错**，而不是悄悄变成一个没有工具的模式。
- *
- * 为什么 `normal` 的工具集合为空（`决策记录.md` B-1）：
- *   模型看不到工具就不可能调用它——这是代码级保证，不依赖提示词里写「不要提问」。
- *   `normal` 只作为「端点不支持工具」时的兜底模式存在，不出现在任何界面上。
+ * - 教学指令由调用方注入；`.md` 只由 `modePrompts.js` 读取，本文件可被 Node 直接导入
+ * - 只存工具名，由装配层映射成实现；缺实现时直接抛错，不静默降级
+ * - `normal` 不注册任何工具，作为端点不支持工具时的兜底，不出现在界面上
  */
 
-/** 唯一的提问工具名。B4 会用这个名字注册实现。 */
+/** 唯一的提问工具名。工具实现用这个名字注册。 */
 export const ASK_QUESTION_TOOL = 'ask_question';
 
-/** 可视化工具名（explore/visualize 分支）：模型产出 HTML 片段，展示层沙箱渲染。 */
+/** 可视化工具名：模型产出 HTML 片段，展示层沙箱渲染。 */
 export const VISUALIZE_TOOL = 'visualize';
 
 /** 讲解卡片工具名：模型产出纯 SVG 静态图，空 sandbox 渲染（无脚本）。 */
 export const EXPLAIN_CARD_TOOL = 'explain_card';
 
-/** 无工具兜底模式。名字与 `01-核心协议.md` §5 的 `modeSnapshot` 取值一致，不另起别名。 */
+/** 无工具兜底模式。名字与 `modeSnapshot` 取值一致，不另起别名。 */
 export const MODE_NORMAL = 'normal';
 
 /** 唯一对用户可见的教学模式。 */
@@ -40,7 +31,7 @@ const TOOL_NAMES_BY_MODE = Object.freeze({
 
 /**
  * 造一个模式对象。
- * `allowsQuestions` 是给工具执行层用的判据（B4 的 `mode_not_allowed`），
+ * `allowsQuestions` 是给工具执行层用的判据（`ask_question` 的 `mode_not_allowed`），
  * 与「注册了哪些工具」分开：注册是装配事实，允许与否是业务规则。
  */
 function createMode({ id, teaching, toolNames, allowsQuestions }) {
@@ -89,7 +80,7 @@ export function getMode(modes, id) {
 /**
  * 系统提示词只由模式决定。
  * 签名只有一个参数，这是**结构上的保证**：用户自定义提示词没有入口可拼进来
- * （旧路径的 `localStorage.mainAgentPrompt` 迁移属于 D6，不在运行层混装）。
+ * （旧的 `localStorage.mainAgentPrompt` 由 `promptMigration.js` 处理，不在运行层混装）。
  */
 export function buildSystemPrompt(mode) {
   if (!mode || typeof mode.teaching !== 'string') {

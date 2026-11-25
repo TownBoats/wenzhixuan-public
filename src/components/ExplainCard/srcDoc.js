@@ -4,7 +4,7 @@
  * 两份文档对应两种状态：
  *   1. `buildExplainSrcDoc`（就绪态）：一行脚本都没有，iframe 空 sandbox，
  *      「没有脚本」是最硬的边界。
- *   2. `buildStreamSrcDoc`（流式生成中，explore/streaming-cards）：需要脚本来收
+ *   2. `buildStreamSrcDoc`（流式生成中）：需要脚本来收
  *      postMessage 增量，sandbox 放开 allow-scripts——但脚本是我们注入的桥接器，
  *      模型内容一律经消毒后才进 DOM（剥 <script>/<foreignObject>/on* 属性）。
  *

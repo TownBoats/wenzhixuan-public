@@ -1,11 +1,6 @@
 /**
- * B2 判据（`B-运行层与提问工具.md`）：
- *   ① normal 模式下传给模型的工具集合为空；
- *   ② socratic 模式下工具集合恰好含 ask_question、visualize 与 explain_card（explore/visualize 起）；
- *   ③ 两份教学指令不含任何 U+3016 / U+3017（空心方括号）形式的输出格式规则（本文件按「完全不出现该字符」检查）。
- * 另有两条本次新增的结构保证：system prompt 只由模式决定；注册表缺实现时当场失败。
- *
- * 本文件 import 的是纯函数 `modes.js`，不经过 `modePrompts.js`（`?raw` 只能由 Vite 处理）。
+ * 教学模式：工具集合、教学指令格式约束、system prompt 来源与缺实现报错。
+ * 导入纯函数 `modes.js`，不经过 `modePrompts.js`（`?raw` 只能由 Vite 处理）。
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

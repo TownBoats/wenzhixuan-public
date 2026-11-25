@@ -102,3 +102,10 @@ test('answers with missing question records retain their text without internal o
   assert.ok(text.includes('我的回答：环境'));
   assert.equal(/expert|来自选项/.test(text), false);
 });
+
+test('重试后作废的旧题保留题干，不写成学生跳过', () => {
+  const question = { id: 'q', text: '旧问题', state: 'skipped', resolution: 'superseded' };
+  const text = formatConversationText({ turns: [{ parts: [], questions: [question] }] });
+  assert.match(text, /旧问题/);
+  assert.doesNotMatch(text, /跳过/);
+});

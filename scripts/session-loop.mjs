@@ -1,22 +1,9 @@
 /**
- * C4 · Node 闭环脚本（阶段 C）
+ * 会话闭环脚本：用假运行层走完「发送 → 待答 → 作答/跳过 → 自动下一轮」，
+ * 不联网、不渲染。检查轮次内容、上下文含问题与答案、无悬空调用、无 reasoning 与 U+200B。
  *
- * 目的：在**不联网、不渲染**的前提下，用假运行层把会话状态机走完一整轮真实语义：
- *   发送 → 待答（一轮 3 问）→ 逐题作答 / 跳过 → 全部结束后自动开下一轮。
- *
- * 为什么在接页面之前做（`C-会话状态层.md` C4）：这是「协议 + 状态机成立」的独立证据。
- * 它跑不通，接页面只会让问题更难定位（分不清是状态错还是渲染错）。
- *
- * 覆盖的判据：
- *   ① 两个 turn 的内容符合预期；
- *   ② 第二个 turn 的上下文含第一个 turn 的问题与用户答案；
- *   ③ 上下文没有悬空调用、没有 reasoning、没有 U+200B。
- *
- * 与 `useChatSession` 的唯一差异：hook 里「把本轮用户消息补进上下文」由 `contextForRun`
- * 完成（`buildModelContext` 按协议只发已完成轮次），本脚本用同名逻辑复刻一次并打印出来，
- * 因此下面看到的「实际发送」与真实运行时完全一致。
- *
- * 运行：`node scripts/session-loop.mjs`；全部判据通过则退出码 0，否则 1。
+ * 运行：`node scripts/session-loop.mjs`；全部通过退出码 0，否则 1。
+ * 本脚本复刻了 hook 中的 `contextForRun`，修改时需同步。
  */
 import {
   buildModelContext,
@@ -183,7 +170,7 @@ state = playEvents(state, 'run-1', [
   { type: 'reasoning-delta', partId: 'reason-1', delta: '先摸底，一次问三个维度' },
   { type: 'text-delta', partId: 'text-1', delta: `先聊两句，再问你三个问题。${GATE}` },
   { type: 'text-delta', partId: 'text-1', delta: '别紧张，答不出也没关系。' },
-  // 真实端点的顺序：调用按 1/2/3 出现，结果按 1/3/2 回来（B7 实测过 00/02/01）
+  // 真实端点的顺序：调用按 1/2/3 出现，结果按 1/3/2 回来（实测过 00/02/01）
   { type: 'tool-started', toolCallId: 'call_1', toolName: 'ask_question', input: { question: question1.question } },
   { type: 'tool-started', toolCallId: 'call_2', toolName: 'ask_question', input: { question: question2.question } },
   { type: 'tool-started', toolCallId: 'call_3', toolName: 'ask_question', input: { question: question3.question } },
@@ -202,7 +189,7 @@ state = reduceSession(state, {
       role: 'assistant',
       content: [
         { type: 'reasoning', text: '这段推理不该进上下文' },
-        // 运行层（B1）返回前已清过 U+200B，这里如实模拟「干净输入」
+        // 模型适配层返回前已清过 U+200B，这里如实模拟「干净输入」
         { type: 'text', text: '先聊两句，再问你三个问题。别紧张，答不出也没关系。' },
         { type: 'tool-call', toolCallId: 'call_1', toolName: 'ask_question', input: { question: question1.question } },
         { type: 'tool-call', toolCallId: 'call_2', toolName: 'ask_question', input: { question: question2.question } },

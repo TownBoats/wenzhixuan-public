@@ -1,12 +1,5 @@
 /**
- * visualize 工具判据（explore/visualize 分支，纪律对齐 askQuestion.test.js）：
- *   ① 正常输入 → ready，title / html 去空白后原样带回；
- *   ② 非对象 / 未知字段 / title 空 / title 超长 / html 空 / html 超长 → rejected('invalid_input')；
- *   ③ 同一 toolCallId 重放 → 返回上次结果（同一个对象引用）；
- *   ④ 边界：恰好 80 字 title、恰好 60000 字符 html → ready；
- *   ⑤ 一轮多个调用各自有结果，互不串台。
- *
- * 全部直接调用工具对象的 execute，不走 SDK、不联网。
+ * visualize 工具：输入校验、长度边界与幂等。直接调用 execute，不走 SDK、不联网。
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

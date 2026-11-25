@@ -1,22 +1,8 @@
 /**
- * 运行层 · `visualize` 工具（探索分支 explore/visualize）
+ * `visualize` 工具：校验并返回一段自包含 HTML，由展示层沙箱渲染，不打断运行。
  *
- * 灵感来自 ZCode 的 visualize skill：模型产出一个自包含 HTML 片段，
- * 宿主把它渲染成对话内的沙箱可视化。ZCode 走「写文件 + ::visualize 文本协议」，
- * 问知轩是纯前端、没有文件系统，所以改成工具调用——参数有 schema 校验，
- * 结果随对话历史一起进 localStorage，天然持久化，不需要任何文本协议解析。
- *
- * 与 ask_question 相同的纪律：
- *   - 每轮一个实例，`resultsByCallId` 保证同一调用重放时幂等；
- *   - 三层校验：jsonSchema → 手写校验 → 业务校验（这里只有「长度 / 类型」两层）；
- *   - 异常绝不回传原文（可能含内部信息），统一 internal_error。
- *
- * 与 ask_question 不同的语义：
- *   - 这个工具**不打断运行**：没有 nextAction，模型画完可以继续讲、继续提问；
- *   - 渲染发生在展示层（VisualizeCard），本文件只负责「接收并校验片段」。
- *
- * HTML 上限 60K 字符：历史对话存 localStorage（配额约 5MB），
- * ZCode 的 1MB 上限在我们这里会直接把存储打爆（见 skill 文档「体积」一节）。
+ * - 上限 60K 字符：结果随历史存入 localStorage（配额约 5MB）
+ * - 每轮一个实例，按 toolCallId 幂等；异常不回传原文
  */
 import { jsonSchema, tool } from 'ai';
 

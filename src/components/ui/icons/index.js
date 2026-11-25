@@ -1,6 +1,6 @@
 // 问知轩自绘图标层
 //
-// 设计规格：docs/REDESIGN_KARE.md §2.3（自绘 7 + 状态扩展）
+// 设计约定见 src/components/ui/README.md
 //
 // 与 lucide-react 的分工：
 //   - lucide：通用工具图标（Settings, Send, Trash2, ChevronDown ...）

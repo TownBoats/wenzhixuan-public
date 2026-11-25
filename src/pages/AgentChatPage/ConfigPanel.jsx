@@ -10,23 +10,10 @@ import { normalizeContextWindow } from '../../utils/contextWindow.js';
 import DataBackupSection from './DataBackupSection';
 
 /**
- * ConfigPanel — 新路径的配置面板（模态）
+ * ConfigPanel：设置面板（数据备份、主模型、候选答案模型、答题等待、作者信息）。
  *
- * 为什么新写而不是复用旧 `components/SettingsPanel/SettingsPanel.jsx`：
- *   旧面板是四 Tab（通用 / 模型 / 提示词 / 数据）600 行组件，强依赖旧路径的
- *   `histories`、`handleNewChat`、`mainPrompt` 等状态，搬进新页面要造一堆等价数据。
- *   新路径包含答题偏好和模型配置：
- *     ① 主模型（复用 ModelConfigPanel，与旧面板同一套行为：BYOK、测试连接、URL 调试）
- *     ② 候选答案模型（同上，留空即降级为手动作答）
- *     ③ 答题等待时间（沿用旧版 localStorage 偏好）
- *     ④ 我的个人信息（作者邮箱 / GitHub，来自原「关于」Tab）
- *     ⑤ 完整备份与导入，包含新旧历史、配置和偏好
- *
- * 不提供的项（有意为之）：
- *   - 主提示词编辑：新架构由 `src/agent/skills/*.md` 按教学模式固定，改了也不生效（D6 迁移提示已说明）
- *
- * 边界：本组件只做「读当前配置 → 交给 ModelConfigPanel → 把变更回传页面」，
- * 不直接写会话状态、不调用运行层。保存落盘由页面统一处理（ConfigManager）。
+ * 不提供主提示词编辑：教学指令由 `src/agent/skills/*.md` 固定。
+ * 只读取配置并回传变更，由页面落盘；不写会话状态、不调用运行层。
  */
 function ConfigPanel({ open, onClose, mainConfig, optionConfig, onMainConfigChange, onOptionConfigChange,
   transferDisabled, beforeTransfer, onDataImported }) {

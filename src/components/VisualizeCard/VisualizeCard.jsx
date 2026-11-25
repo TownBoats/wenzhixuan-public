@@ -5,7 +5,7 @@ import { Icon, cn } from '@/components/ui';
 import { VIZ_MESSAGE_TAG, buildSrcDoc } from './srcDoc';
 
 /**
- * VisualizeCard — `visualize` 工具结果的沙箱渲染卡（explore/visualize 分支）
+ * VisualizeCard — `visualize` 工具结果的沙箱渲染卡
  *
  * 只承接「就绪」一种情况：completed + output.status === 'ready'。
  * running / rejected / failed 由 MessageContent 路由回 ToolCallCard，

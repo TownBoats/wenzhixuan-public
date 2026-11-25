@@ -1,11 +1,6 @@
 /**
- * F3 · 失败文案分类（`F-取消重试与验收.md` §4 的五种情况）
- *
- * 被测对象是展示层的纯函数 `classifyTurnError`：它只决定「显示哪一句可读文案」，
- * 不生成文案、不碰状态。这里只验证分类，不渲染页面。
- *
- * 关键背景：超时与取消在传输层是同一个 `AbortError`（原文都是「运行已中断」），
- * 唯一区别是运行层打的 `errorKind`。所以「没有 errorKind 时不得猜成超时」必须有用例守住。
+ * 失败分类 `classifyTurnError`。
+ * 超时与取消原文相同，没有 errorKind 时不得猜成超时。
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -50,7 +45,7 @@ test('网络失败：浏览器 Failed to fetch 与 Node 的 ECONNREFUSED 都归�
   }
 });
 
-test('端点不支持工具：沿用 D-2 的粗判并保留整句建议（textKey 为空）', () => {
+test('端点不支持工具：沿用粗判并保留整句建议（textKey 为空）', () => {
   const info = classifyTurnError({
     error: 'AI_APICallError: tools is not supported by this endpoint',
     errorKind: 'failed',

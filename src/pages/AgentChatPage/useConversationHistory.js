@@ -1,16 +1,9 @@
 /**
- * 页面级存储接线（阶段 E · 任务 E3）
+ * 页面的历史接线：载入、保存、提示。
  *
- * 职责只有三件：**载入、保存、提示**。
- *   - 载入：`listForSidebar()` 取最近一条 → `loadById` → （v1 先过 `projectV1Record`）→
- *     交给 `openConversation(record)`。不新造载入路径（`决策记录.md` C-3）。
- *   - 保存：按「保存签名」判断该不该写，签名不变就跳过——流式正文/思考增量不进签名，
- *     所以不会每个 token 写一次全量历史（`E-历史存储与恢复.md` §2.3）。
- *   - 提示：保存失败与数据损坏都以状态返回给页面，由页面渲染成可关闭的提示条；
- *     这里**不吞异常、不打印假成功**。
- *
- * 为什么放在页面目录而不是 `src/hooks/`：它依赖「哪个页面在展示哪条会话」，
- * 属于展示层的接线；会话层（`useChatSession`）已验收，E 阶段不改它（决策 5）。
+ * - 载入：取最近会话（v1 先投影）交给 `openConversation`
+ * - 保存：保存签名变化才写入；流式正文不进签名，避免逐 token 落盘
+ * - 提示：保存失败与数据损坏返回给页面显示，不吞异常
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -20,7 +13,7 @@ import { projectV1Record } from '../../utils/historyV1.js';
 import { createConversationBackup } from '../../utils/dataBackup.js';
 import { conversationBackupToText } from '../../utils/conversationText.js';
 
-/** 保存失败原因 → 文案键。全是 E3 新增的键，不改 `AgentChat` 里已有的键。 */
+/** 保存失败原因 → 文案键。 */
 export const SAVE_FAILURE_KEYS = Object.freeze({
   quota: 'AgentChat.history.saveFailedQuota',
   corrupt: 'AgentChat.history.saveFailedCorrupt',
@@ -56,7 +49,7 @@ function lastTurnSignature(turn) {
     toolSignature,
     questionSignature,
     turn?.error ? 'error' : '',
-    // 类别变了也要落盘：同样是「有错误」，超时与普通失败的文案不同（F3）
+    // 类别变了也要落盘：同样是「有错误」，超时与普通失败的文案不同
     turn?.errorKind ?? '',
   ].join('§');
 }
@@ -89,7 +82,7 @@ export default function useConversationHistory({ session, storage } = {}) {
   const [corruptCount, setCorruptCount] = useState(0);
   const [loadFailure, setLoadFailure] = useState(false);
 
-  // E5：抽屉里的列表与删除/重命名结果
+  // 抽屉里的列表与删除/重命名结果
   const [conversations, setConversations] = useState([]);
   const [listFailure, setListFailure] = useState(null);
   const [actionFailure, setActionFailure] = useState(null);
@@ -283,7 +276,7 @@ export default function useConversationHistory({ session, storage } = {}) {
     dismissCorrupt,
     dismissLoadFailure,
 
-    // ── 历史列表（E5）──
+    // ── 历史列表 ──
     conversations,
     listFailure,
     actionFailure,

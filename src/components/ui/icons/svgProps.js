@@ -1,7 +1,7 @@
 /**
  * 自绘 SVG 图标的共享基础属性。
  *
- * 设计约束（docs/REDESIGN_KARE.md §2.3）：
+ * 设计约束：
  *   - 24x24 viewBox（与 lucide-react 一致，方便混排）
  *   - stroke=currentColor，调用方通过 className 控色
  *   - strokeWidth=1.5（比 lucide 默认 2 略细，与衬线正文呼应）

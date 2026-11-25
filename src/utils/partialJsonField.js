@@ -1,5 +1,5 @@
 /**
- * 工具层 · 增量 JSON 字符串字段提取器（explore/streaming-cards）
+ * 工具层 · 增量 JSON 字符串字段提取器
  *
  * 用途：工具参数以 JSON 逐字流出（`tool-input-delta`），展示层要在 JSON 尚未闭合时
  * 就把某个字符串字段的**已到达部分**读出来——比如 explain_card 的 `svg` 流式渲染。

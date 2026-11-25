@@ -1,14 +1,6 @@
 /**
- * C3 · 会话状态机的纯函数用例（`C-会话状态层.md` C3 判据）
- *
- * 覆盖 C1 的五条判据 + 双击 / 取消 / 迟到事件：
- *   ① 乱序（`TOOL_COMPLETED` 先于 `TOOL_STARTED`）结果与顺序一致；
- *   ② 重复事件（同一 `toolCallId` 两次 `TOOL_COMPLETED`）不产生第二张卡 / 第二个问题；
- *   ③ 不属于当前 `runId` 的事件不改变状态；
- *   ④ 连续两次 `SUBMIT_ANSWER` 只产生一次运行；
- *   ⑤ 上下文中不含 reasoning、不含未配对调用、不含 U+200B。
- *
- * 全部用例只 import `conversationState.js`（纯函数）：不联网、不渲染、不读 localStorage。
+ * 会话状态机：乱序、重复与迟到事件、双击、取消、重试及上下文投影。
+ * 只导入纯函数，不联网、不渲染。
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -231,7 +223,7 @@ test('规则与乱序：TOOL_COMPLETED 先到也补建卡片并生成问题；�
   assert.equal(state.turns[0].questions[0].state, QUESTION_STATE.PENDING);
 });
 
-test('问题卡顺序＝模型调用顺序，结果乱序回来也不打乱（B7 实测的顺序）', () => {
+test('问题卡顺序＝模型调用顺序，结果乱序回来也不打乱（真实端点的顺序）', () => {
   let state = runningState();
   for (const [toolCallId, text] of [
     ['k1', 'Q1'],
@@ -340,7 +332,7 @@ test('RUN_FINISHED 映射五种结束原因；重复收尾与未知原因不改�
   assert.equal(unknown.turns[0].status, TURN_STATUS.FAILED);
 });
 
-test('迟到事件：旧 runId 的片段 / 工具 / 收尾三连都不改状态（首条判据）', () => {
+test('迟到事件：旧 runId 的片段 / 工具 / 收尾三连都不改状态', () => {
   const state = awaitingState();
   const snapshot = JSON.stringify(state);
 
@@ -382,7 +374,7 @@ test('CANCEL_RUN：标记 cancelled，之后同 runId 的片段被丢弃，重�
   assert.equal(finished.turns[0].modelMessages.length, 1);
 });
 
-test('SUBMIT_ANSWER：一轮全部答完才起新一轮，模板符合协议 §6', () => {
+test('SUBMIT_ANSWER：一轮全部答完才起新一轮，模板固定', () => {
   // 同一轮里两个问题（工具事件只能在运行中到达）
   let built = runningState();
   built = completeTool(built, { toolCallId: 'k1', output: readyOutput('q1', '闭包捕获的是什么？') });
@@ -460,7 +452,7 @@ test('RETRY_LAST_TURN：换 runId 保留内容，运行中是空操作', () => {
   assert.equal(reduceSession(running, { type: 'RETRY_LAST_TURN', runId: 'r9' }), running);
 });
 
-test('projectTurns：重试后相同 partId 的两个 run 必须分成两块（F2 判据④）', () => {
+test('projectTurns：重试后相同 partId 的两个 run 必须分成两块', () => {
   // AI SDK 的 text 片段 id 是每次流内自增的（实测两次独立运行都是 `0`），
   // 所以「旧正文被拼到新正文后面」只有在合并键带上 runId 时才能避免。
   const spoken = reduceSession(runningState(), {
@@ -489,7 +481,7 @@ test('projectTurns：重试后相同 partId 的两个 run 必须分成两块（F
   assert.deepEqual(blocks.map((block) => block.runId), ['r1', 'r2']);
 });
 
-test('errorKind：失败轮记录类别，取消一律为空，重试时清掉（协议 §5 / F3）', () => {
+test('errorKind：失败轮记录类别，取消一律为空，重试时清掉', () => {
   const timedOut = reduceSession(runningState(), {
     type: 'RUN_FINISHED',
     runId: 'r1',
@@ -568,7 +560,7 @@ test('buildModelContext：只取已完成 turn、只保留配对调用，无 rea
     },
   ];
 
-  // 作答产生的新一轮还在 streaming，本函数按协议不发送它；这里让它收尾，检查稳态上下文
+  // 作答产生的新一轮还在 streaming，本函数不发送它；这里让它收尾，检查稳态上下文
   const answering = submit(awaitingState({ responseMessages }));
   const answered = reduceSession(answering, {
     type: 'RUN_FINISHED',
@@ -641,7 +633,7 @@ test('projectTurns 与 deriveViewState：渲染块合并、问题卡保序、派
 });
 
 
-// ── explore/streaming-cards：工具参数增量（partialInput）──
+// ── 工具参数增量（partialInput）──
 
 test('TOOL_INPUT_STARTED 提前建卡，TOOL_INPUT_DELTA 累积，完成后清空且不进投影', () => {
   let state = runningState();
@@ -733,4 +725,38 @@ test('不属于当前 runId 的增量事件不改变状态', () => {
     delta: 'x',
   });
   assert.equal(next, state);
+});
+
+test('RETRY_LAST_TURN：旧问题作废，只显示、不可作答、不进答案汇总', () => {
+  const ask = (state, runId, toolCallId, questionId, text) =>
+    reduceSession(state, {
+      type: 'TOOL_COMPLETED',
+      runId,
+      toolCallId,
+      toolName: 'ask_question',
+      output: { status: 'ready', nextAction: 'await_user', questionId, question: text, options: [] },
+    });
+  const finish = (state, runId, reason) =>
+    reduceSession(state, { type: 'RUN_FINISHED', runId, reason, responseMessages: [] });
+  const retry = (toolCallId) => {
+    const failed = finish(ask(runningState(), 'r1', 'old-call', 'old-q', '旧问题'), 'r1', 'failed');
+    const retried = reduceSession(failed, { type: 'RETRY_LAST_TURN', runId: 'r2' });
+    return finish(ask(retried, 'r2', toolCallId, 'new-q', '新问题'), 'r2', 'awaiting_user');
+  };
+
+  const waiting = retry('new-call');
+  assert.deepEqual(deriveViewState(waiting).pendingQuestions.map((item) => item.id), ['new-q']);
+  const shown = projectTurns(waiting.turns)[0].questions;
+  assert.equal(shown.find((item) => item.id === 'old-q').resolution, 'superseded');
+  const answer = { type: 'SUBMIT_ANSWER', answer: '答', turnId: 't2', runId: 'r3' };
+  assert.equal(reduceSession(waiting, { ...answer, questionId: 'old-q' }), waiting);
+
+  const next = reduceSession(waiting, { ...answer, questionId: 'new-q' });
+  assert.equal(next.turns.length, 2, '只剩新题，答完即续轮');
+  assert.match(next.turns[1].userMessage.text, /新问题/);
+  assert.doesNotMatch(next.turns[1].userMessage.text, /旧问题/);
+  assert.equal(next.turns[1].userMessage.questionId, 'new-q');
+
+  // 端点复用 toolCallId 时，新题必须可作答
+  assert.deepEqual(deriveViewState(retry('old-call')).pendingQuestions.map((item) => item.id), ['new-q']);
 });

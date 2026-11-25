@@ -1,34 +1,14 @@
 /**
- * 运行层 · 副模型服务（阶段 B · 任务 B3；explore/structured-options 起改为结构化输出）
+ * 副模型服务：为一个问题生成五档候选答案。
  *
- * 职责：一个问题 → 五档候选答案（档位见 `OPTION_LEVELS`）。只做这一件事。
+ * 输出走强制工具 `submit_options`，由 SDK 按 schema 校验。
+ * 不用 `generateObject`：它固定发送 strict json_schema，DeepSeek 返回 400。
+ * DeepSeek / 智谱的思考模式不接受强制 tool_choice，因此仅对这两家注入
+ * `thinking: {type:'disabled'}`，其余端点不注入。
  *
- * 为什么是结构化输出而不是标签解析：
- *   旧协议让模型用空心方括号包裹档位名，再用 ContentParser 从正文里抠标签——
- *   模型漏闭合、嵌套写错、正文里提到标签名，解析就碎。现在输出走**工具通道**：
- *   定义一个 `submit_options` 工具并强制 tool_choice，模型只能以工具参数的形式
- *   提交 JSON，SDK 按 schema 校验——标签解析这条路整体废弃。
- *
- * 为什么不是 `generateObject`（实测记录，2026-10-20）：
- *   AI SDK v6 的 generateObject 已移除 mode 参数，固定发 response_format=json_schema
- *   （strict），DeepSeek 直接 400「This response_format type is unavailable now」。
- *   工具通道在所有支持 function calling 的 OpenAI 兼容端点上都可用。
- *
- * 为什么注入 `thinking: {type:'disabled'}`（仅 DeepSeek / 智谱端点）：
- *   这两家的「思考模式」不接受强制 tool_choice（DeepSeek 400 原文：
- *   "Thinking mode does not support this tool_choice"）。候选答案是格式化任务，
- *   不需要思考；其余端点不注入，避免未知参数被拒。
- *
- * 边界（`决策记录.md` B-10，不变）：
- *   - 不生成 questionId、不拼 nextAction、不产生卡片、不等待学生（B4 负责）
- *   - 不控制并发（B5 的并发上限 4）
- *   - 不读 localStorage：副模型配置与 system prompt 由上层传入（运行层硬约束）
- *   - 不抛业务异常：失败一律返回结构化结果，`detail` 只允许白名单取值
- *   - 不重试：maxRetries 固定 0，与 B1 同纪律
- *
- * 与 B1 的关系：本服务**不经过** `runModelTurn`——单次非流式调用，
- * 不需要 SSE 翻译与开闸哑弹；超时 / 取消 / 端点规范化在本文件内自行处理
- * （端点规范化复用 modelAdapter 导出的 `normalizeEndpoint`，两处口径一致）。
+ * - 单次非流式调用，不重试；超时与取消在本文件处理
+ * - 业务失败返回结构化结果，`detail` 只允许白名单取值
+ * - 不生成 questionId、不控制并发、不读浏览器存储
  */
 import { generateText, jsonSchema, stepCountIs, tool } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
@@ -88,7 +68,7 @@ const NEEDS_THINKING_OFF = /deepseek|bigmodel/i;
 
 /**
  * 给 fetch 套一层请求体注入：对上述端点关闭思考模式。
- * 模式同 B1 的 createGateFetch（只增不改、非 JSON 请求体保持原样），但不需要开闸哑弹——
+ * 模式同 modelAdapter 的 createGateFetch（只增不改、非 JSON 请求体保持原样），但不需要开闸哑弹——
  * 本服务是非流式调用。
  */
 function createOptionFetch(baseFetch) {
@@ -169,9 +149,9 @@ const unavailable = (errorCode, detail) =>
  * 生成候选答案（结构化输出）。
  *
  * @param {Object} params
- * @param {string} params.question       学生要回答的问题（B4 已校验非空）
+ * @param {string} params.question       学生要回答的问题（调用方已校验非空）
  * @param {string} [params.context]      副模型所需的有限教学上下文
- * @param {string} [params.language]     本期不使用（`决策记录.md` B-1 结论 6），仅为协议保留
+ * @param {string} [params.language]     暂不使用，仅保留签名
  * @param {{ endpoint?: string, baseURL?: string, apiKey?: string, model?: string }} params.config
  *                                       副模型配置快照（绝对 endpoint）
  * @param {string} params.systemPrompt   副模型提示词（上层从配置层读取后传入）
@@ -179,7 +159,7 @@ const unavailable = (errorCode, detail) =>
  * @param {number} [params.timeoutMs]    主运行剩余时间；内部再夹一层 45s 上限
  * @param {Function} [params.baseFetch]  测试用 fetch 注入
  * @param {Object} [params.model]        测试用模型注入（`ai/test` 的 MockLanguageModelV3）；
- *   生产路径永远不传，与 B1 同一纪律（`决策记录.md` B-13）
+ *   生产路径永远不传，与 modelAdapter 同一纪律
  * @returns {Promise<{ status:'ready', options: Array<{level:string,text:string}> }
  *   | { status:'unavailable', errorCode:string, detail?:string }>}
  */
@@ -194,7 +174,7 @@ export async function generateAnswerOptions({
   baseFetch,
   model,
 } = {}) {
-  void language; // 本期不处理双语（保留签名，不改协议）
+  void language; // 暂不处理双语（保留签名）
 
   const trimmedQuestion = typeof question === 'string' ? question.trim() : '';
   if (!trimmedQuestion) {
@@ -204,7 +184,7 @@ export async function generateAnswerOptions({
     throw new Error('generateAnswerOptions: 缺少副模型 systemPrompt（运行层不读配置）');
   }
 
-  // 未配置副模型：不发请求（判据要求零网络）
+  // 未配置副模型：不发请求（零网络）
   if (!model && !isOptionConfigReady(config)) {
     return unavailable(OPTION_ERROR_NOT_CONFIGURED);
   }
@@ -214,7 +194,7 @@ export async function generateAnswerOptions({
   if (trimmedContext) messages.push({ role: 'assistant', content: trimmedContext });
   messages.push({ role: 'user', content: trimmedQuestion });
 
-  // ── 超时与取消是两件不同的事，最后要能分别上报（与 B1 同口径）──
+  // ── 超时与取消是两件不同的事，最后要能分别上报（与 modelAdapter 同口径）──
   const timeoutSignal = AbortSignal.timeout(resolveTimeout(timeoutMs));
   const signal = abortSignal ? AbortSignal.any([abortSignal, timeoutSignal]) : timeoutSignal;
 
@@ -222,7 +202,7 @@ export async function generateAnswerOptions({
   const endpoint = String(config?.endpoint ?? config?.baseURL ?? '');
   const fetchImpl = NEEDS_THINKING_OFF.test(endpoint) ? createOptionFetch(baseFetch) : baseFetch;
 
-  // provider：每次按快照新建，不复用（与 B1 同纪律）；测试注入模型时不建连接。
+  // provider：每次按快照新建，不复用（与 modelAdapter 同纪律）；测试注入模型时不建连接。
   const languageModel =
     model ??
     createOpenAI({

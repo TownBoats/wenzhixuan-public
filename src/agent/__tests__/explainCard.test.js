@@ -1,13 +1,6 @@
 /**
- * explain_card 工具判据（explore/visualize 分支 · 讲解卡片）：
- *   ① 正常输入 → ready，svg 去空白带回，viewBox 解析出宽高；
- *   ② 非对象 / 未知字段 / title 空或超长 / svg 空或超长 → rejected('invalid_input')；
- *   ③ svg 非单根 <svg>、缺 viewBox、含 <script> → rejected('invalid_input')；
- *   ④ viewBox 宽高为 0 或非法值 → rejected；
- *   ⑤ 同一 toolCallId 重放 → 返回上次结果（同一引用）；
- *   ⑥ 边界：恰好 80 字 title、恰好 30000 字符 svg → ready。
- *
- * 全部直接调用工具对象的 execute，不走 SDK、不联网。
+ * explain_card 工具：输入校验、SVG 形状、viewBox、长度边界与幂等。
+ * 直接调用 execute，不走 SDK、不联网。
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';

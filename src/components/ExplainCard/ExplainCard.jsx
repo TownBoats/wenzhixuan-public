@@ -7,8 +7,8 @@ import { extractPartialStringField } from '@/utils/partialJsonField.js';
 import { STREAM_MESSAGE_TAG, buildExplainSrcDoc, buildStreamSrcDoc } from './srcDoc';
 
 /**
- * ExplainCard — `explain_card` 工具结果的静态 SVG 渲染卡（explore/visualize 分支）
- *               + 流式生成中实时预览（explore/streaming-cards 分支）
+ * ExplainCard — `explain_card` 工具结果的静态 SVG 渲染卡
+ *               + 流式生成中实时预览
  *
  * 三种状态：
  *   - running  ：桥接 iframe（sandbox=allow-scripts），postMessage 增量 + 消毒后实时渲染；

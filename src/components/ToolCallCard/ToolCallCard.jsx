@@ -4,31 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { Icon, cn } from '@/components/ui';
 
 /**
- * ToolCallCard — 单个工具调用的生命周期卡片（D3 行为 / G2 视觉改版）
+ * ToolCallCard：通用工具调用卡片，数据来自 `projectTurns` 的 tool block。
  *
- * 数据来自 `projectTurns` 投影的 tool block：
- *   { type:'tool', toolCallId, toolName, status, input, output, error }
- *   - status：running / completed / failed（conversationState.js TOOL_PART_STATUS）
- *   - output.status：ready / unavailable / rejected（B4 ask_question 的返回结构）
- *
- * 五态（2026-10-17 与用户拍板）：进行中 / 完成 / 候选答案不可用 / 被拒绝 / 失败。
- * 文档原写的「准备问题中 / 生成候选答案中」两个进行态在会话层无法区分
- * （运行层只有 tool-started / tool-completed 两个事件），合并为一个进行态。
- *
- * 默认折叠；展开显示工具名 + 输入的问题 + 结果摘要，错误/降级原因在展开区可见。
- * 状态用文字 + 图形区分，不只靠颜色；展开按钮原生 <button>，键盘可操作。
- *
- * G2 视觉：
- *   - 折叠条从「一行灰字」改成「状态圆徽 + 工具名 + 状态胶囊」，扫一眼能分清五种态
- *   - 展开区改成两列标签网格，长文本（问题 / 原因）用引用块与等宽 chip 区分
- *   - 进行中加一条呼吸感的进度条，避免用户以为卡住
- *
- * 2026-10-19 调整（用户反馈）：折叠条不再只显示「提问 ✓」，
- * 而是直接露出生成的问题文本（output.question → 回退 input.question），
- * 「提问」这个标签只在展开详情里出现——一眼能看到问了什么，不用再展开。
+ * - 五态：进行中 / 完成 / 候选答案不可用 / 被拒绝 / 失败
+ * - 默认折叠，折叠条显示问题文本；展开显示工具名、输入、结果与失败原因
+ * - 状态用文字与图形区分，不只靠颜色；键盘可操作
  */
 
-// 文案全部在 translation.json 的 AgentChat.toolCard（D7），组件里只留键名与图标
+// 文案全部在 translation.json 的 AgentChat.toolCard，组件里只留键名与图标
 const TOOL_LABEL_KEYS = {
   ask_question: 'AgentChat.toolCard.toolLabels.ask_question',
 };
@@ -75,7 +58,7 @@ function resolveCardState(status, output) {
   if (status === 'running') return 'running';
   if (status === 'failed') return 'failed';
   // 候选答案不可用在协议里是 `optionsStatus`（`ask_question` 成功返回时 status 恒为 'ready'，
-  // 见 src/agent/tools/askQuestion.js）；D8 走查发现只判 status 会让这一态永远进不去，
+  // 见 src/agent/tools/askQuestion.js）；只判 status 会让这一态永远进不去，
   // 故同时认 optionsStatus，并保留对旧 status 值的兼容。
   const optionsUnavailable =
     output?.optionsStatus === 'unavailable' || output?.status === 'unavailable';

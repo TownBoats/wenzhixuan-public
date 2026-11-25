@@ -1,17 +1,10 @@
 /**
- * 会话层 · 只发命令的 hook（阶段 C · 任务 C2）
+ * 会话 hook：持有 reducer 状态，分配会话/轮次/运行 ID，管理 AbortController，
+ * 并把运行事件转成 action。
  *
- * 职责：持有 `useReducer` 状态、分配三个 ID（`conversationId` / `turnId` / `runId`）、
- * 持有每次运行的 `AbortController`、把运行层的规范事件转成 action。
- *
- * 边界（`C-会话状态层.md` C2 + 规则 §3）：
- *   - 对页面**只暴露数据与命令**，不返回任何 state setter、不返回 `dispatch`
- *   - 状态转换全部在 `reduceSession`（C1 的纯函数）里，本文件不写状态分支
- *   - `isRunning` 等一律由 `deriveViewState` 从 turns 派生，不新增可写布尔量
- *   - 命令必须可安全重复调用：运行中重发 / 双击 / 无运行时取消，都是空操作
- *
- * 与运行层的接线：`runTeachingAgent({ conversationId, turnId, runId, mode, config, messages,
- * optionConfig, optionSystemPrompt, abortSignal, onEvent })`——三个 ID 由本层分配（决策 B-12）。
+ * - 只向页面暴露数据与命令，不暴露 setter 或 dispatch
+ * - 状态转换全部在 `reduceSession`；运行状态由 `deriveViewState` 派生
+ * - 命令可安全重复调用：运行中重发、双击、无运行时取消都是空操作
  */
 
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
@@ -26,7 +19,7 @@ import {
   reduceSession,
 } from '../utils/conversationState.js';
 
-/** 规范事件 → action 类型（协议 §4）。事件本身已经带 `runId`，会话层只做归属过滤。 */
+/** 规范事件 → action 类型。事件本身已经带 `runId`，会话层只做归属过滤。 */
 const EVENT_ACTION_TYPES = Object.freeze({
   'run-started': 'RUN_STARTED',
   'text-delta': 'TEXT_DELTA',
@@ -41,7 +34,7 @@ const EVENT_ACTION_TYPES = Object.freeze({
 let fallbackSequence = 0;
 
 /**
- * 运行身份由会话层生成（B-12）。纯函数层不许造 ID，所以生成只发生在这里。
+ * 运行身份由会话层生成。纯函数层不许造 ID，所以生成只发生在这里。
  * 没有 `randomUUID` 的环境（少数测试运行时）用一个进程内自增序列兜底，仍保证唯一。
  */
 function createId() {
@@ -54,9 +47,9 @@ function createId() {
 /**
  * 新运行的上下文：**已完成 turn 的全部消息 + 本轮用户消息**。
  *
- * 为什么不是直接 `buildModelContext(turns)`：该函数按协议只纳入已完成的 turn，
- * 而正要开跑的这一轮还是 `streaming`，它的用户消息必须显式补上（不改 C1 的纯函数）。
- * 用户答案的文本由 reducer 生成（协议 §6 模板），这里只搬运 `userMessage.text`。
+ * 为什么不是直接 `buildModelContext(turns)`：该函数只纳入已完成的 turn，
+ * 而正要开跑的这一轮还是 `streaming`，它的用户消息必须显式补上（不改纯函数）。
+ * 用户答案的文本由 reducer 生成（固定模板），这里只搬运 `userMessage.text`。
  */
 function contextForRun(nextState) {
   const turn = nextState?.turns?.at(-1);
@@ -70,13 +63,13 @@ function contextForRun(nextState) {
 
 /**
  * @param {Object} params
- * @param {Object} params.modes    `modes.js` 的 `createModes()` 产物（id → 模式对象），D 阶段由页面装配
+ * @param {Object} params.modes    `modes.js` 的 `createModes()` 产物（id → 模式对象），由页面装配
  * @param {string} [params.mode]   初始模式 id
  * @param {Object} params.config   主模型配置快照（每次运行前由页面传入，hook 不读配置层）
  * @param {Object} [params.optionConfig]      副模型配置快照
  * @param {string} [params.optionSystemPrompt] 副模型提示词
  * @param {string} [params.conversationId]     续接既有会话时传入
- * @param {Function} [params.runner]           运行层入口（默认 B5；C3/C4 可注入假运行层）
+ * @param {Function} [params.runner]           运行层入口（默认 `runTeachingAgent`；测试可注入假运行层）
  */
 export function useChatSession({
   modes,
@@ -170,7 +163,7 @@ export function useChatSession({
           reason: result?.reason ?? 'failed',
           responseMessages: result?.responseMessages ?? [],
           error: result?.error ?? null,
-          // 失败类别来自运行层的 `endedBy`（协议 §5 / F3）：超时与取消是两件事，
+          // 失败类别来自运行层的 `endedBy`：超时与取消是两件事，
           // 只靠 error.message 区分不了（两者原文都是「运行已中断」）。
           errorKind: result?.endedBy ?? null,
           contextUsage: result?.contextUsage ?? null,
@@ -242,7 +235,7 @@ export function useChatSession({
       });
       if (!nextState) return null;
 
-      // 还有问题没答：只更新状态，不起新一轮（协议 §6：一轮的答案一起进上下文）
+      // 还有问题没答：只更新状态，不起新一轮（一轮的答案一起进上下文）
       const turn = nextState.turns.at(-1);
       if (!turn || turn.id !== turnId || turn.status !== 'streaming') return null;
       return startRun({ turnId, runId, messages: contextForRun(nextState) });
@@ -261,7 +254,7 @@ export function useChatSession({
   );
 
   /**
-   * 只重试最后一轮（决策 C-1 结论 3）：换新 `runId` 重跑，旧内容保留到新运行产出。
+   * 只重试最后一轮：换新 `runId` 重跑，旧内容保留到新运行产出。
    * 重试的上下文由「该轮之前的已完成 turn + 该轮自己的用户消息」组成。
    */
   const retryLastTurn = useCallback(() => {
@@ -287,7 +280,7 @@ export function useChatSession({
     [apply],
   );
 
-  /** 打开既有会话（E 阶段的存储读取结果）。先中止当前运行，再整体替换。 */
+  /** 打开既有会话（来自存储读取结果）。先中止当前运行，再整体替换。 */
   const openConversation = useCallback(
     (record) => {
       const controller = controllerRef.current;

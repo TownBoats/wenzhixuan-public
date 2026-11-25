@@ -1,28 +1,15 @@
 /**
- * v1 历史只读适配（阶段 E · 任务 E2）
+ * v1 历史只读适配：在内存中把旧记录投影成 turns，供显示与续聊。
  *
- * 旧键 `chat_histories` 里的记录是另一套结构：
- *   { id, title, timestamp, messages: [{id, role, content, status, error}],
- *     uiMessages: [{id, sourceMessageId, role, content: [{type, value}], status, error}] }
- * 本文件把它**在内存里**投影成协议 §5 的 turns，交给 `openConversation(record)` 显示与续聊。
- *
- * 三条硬约束（`E-历史存储与恢复.md` §2.2 / `E-开发指导.md` E2）：
- *   1. **只读**：不接收 storage、不写任何键，调用前后旧记录对象与旧键字符串都必须逐字节不变。
- *   2. **上下文只取纯文本**：旧记录里 `messages` 与 `uiMessages` 已经分叉（摘要进了 messages
- *      没进 uiMessages，`answer-card` 进了 uiMessages 没进 messages），从分叉的数据里还原
- *      「当时到底说了什么」没有唯一答案，所以只搬纯文本，不搬标签、不搬卡片结构。
- *   3. **纯函数**：不 import React、不碰宿主对象、不读时间、不产生随机 ID。
- *
- * 两个已拍板的取舍（`决策记录.md` **E-1** 的补充 / E2 开工说明）：
- *   - turn 以 **`messages` 为主线**切分（一条 user 开一轮，assistant 并入），因为 `messages`
- *     才是旧路径真正发给模型的序列，含「一轮多题的作答摘要」；`uiMessages` 只用来取展示文本。
- *   - 旧 `answer-card` 投影成**文本片段**（`问题：…／我的回答：…／档位：…`），不塞进
- *     `turn.questions`——那会被 `QuestionGroup` 渲染成可点卡片，而历史不可作答。
+ * - 只读纯函数：不接收 storage，不改动旧记录
+ * - 旧 `messages` 与 `uiMessages` 内容不一致：以 `messages` 为主线切分轮次，
+ *   `uiMessages` 只取展示文本；上下文只取纯文本
+ * - 旧答案卡投影为文本片段，不恢复成可作答的问题
  */
 
 const GATE_MARKER = '\u200B';
 
-/** 旧思考块不进历史：协议 §7 禁止 reasoning 原文入库，也不该在恢复时复活。 */
+/** 旧思考块不进历史：reasoning 原文禁止入库，也不该在恢复时复活。 */
 const DROPPED_UI_TYPES = new Set(['thinking', 'answer-card']);
 
 function stripGate(value) {
@@ -159,7 +146,7 @@ function makeTurn({ conversationId, index, text, source }) {
     id: `v1_${conversationId}_${index}`,
     runId: null,
     modeSnapshot: null,
-    // 先记未完成；该轮的 assistant 文本到了才改成 completed（协议不变量 8：未完成不进上下文）
+    // 先记未完成；该轮的 assistant 文本到了才改成 completed（未完成不进上下文）
     status: 'interrupted',
     userMessage: { text, source },
     modelMessages: [],
@@ -339,14 +326,14 @@ export function projectV1Record(record) {
       const text = uiMessageToText(uiMessage) || messageToText(message);
       if (text) appendTextPart(current, text);
 
-      // 失败的那一轮保留展示、不进上下文（与 C 层对 failed turn 的处理一致）
+      // 失败的那一轮保留展示、不进上下文（与会话层对 failed turn 的处理一致）
       if (text && !isFailed(message, uiMessage)) {
         current.modelMessages.push({ role: 'assistant', content: text });
         current.status = 'completed';
       }
       continue;
     }
-    // 其它 role（system / tool 等）旧路径不会产生，忽略
+    // 其它 role（system / tool 等）旧记录不会产生，忽略
   }
 
   // 收尾：最后一轮之后还有答案卡（用户点完就关页面、没触发摘要）

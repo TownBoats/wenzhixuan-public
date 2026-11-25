@@ -1,12 +1,8 @@
 /**
- * B7 · 真实端点单跑（阶段 B 唯一的真实证据来源）
+ * 真实端点单跑：用 `runTeachingAgent` 跑一轮 socratic，检查工具调用、参数、
+ * 候选答案与 response.messages 配对。
  *
- * 目的：把 `runTeachingAgent`（B5）接到真实端点上跑**一轮** socratic，回答四件离线证据
- * 回答不了的事——模型会不会真的调用 `ask_question`、真实参数是否合规、副模型能否稳定出档位、
- * 工具结果回填进 `response.messages` 后是否配对。顺带覆盖 B6 覆盖不到的三块：
- * provider 装配、开闸 fetch（U+200B）、请求体注入。
- *
- * 用法（PowerShell 里同样可用，三个变量缺一即退出）：
+ * 用法（三个变量缺一即退出）：
  *   PROBE_BASE_URL=https://api.deepseek.com/v1
  *   PROBE_API_KEY=<你的 key>
  *   PROBE_MODEL=deepseek-flash
@@ -14,15 +10,12 @@
  *
  * 可选变量：
  *   PROBE_TOPIC          教学主题（默认「闭包」）
- *   PROBE_OPTION_MODEL   副模型名（默认＝PROBE_MODEL，`决策记录.md` B-14 决策 1）
- *   PROBE_OPTION_PROMPT  副模型提示词（默认读 `src/locales/zh/translation.json` 的 `SystemPrompts.optionAiMode`）
+ *   PROBE_OPTION_MODEL   副模型名（默认＝PROBE_MODEL）
+ *   PROBE_OPTION_PROMPT  副模型提示词（默认读中文翻译文件的 SystemPrompts.optionAiMode）
  *
- * 输出：控制台打印「问题 / 每档文案 / 步数 / 事件序列 / response.messages 摘要 / 四项判据」，
- *      完整结果写入 `scripts/socratic-once.output.json`（不含密钥）。
- *
- * 退出码：0 = 四项判据全过；1 = 配置缺失、模型没触发工具、或判据有不达标项。
- *
- * 安全：密钥只在内存中使用，打印与落盘时都不出现（只打印掩码）。
+ * 完整结果写入 scripts/socratic-once.output.json。
+ * 退出码：0 = 判据全过；1 = 配置缺失、未触发工具或判据不达标。
+ * 密钥只在内存中使用，打印与落盘时都不出现。
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -35,7 +28,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
 const OUTPUT_PATH = join(HERE, 'socratic-once.output.json');
 
-/** 开闸标记（协议不变量 2 要求两处都没有）。 */
+/** 开闸标记（文本与协议消息里都不得出现）。 */
 const GATE_MARKER = '\u200B';
 /** 脚本看门狗：主运行上限 120s，留 30s 余量。 */
 const WATCHDOG_MS = 150_000;
@@ -48,7 +41,7 @@ const TOPIC = (process.env.PROBE_TOPIC || '闭包').trim();
 
 if (!BASE_URL || !API_KEY || !MODEL) {
   console.error(
-    '缺少环境变量。需要 PROBE_BASE_URL / PROBE_API_KEY / PROBE_MODEL 三个都设置（参见 A3 的 scripts/probe-tools.mjs）。',
+    '缺少环境变量。需要 PROBE_BASE_URL / PROBE_API_KEY / PROBE_MODEL 三个都设置（参见 scripts/probe-tools.mjs）。',
   );
   process.exit(1);
 }
@@ -139,7 +132,7 @@ async function main() {
   line(`身份      : conversationId=${conversationId}`);
   line(`            turnId=${turnId}`);
   line(`            runId=${runId}`);
-  line('可选参数  : thinking / reasoningEffort 未传（B7 取最小面，记录在案）');
+  line('可选参数  : thinking / reasoningEffort 未传（取最小面）');
 
   const events = [];
   const controller = new AbortController();
@@ -254,7 +247,7 @@ async function main() {
   }
   const allPassed = checks.every((check) => check.ok);
 
-  // ── 未通过时的诊断（`决策记录.md` B-14 决策 3：不自动重跑）──
+  // ── 未通过时的诊断（不自动重跑）──
   if (!allPassed) {
     heading('诊断');
     if (result.reason === 'failed') {
@@ -317,12 +310,12 @@ async function main() {
   heading('落盘');
   line(`完整结果 → scripts/socratic-once.output.json（不含密钥）`);
   line('');
-  line(allPassed ? 'B7 四项判据全过。' : 'B7 有判据未过，见上面的 ❌ 与诊断。');
+  line(allPassed ? '四项判据全过。' : '有判据未过，见上面的 ❌ 与诊断。');
 
   process.exit(allPassed ? 0 : 1);
 }
 
 main().catch((error) => {
-  console.error('B7 脚本自身出错：', error?.message || error);
+  console.error('脚本自身出错：', error?.message || error);
   process.exit(1);
 });

@@ -109,7 +109,7 @@ turn 状态为 streaming / awaiting_user / completed / failed / cancelled / inte
 
 会话层先校验当前 runId 和运行状态，忽略迟到片段。取消时允许对应的最终收尾写回，避免丢失结果；hook 根据 runner 的最终返回统一派发 RUN_FINISHED，避免事件和 Promise 两路重复结束。
 
-重试仅作用于最后一轮；换 runId，保留已显示的旧内容和问题。文本合并与 React key 需要同时包含 runId 和 partId，因为 partId 可在不同运行重复。旧 pending 问题保留是历史已接受的语义，具有需要继续评估的风险。
+重试仅作用于最后一轮；换 runId，保留已显示的旧内容和问题。文本合并与 React key 需要同时包含 runId 和 partId，因为 partId 可在不同运行重复。2026-11-25 起，重试时旧运行的问题作废：状态转为 skipped 并附 `resolution:'superseded'`，只保留显示，不可作答、不进答案汇总，TXT 只留题干。此前已落盘的旧 pending 不迁移。取舍见 [ADR-005](../decisions/ADR-005-retry-supersedes-questions.md)。
 
 ## 8. 三种数据投影
 
@@ -161,9 +161,9 @@ ExplainCard 就绪态使用空 sandbox 和限制性 CSP，不给模型脚本执�
 
 ## 11. 兼容依赖和清理边界
 
-新路径仍使用 AnswerCard → MarkdownRenderer，以及 ModelConfigPanel、ConfigManager、SettingsSection、AnswerWaitSettings、useMediaQuery、answerPreferences、候选提示词服务。不能按“旧组件目录”整体删除。QuestionCard 组件无当前主路径入口，但 questionAdapter 文件仍有现行答案适配函数，测试也引用其旧适配函数。
+新路径仍使用 AnswerCard → MarkdownRenderer，以及 ModelConfigPanel、ConfigManager、SettingsSection、AnswerWaitSettings、useMediaQuery、answerPreferences、候选提示词服务。不能按“旧组件目录”整体删除。questionAdapter 的 `toQuestionCardModel` 现仅被测试引用，其余为现行答案适配函数。
 
-旧 ChatPage 及专用 hooks/lib/解析器/旧 UI 是静态删除候选；删除前仍需依赖与运行验证。`/design`、ui-review 是有效开发入口，闲置 LandingPage 用途另行判断。历史兼容和旧配置键的退役需要单独产品决定。
+旧 ChatPage 及专用 hooks/lib/解析器/旧 UI 共 28 个文件已于 2026-11-25 按用户要求删除，清单见 [清理盘点](../tasks/cleanup-2026-11-25.md)。`/design`、ui-review 是有效开发入口，闲置 LandingPage 用途另行判断。历史兼容和旧配置键的退役需要单独产品决定。
 
 ### 学习链路撤销（2026-11-03）
 

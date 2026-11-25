@@ -174,9 +174,9 @@
         "profileEmail": "邮箱：",
         "profileGithub": "GitHub：",
         "notFilled": "未填写",
-        "mainModelMissing": "主模型还没配置好。请到设置里填好接口地址、密钥和模型名后再开始（推荐：接口地址 https://api.deepseek.com，模型 deepseek-flash；新路径与旧路径读同一份设置）。",
+        "mainModelMissing": "主模型还没配置好。请到设置里填好接口地址、密钥和模型名后再开始（推荐：接口地址 https://api.deepseek.com，模型 deepseek-flash）。",
         "optionModelMissing": "副模型未配置，候选答案将不可用；问题仍可手动作答。需要候选答案的话，请到设置里配置副模型（推荐 deepseek-flash）。",
-        "migrationNotice": "检测到你之前自定义过教学提示词。新架构下系统提示词由教学模式统一管理，自定义内容不会生效；原文仍保存在旧路径的设置里。"
+        "migrationNotice": "检测到你之前自定义过教学提示词。新架构下系统提示词由教学模式统一管理，自定义内容不会生效；原文仍保存在当前浏览器中，也会包含在设置的完整 JSON 备份里。"
       },
       "backup": {
         "title": "数据备份与迁移",
@@ -294,6 +294,7 @@
         "pending": "待作答",
         "answered": "已回答",
         "skipped": "已跳过",
+        "superseded": "已作废",
         "optionsReady": "{{count}} 档候选",
         "manual": "手动作答",
         "open": "作答",
@@ -321,9 +322,10 @@
       "expert": "精通",
       "custom": "自定",
       "aiError": "AI 预测回答失败",
-      "aiErrorTips": "您可以在提供自定义回答",
+      "aiErrorTips": "您可以提供自定义回答",
       "placeholder": "在这里输入您的思考... (按 Enter 发送，Shift + Enter 换行)",
       "customAnswer": "自答",
+      "send": "发送",
       "tips1": "留一刻静待，思考自有其时。还有",
       "tips2": "秒，让答案找到你。",
       "tips3": "点击查看答案",

@@ -6,21 +6,10 @@ import { useTranslation } from 'react-i18next';
 import { Icon, cn } from '@/components/ui';
 
 /**
- * MarkdownContent — 助手正文与题目文本的 Markdown 渲染（G2）
+ * MarkdownContent：教学正文与题目的 Markdown 渲染。
  *
- * 为什么新写一个而不是复用 `components/MarkdownRenderer`：
- *   那个组件服务的是聊天页面，带 KaTeX CDN `<link>`、代码高亮与「tech 主题」兼容参数；
- *   新路径只要「教学正文」这一种排版，不需要每次渲染都往 `<head>` 塞外链，
- *   也不想为了几行代码把 `react-syntax-highlighter` 重新拉进包里（旧页面被摇掉后
- *   它本来已经不在产物里了）。这里只保留 remark-gfm（表格 / 任务列表 / 删除线）。
- *
- * 安全：不启用 `rehype-raw`，HTML 一律按文本渲染（`skipHtml` 默认 true），
- * 模型输出里的 `<script>` 之类不会被执行。
- *
- * 排版口径（与页面正文一致）：
- *   - 段落 1.8 行高、块间距 12px，首尾不留白，交给外层 `space-y` 控制节奏
- *   - 代码块深底 + 语言标签 + 悬停出现复制按钮
- *   - 列表标记用 sage-300，引用块用 sage 左边线 + 纸色底
+ * 与 `MarkdownRenderer` 分开：后者用于答题卡，带代码高亮等依赖；这里只启用 remark-gfm。
+ * 不启用 `rehype-raw`，模型输出的 HTML 不会被执行。
  */
 
 function CodeBlock({ language, code }) {

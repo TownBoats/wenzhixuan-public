@@ -3,40 +3,35 @@ import { streamText } from 'ai';
 import { sanitizeTokenUsage } from '../utils/tokenUsage.js';
 
 /**
- * 运行层 · 一次模型执行（阶段 B · 任务 B1）
+ * 模型适配：执行一次模型流式调用。
  *
- * 职责只有四件，别的一概不做：
- *   1. 装载：按配置快照建一次连接（用完即弃，不复用单例、不读全局配置）
- *   2. 翻译：把 SDK 的 fullStream 方言翻成规范事件（带 runId / partId / toolCallId）
- *   3. 净化：开闸标记（U+200B）在「出口」两处清掉；reasoning 只展示、不回传
- *   4. 交账：返回整轮的 responseMessages（来自 SDK，不手工拼）与传输层结束原因
+ * - 按配置快照创建连接，用完即弃，不读全局配置
+ * - 把 SDK 的 fullStream 翻译成带 runId 的规范事件
+ * - 清除开闸标记（U+200B）；reasoning 只展示、不回传
+ * - 返回 SDK 给出的 responseMessages 与传输层结束原因，不手工拼消息
  *
- * 边界（现行知识见 `docs/knowledge/agent-upgrade.md`；历史理由见
- * `docs/archive/agent-upgrade-2026-11-01/agent-mvp/` 的 `决策记录.md` B-1 ~ B-7 与 `01-核心协议.md` §4）：
- *   - 不决定「下一步做不做」：stopWhen 由上层构造后传入，本模块只透传
- *   - 不重试：maxRetries 固定 0（工具可能已执行，重放不幂等；重试是上层策略）
- *   - 不发 run-started / run-finished：那是整轮语义，由 B5 统一发出
- *   - 不碰 React / localStorage / window / JSX：本文件要能被 node --test 直接导入
+ * 不重试（工具可能已执行，重放不幂等），不决定停止条件，
+ * 不发 run-started / run-finished。不依赖 React 与浏览器存储。
  */
 
 /** 开闸标记（零宽空格）。它属于传输层，不属于模型输出。 */
 const GATE_MARKER = '\u200B';
 const GATE_MARKER_RE = /\u200B/g;
 
-/** 主运行预算（协议：主运行 120s）。可由配置快照覆盖。 */
+/** 主运行预算（120s）。可由配置快照覆盖。 */
 const DEFAULT_TIMEOUT_MS = 120_000;
 
-/** AI SDK 允许的 reasoningEffort 取值；`max` 等不在其中，只能注入请求体（决策 A-6）。 */
+/** AI SDK 允许的 reasoningEffort 取值；`max` 等不在其中，只能注入请求体。 */
 const SDK_REASONING_EFFORTS = new Set(['none', 'minimal', 'low', 'medium', 'high', 'xhigh']);
 
 const stripGate = (value) => (typeof value === 'string' ? value.replace(GATE_MARKER_RE, '') : value);
 
 /**
- * 给失败错误打类别标记（协议 §5 的 `errorKind`）。
+ * 给失败错误打类别标记（`errorKind`）。
  *
  * 为什么不让上层去猜：会话层只拿得到 `message`，而「超时」与「取消」在传输层是同一句
  * `运行已中断`，`Failed to fetch` 也只是 TypeError 的默认文案。类别在**产生它的地方**记录，
- * 上层才能把它映射成可读文案（F3）。
+ * 上层才能把它映射成可读文案。
  */
 function tagError(error, endedBy) {
   const target = error instanceof Error ? error : new Error(String(error ?? '运行失败'));
@@ -48,7 +43,7 @@ function tagError(error, endedBy) {
   return target;
 }
 
-/** 递归清理任意结构里的开闸标记（协议不变量 2 覆盖所有字段，不只是 text）。 */
+/** 递归清理任意结构里的开闸标记（覆盖所有字段，不只是 text）。 */
 const sanitizeValue = (value) => {
   if (typeof value === 'string') return stripGate(value);
   if (Array.isArray(value)) return value.map(sanitizeValue);
@@ -204,13 +199,13 @@ function normalizeConfig(config) {
  * @param {Object} params.config       配置快照 { endpoint, apiKey, model, thinking?, reasoningEffort?, timeoutMs?, maxOutputTokens? }
  * @param {Array}  params.messages     上下文消息
  * @param {Object} [params.tools]      工具集合；普通模式传空对象
- * @param {Array}  [params.stopWhen]   停止条件，由上层（B5）构造后传入
- * @param {string} [params.system]     系统提示词，由上层（B2/B5）装配后传入
+ * @param {Array}  [params.stopWhen]   停止条件，由上层构造后传入
+ * @param {string} [params.system]     系统提示词，由上层装配后传入
  * @param {AbortSignal} [params.abortSignal] 外部取消信号
  * @param {(event: Object) => void} params.onEvent 规范事件回调
  * @param {Function} [params.baseFetch] 可注入的 fetch（测试用）
  * @param {Object} [params.model] 直接注入的语言模型（测试用：`ai/test` 的 MockLanguageModelV3）。
- *   不传时按配置快照装配 provider —— 生产路径永远不传它（`决策记录.md` B-13）。
+ *   不传时按配置快照装配 provider —— 生产路径永远不传它。
  * @returns {Promise<{ ok: boolean, endedBy: 'finished'|'cancelled'|'timeout'|'failed',
  *   finishReason: string|null, stepCount: number, responseMessages: Array, error?: Error }>}
  */
@@ -265,7 +260,7 @@ export async function runModelTurn({
   const hasTools = Boolean(tools && Object.keys(tools).length > 0);
 
   const emit = (event) => {
-    // 取消/超时之后不再产生任何事件（B1 判据③）
+    // 取消/超时之后不再产生任何事件
     if (controller.signal.aborted) return;
     onEvent(event);
   };
@@ -332,10 +327,10 @@ export async function runModelTurn({
           continue;
         }
         case 'tool-input-start': {
-          // 参数开始流出（explore/streaming-cards）：比 tool-call 早得多，
+          // 参数开始流出：比 tool-call 早得多，
           // 展示层靠它把「运行中」卡片提前摆出来。
           // 实测（ai@6.0.177）：该部分的调用 ID 字段叫 `id`，与 tool-call 的 toolCallId 同值。
-          if (!part.id) continue; // 没有身份就不建卡（不变量 5 的前提）
+          if (!part.id) continue; // 没有身份就不建卡（同一调用只对应一张卡）
           emit({
             type: 'tool-input-started',
             runId,
@@ -440,9 +435,9 @@ export async function runModelTurn({
       finishReason: null,
       stepCount: 0,
       responseMessages: [],
-      // 取消是用户意图，不是错误（协议 §4 / F1 判据②）：
+      // 取消是用户意图，不是错误：
       // 把 AbortError 交出去，会话层会写进 `turn.error`，界面就会冒出「运行已中断」的错误块。
-      // 其余失败带上类别（`timeout` / `failed`），供会话层存成 `errorKind`（协议 §5 / F3）。
+      // 其余失败带上类别（`timeout` / `failed`），供会话层存成 `errorKind`。
       error: endedBy === 'cancelled' ? null : tagError(error, endedBy),
     };
   } finally {

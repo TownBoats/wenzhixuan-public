@@ -1,11 +1,5 @@
 /**
- * D4 适配层：新协议 question → 旧组件 props（纯函数，无副作用）
- *
- * 新协议（`conversationState.js` / `projectTurns` 投影）：
- *   { id, toolCallId, text, options: [{level,text}], optionsStatus, answer, selectedLevel, state }
- *
- * 旧组件（QuestionCard / AnswerCard）吃的是另一套字段名与结构，
- * 这里做一次性翻译，旧组件一行不改（`cancelLabel` 是新增的可选 prop，默认行为不变）。
+ * 把会话层 question 投影转换为答题卡组件所需的 props（纯函数）。
  */
 
 /** 新 question → QuestionCard 的 `question` prop。 */
@@ -15,11 +9,11 @@ export function toQuestionCardModel(question) {
   return {
     id: question.id,
     question: question.text ?? '',
-    // 旧组件的 status 只驱动状态标签；`responding` 只应表示「还在生成」，而问题卡的
-    // 候选答案在该问题进入待答时就已经定型——D8 修复前这里给 `responding`，会让
+    // status 只驱动状态标签；`responding` 只应表示「还在生成」，而问题卡的
+    // 候选答案在该问题进入待答时就已经定型——若这里给 `responding`，会让
     // 已结束的这一轮永远转「AI 回答中...」。
     // 候选答案不可用时给专用状态 `unavailable`：标签显示「可以点击回答」，
-    // 既不是「AI 回答完毕！」（假陈述）也不打警告色（D-6，细化 D-1 决策 3）。
+    // 既不是「AI 回答完毕！」（假陈述）也不打警告色。
     status: question.optionsStatus === 'unavailable' ? 'unavailable' : 'completed',
     isAnswered: !isPending,
     isProcessing: false,
@@ -45,16 +39,16 @@ export function toAnswerCardModel(question) {
     id: question.id,
     question: question.text ?? '',
     answer,
-    // D8 修复：候选答案为空（副模型失败/未配置）时 `answer` 是 `{}`，旧组件把空对象
+    // 候选答案为空（副模型失败/未配置）时 `answer` 是 `{}`，组件会把空对象
     // 判成「还在等」而不渲染自定义输入框，学生只能跳过此题。问题卡只在待答状态下
-    // 打开，此时候选答案已定型，因此显式声明「这一轮已结束」（旧路径不传此 prop）。
+    // 打开，此时候选答案已定型，因此显式声明「这一轮已结束」。
     answerSettled: true,
   };
 }
 
 /**
  * AnswerCard 的 `onLevelSelect(level, content)` → `submitAnswer` 的参数。
- * `level === 'custom'` 是自定义输入路径，不带 selectedLevel（协议 §5）。
+ * `level === 'custom'` 是自定义输入路径，不带 selectedLevel。
  */
 export function levelSelectToSubmission(questionId, level, content) {
   if (level === 'custom') {

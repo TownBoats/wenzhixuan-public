@@ -5,7 +5,7 @@ import { cn } from './cn';
 /**
  * Input — 问知轩原子单行输入框
  *
- * 设计规格见 docs/REDESIGN_KARE.md §2.2：
+ * 设计规格：
  *   - 默认：bg-paper-50 + 1px paper-200 描边
  *   - 聚焦：sage-500 描边 + sage 半透光环；光标颜色 = sage-500
  *   - 错误：state-alert 描边 + 半透光环

@@ -1,6 +1,6 @@
 // 问知轩原子组件 barrel
 //
-// 设计规格：docs/REDESIGN_KARE.md Layer 2
+// 设计约定见 src/components/ui/README.md
 // ESLint 强制：本目录下严禁 hex / 旧色家族 (eslint.config.js)
 //
 // 推荐导入：

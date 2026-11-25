@@ -4,7 +4,7 @@ import { cn } from './cn';
 /**
  * Tag — 问知轩原子标签 / 徽章
  *
- * 设计规格见 docs/REDESIGN_KARE.md §2.4：
+ * 设计规格：
  *   - 高 24（h-6）+ 横向 8px 内边距 + 极小圆角 (rounded-xs)
  *   - 5 种语义：neutral / active / good / warn / alert
  *   - 字号 caption（11px）、字重 medium，font-sans
