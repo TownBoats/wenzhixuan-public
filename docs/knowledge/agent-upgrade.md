@@ -151,6 +151,12 @@ turn 状态为 streaming / awaiting_user / completed / failed / cancelled / inte
 
 `historyStore` 的结构白名单用于正常业务数据清洗，不应称为对任意嵌套文本或工具 payload 中秘密的通用 DLP。模型配置有独立的本地存储，不能把“历史不含 apiKey”说成“整个浏览器不存 apiKey”。
 
+### 候选答案材料与调试（2026-11-25）
+
+`services/buildOptionContext.js` 组装材料：主模型写的 `context`、本轮正文、学生本轮输入；`context` 为空时才附最近 6 轮历史兜底，写“无”视为声明无依赖。总预算 6000 字，按上述顺序优先保留。图只放标题；工具结果、源码、候选项与 reasoning 不进入。`context` 在工具声明中必填，手写校验仍允许缺省，漏写不拒绝问题。材料、问题与防编造约束放在同一条 user 消息，system prompt 仍由配置决定。学生本轮输入会发送到副模型端点。
+
+调试沿用 `developerMode` 开关键。打开后运行层经 `onDebug` 旁路回调产生记录，不进事件流、reducer、历史或备份；不含端点与密钥，只存页面内存，最多 40 条，关闭即清空。主模型记录是本轮首次请求的内容，不含后续步骤的工具往返。
+
 ### 直接讲解（2026-11-25）
 
 未作答问题的处理方式由可选字段 `resolution` 表示，状态仍是 skipped：`superseded`（重试作废）、`explain`（请求直接讲解）、`deferred`（因该请求而暂缓），缺省为普通跳过。`EXPLAIN_QUESTION` 在一次转换中处理目标题与同轮其余待答题并立即续轮，是“全部处理完才续轮”的例外；正常作答与跳过不变。三者的汇总文案、界面标签与 TXT 各自区分，见 [ADR-004](../decisions/ADR-004-direct-guidance.md)。

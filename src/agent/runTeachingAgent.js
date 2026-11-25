@@ -20,6 +20,7 @@ import {
   toolsForMode,
 } from './modes.js';
 import { REJECT_INTERNAL_ERROR, createAskQuestionTool } from './tools/askQuestion.js';
+import { CONTEXT_SOURCES, buildOptionContext, visualTitle } from './services/buildOptionContext.js';
 import { createExplainCardTool } from './tools/explainCard.js';
 import { createVisualizeTool } from './tools/visualize.js';
 
@@ -173,6 +174,7 @@ export function resolveRunReason({ endedBy, finishReason }, awaitingUser) {
  * @param {string} [params.optionSystemPrompt] 副模型提示词（上层从配置层读出后传入）
  * @param {AbortSignal} [params.abortSignal]
  * @param {(event: Object) => void} params.onEvent 规范事件回调
+ * @param {(record: Object) => void} [params.onDebug] 调试记录回调，缺省时不产生记录
  * @param {Function} [params.generateOptions] 副模型服务（默认 `generateAnswerOptions`；测试注入假函数）
  * @param {Function} [params.baseFetch]       主模型 fetch 注入（测试用）
  * @param {Object} [params.model]             主模型对象注入（测试用 `ai/test` 的 MockLanguageModelV3）；
@@ -192,6 +194,7 @@ export async function runTeachingAgent({
   optionSystemPrompt,
   abortSignal,
   onEvent,
+  onDebug,
   generateOptions,
   baseFetch,
   model,
@@ -227,6 +230,44 @@ export async function runTeachingAgent({
     return hit;
   };
 
+  /**
+   * 本轮已生成的正文（图只记标题），作为候选答案的材料。
+   * 工具执行前的 text-delta 已先到达，测试中有断言。
+   */
+  let runText = '';
+  let lastPartId = null;
+  const collectRunText = (event) => {
+    if (event.type === 'text-delta') {
+      if (runText && event.partId !== lastPartId) runText += '\n';
+      lastPartId = event.partId;
+      runText += event.delta;
+    } else if (event.type === 'tool-started') {
+      const title = visualTitle(event.toolName, event.input);
+      if (title) runText += `${runText ? '\n' : ''}${title}`;
+      // 各步的 partId 会重复，工具调用后的正文另起一行
+      lastPartId = null;
+    }
+  };
+
+  /** 组装失败只影响候选质量，不能连累问题本身。 */
+  const buildQuestionContext = (modelContext) => {
+    try {
+      return buildOptionContext({ messages, currentText: runText, modelContext });
+    } catch {
+      return { text: modelContext ?? '', source: CONTEXT_SOURCES.MODEL };
+    }
+  };
+
+  /** 调试记录是旁路：不含端点与密钥，不进事件流；回调出错不影响运行。 */
+  const debug = (record) => {
+    if (typeof onDebug !== 'function') return;
+    try {
+      onDebug(record);
+    } catch {
+      // 忽略
+    }
+  };
+
   const limiter = createLimiter(OPTION_CONCURRENCY_LIMIT);
   const askQuestionTool = withOptionConcurrency(
     createAskQuestionTool({
@@ -235,6 +276,8 @@ export async function runTeachingAgent({
       optionSystemPrompt,
       generateOptions,
       getRemainingMs,
+      buildContext: buildQuestionContext,
+      onDebug: (record) => debug({ ...record, id: `option:${identity.runId}:${record.toolCallId}` }),
     }),
     limiter,
   );
@@ -248,6 +291,7 @@ export async function runTeachingAgent({
   // ── 2. 事件转发：不属于本次运行的事件丢弃（返回原状态、不报错、不记日志）──
   const forwardEvent = (event) => {
     if (!event || event.runId !== identity.runId) return;
+    collectRunText(event);
     onEvent(event);
   };
 
@@ -257,6 +301,16 @@ export async function runTeachingAgent({
     turnId: identity.turnId,
     runId: identity.runId,
     mode: mode.id,
+  });
+
+  debug({
+    id: `main:${identity.runId}`,
+    kind: 'main',
+    at: startedAt,
+    model: config.model,
+    system: buildSystemPrompt(mode),
+    messages,
+    tools: Object.keys(tools),
   });
 
   // ── 3. 执行：三条出口（正常 / 传输层失败 / 抛错）都必须落到 run-finished ──

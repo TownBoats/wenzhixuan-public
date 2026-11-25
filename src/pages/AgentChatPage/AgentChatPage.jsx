@@ -14,6 +14,8 @@ import AnswerCard from '../../components/AnswerCard/AnswerCard';
 import MessageContent from '../../components/MessageContent/MessageContent';
 import { BrandLogo, Button, Icon, Textarea, cn } from '@/components/ui';
 import QuestionGroup from './QuestionGroup';
+import DebugDrawer from './DebugDrawer';
+import { useDebugLog } from './useDebugLog';
 import HistoryDrawer from './HistoryDrawer';
 import ConfigPanel from './ConfigPanel';
 import useConversationHistory from './useConversationHistory';
@@ -163,7 +165,16 @@ function AgentChatPage() {
     setConfigSnapshot(readConfigSnapshot());
   };
 
-  const session = useChatSession({ modes: MODES, config, optionConfig, optionSystemPrompt });
+  const debugLog = useDebugLog();
+  const [debugOpen, setDebugOpen] = useState(false);
+  const closeDebug = () => setDebugOpen(false);
+  const session = useChatSession({
+    modes: MODES,
+    config,
+    optionConfig,
+    optionSystemPrompt,
+    onDebug: debugLog.enabled ? debugLog.push : undefined,
+  });
   // 载入 / 保存 / 提示。页面只读它的结果，不自己解析存储。
   const history = useConversationHistory({ session });
   // 历史抽屉的开合（纯 UI 状态，数据在打开时重读）
@@ -287,6 +298,17 @@ function AgentChatPage() {
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            {debugLog.enabled && (
+              <Button
+                intent="ghost"
+                size="sm"
+                onClick={() => setDebugOpen(true)}
+                aria-label={t('AgentChat.debug.title')}
+              >
+                <Icon name="Bug" size={14} className="text-current" />
+                <span className="hidden sm:inline">{t('AgentChat.debug.open')}</span>
+              </Button>
+            )}
             <Button intent="ghost" size="sm" onClick={() => setConfigOpen(true)}>
               <Icon name="SlidersHorizontal" size={14} className="text-current" />
               <span className="hidden sm:inline">{t('AgentChat.page.settings')}</span>
@@ -614,7 +636,16 @@ function AgentChatPage() {
         </div>
       )}
 
+      <DebugDrawer
+        open={debugOpen && debugLog.enabled}
+        records={debugLog.records}
+        onClose={closeDebug}
+        onClear={debugLog.clear}
+      />
+
       <ConfigPanel
+        debugEnabled={debugLog.enabled}
+        onDebugChange={debugLog.setEnabled}
         open={configOpen}
         onClose={() => setConfigOpen(false)}
         mainConfig={configSnapshot.main}
@@ -625,6 +656,7 @@ function AgentChatPage() {
         beforeTransfer={history.checkpoint}
         onDataImported={() => {
           setConfigSnapshot(readConfigSnapshot());
+          debugLog.refresh();
           history.refreshAfterImport();
           setOpenQuestionId(null);
           setShowMigrationNotice(readMainPromptMigrationState({ storage: localStorage,

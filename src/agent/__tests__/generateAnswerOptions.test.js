@@ -327,3 +327,24 @@ test('调用契约错误直接抛错（不由服务静默兜底）', async () =>
     /systemPrompt/,
   );
 });
+
+test('请求体：材料与问题在同一条 user 消息，附带不编造的约束；无材料时只发问题', async () => {
+  const capture = async (overrides) => {
+    let body;
+    await run(async (_url, init) => {
+      body = JSON.parse(init.body);
+      return optionsResponse(FULL_OPTIONS);
+    }, overrides);
+    return body.messages.filter((message) => message.role !== 'system');
+  };
+  const text = (message) =>
+    typeof message.content === 'string' ? message.content : message.content.map((part) => part.text).join('');
+
+  const withContext = await capture({ systemPrompt: '用户自定义提示词' });
+  assert.equal(withContext.length, 1);
+  assert.equal(withContext[0].role, 'user');
+  assert.match(text(withContext[0]), /上一段讲解讲到了函数作用域。[^]*你听说过闭包吗？[^]*不编造细节/);
+
+  const without = await capture({ context: undefined });
+  assert.equal(text(without[0]), '你听说过闭包吗？');
+});

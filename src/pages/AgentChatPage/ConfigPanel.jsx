@@ -10,13 +10,13 @@ import { normalizeContextWindow } from '../../utils/contextWindow.js';
 import DataBackupSection from './DataBackupSection';
 
 /**
- * ConfigPanel：设置面板（数据备份、主模型、候选答案模型、答题等待、作者信息）。
+ * ConfigPanel：设置面板（数据备份、主模型、候选答案模型、答题等待、调试、作者信息）。
  *
  * 不提供主提示词编辑：教学指令由 `src/agent/skills/*.md` 固定。
  * 只读取配置并回传变更，由页面落盘；不写会话状态、不调用运行层。
  */
 function ConfigPanel({ open, onClose, mainConfig, optionConfig, onMainConfigChange, onOptionConfigChange,
-  transferDisabled, beforeTransfer, onDataImported }) {
+  transferDisabled, beforeTransfer, onDataImported, debugEnabled, onDebugChange }) {
   const { t } = useTranslation();
   const [dataRevision, setDataRevision] = useState(0);
 
@@ -109,6 +109,24 @@ function ConfigPanel({ open, onClose, mainConfig, optionConfig, onMainConfigChan
               <AnswerWaitSettings key={dataRevision} />
 
               <SettingsSection
+                icon={<Icon name="Bug" size={16} className="text-sage-700" />}
+                title={t('AgentChat.debug.settingsTitle')}
+              >
+                <label className="flex min-h-11 cursor-pointer items-center justify-between gap-4 text-body text-ink-900">
+                  {t('AgentChat.debug.settingsLabel')}
+                  <input
+                    type="checkbox"
+                    checked={debugEnabled}
+                    onChange={(event) => onDebugChange(event.target.checked)}
+                    className="h-5 w-5 accent-sage-500"
+                  />
+                </label>
+                <p className="mt-2 text-caption leading-relaxed text-ink-500">
+                  {t('AgentChat.debug.settingsHint')}
+                </p>
+              </SettingsSection>
+
+              <SettingsSection
                 icon={<Icon name="Mail" size={16} className="text-sage-700" />}
                 title={t('AgentChat.config.profileTitle')}
               >
@@ -161,6 +179,8 @@ ConfigPanel.propTypes = {
   transferDisabled: PropTypes.bool.isRequired,
   beforeTransfer: PropTypes.func.isRequired,
   onDataImported: PropTypes.func.isRequired,
+  debugEnabled: PropTypes.bool.isRequired,
+  onDebugChange: PropTypes.func.isRequired,
 };
 
 export default ConfigPanel;

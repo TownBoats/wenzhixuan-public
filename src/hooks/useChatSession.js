@@ -68,6 +68,7 @@ function contextForRun(nextState) {
  * @param {Object} params.config   主模型配置快照（每次运行前由页面传入，hook 不读配置层）
  * @param {Object} [params.optionConfig]      副模型配置快照
  * @param {string} [params.optionSystemPrompt] 副模型提示词
+ * @param {(record: Object) => void} [params.onDebug] 调试记录回调；不传则不产生记录
  * @param {string} [params.conversationId]     续接既有会话时传入
  * @param {Function} [params.runner]           运行层入口（默认 `runTeachingAgent`；测试可注入假运行层）
  */
@@ -78,6 +79,7 @@ export function useChatSession({
   optionConfig,
   optionSystemPrompt,
   conversationId = null,
+  onDebug,
   runner = runTeachingAgent,
 } = {}) {
   const [state, dispatch] = useReducer(reduceSession, undefined, () =>
@@ -103,6 +105,10 @@ export function useChatSession({
 
   const modesRef = useRef(modes);
   modesRef.current = modes;
+
+  // 用 ref 透传：开关调试不应重建运行命令
+  const onDebugRef = useRef(onDebug);
+  onDebugRef.current = onDebug;
 
   /** 派发一次状态转换，并把结果同步到镜像；返回 null 表示这次命令是空操作。 */
   const apply = useCallback((action) => {
@@ -155,6 +161,7 @@ export function useChatSession({
           optionSystemPrompt,
           abortSignal: controller.signal,
           onEvent: handleEvent,
+          onDebug: onDebugRef.current ? (record) => onDebugRef.current?.(record) : undefined,
         });
 
         apply({

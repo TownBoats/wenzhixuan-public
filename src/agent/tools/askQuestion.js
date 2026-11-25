@@ -13,6 +13,7 @@ import { jsonSchema, tool } from 'ai';
 import {
   OPTION_ERROR_FAILED,
   OPTION_ERROR_NOT_CONFIGURED,
+  buildOptionPrompt,
   generateAnswerOptions,
   isOptionConfigReady,
 } from '../services/generateAnswerOptions.js';
@@ -42,10 +43,11 @@ export const ASK_QUESTION_INPUT_SCHEMA = jsonSchema({
     },
     context: {
       type: 'string',
-      description: `生成候选答案所需的有限教学上下文，例如「学生已了解函数作用域」（可选，≤${CONTEXT_MAX_LENGTH} 字）`,
+      description: `回答这个问题必需的事实、约定和前文结论，例如「本例中数组从 0 开始编号；前面已得出比较次数不超过 2log₂(n+1)」。系统会附上你本轮的讲解和学生本轮的输入，不必重复；更早的依据只能靠这里提供。确实没有依赖时写「无」（≤${CONTEXT_MAX_LENGTH} 字）`,
     },
   },
-  required: ['question'],
+  // 声明必填以促使主模型填写；漏写时不拒绝问题，由材料组装兜底
+  required: ['question', 'context'],
   additionalProperties: false,
 });
 
@@ -108,6 +110,8 @@ function createQuestionId() {
  * @param {string} params.optionSystemPrompt   副模型提示词（上层从配置层读取后传入）
  * @param {Function} [params.generateOptions]  副模型服务，默认 `generateAnswerOptions`；测试注入假函数
  * @param {Function} [params.getRemainingMs]   主运行剩余时间，用于夹住副模型预算
+ * @param {Function} [params.buildContext]     把主模型的补充说明扩展为完整教学材料；缺省时只用补充说明
+ * @param {(record: Object) => void} [params.onDebug] 调试记录回调
  * @returns {Object} AI SDK 工具对象
  */
 export function createAskQuestionTool({
@@ -116,6 +120,8 @@ export function createAskQuestionTool({
   optionSystemPrompt,
   generateOptions = generateAnswerOptions,
   getRemainingMs,
+  buildContext,
+  onDebug,
 } = {}) {
   const resultsByCallId = new Map();
   const askedTexts = new Set();
@@ -158,8 +164,25 @@ export function createAskQuestionTool({
       // ── 5. 问题 ID 由程序生成 ──
       const questionId = createQuestionId();
 
+      const material =
+        typeof buildContext === 'function' ? buildContext(checked.context) : { text: checked.context };
+      const startedAt = Date.now();
+      const debug = (patch) => onDebug?.({ toolCallId, ...patch });
+      debug({
+        kind: 'option',
+        at: startedAt,
+        status: 'running',
+        question: checked.question,
+        modelContext: checked.context ?? '',
+        source: material.source,
+        prompt: buildOptionPrompt(checked.question, material.text),
+        system: optionSystemPrompt,
+        model: optionConfig?.model,
+      });
+
       // ── 6. 未配置副模型：问题照常就绪，不发起任何请求 ──
       if (!isOptionConfigReady(optionConfig)) {
+        debug({ status: 'unavailable', errorCode: OPTION_ERROR_NOT_CONFIGURED });
         return remember(toolCallId, {
           status: 'ready',
           questionId,
@@ -174,11 +197,18 @@ export function createAskQuestionTool({
       // ── 7. 生成候选答案（失败也只降级，不影响问题本身）──
       const optionResult = await generateOptions({
         question: checked.question,
-        context: checked.context,
+        context: material.text,
         config: optionConfig,
         systemPrompt: optionSystemPrompt,
         abortSignal,
         timeoutMs: typeof getRemainingMs === 'function' ? getRemainingMs() : undefined,
+      });
+
+      debug({
+        status: optionResult?.status === 'ready' ? 'ready' : 'unavailable',
+        durationMs: Date.now() - startedAt,
+        options: optionResult?.options,
+        errorCode: [optionResult?.errorCode, optionResult?.detail].filter(Boolean).join(' / '),
       });
 
       if (optionResult?.status === 'ready') {

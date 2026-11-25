@@ -125,6 +125,7 @@ async function runAgent({
   optionConfig = OPTION_CONFIG,
   abortSignal,
   onEvent,
+  onDebug,
   ids = { conversationId: 'c1', turnId: 't1', runId: 'r1' },
 }) {
   const model = createModel(scripts);
@@ -141,6 +142,7 @@ async function runAgent({
       events.push(event);
       onEvent?.(event);
     },
+    onDebug,
     generateOptions: useRealOptions ? undefined : generateOptions,
     model,
   });
@@ -516,4 +518,85 @@ test('取消与超时区分：主运行超时 → failed，用户取消 → canc
     '取消是用户意图（不显示为错误）',
   );
   assert.equal(resolveRunReason({ endedBy: 'cancelled', finishReason: null }, true), 'cancelled');
+});
+
+// ── 候选答案材料：提问前的正文、图标题、历史与补充说明 ──────────────
+test('副模型能拿到提问前的正文、图标题、历史与补充说明', async () => {
+  const seen = [];
+  const svg = '<svg viewBox="0 0 680 100"><text>图内源码</text></svg>';
+  const step = (id, deltas, calls) => [
+    { type: 'text-start', id },
+    ...deltas.map((delta) => ({ type: 'text-delta', id, delta })),
+    { type: 'text-end', id },
+    ...calls,
+    finish('tool-calls'),
+  ];
+  const toolCall = (toolCallId, toolName, input) => ({
+    type: 'tool-call', toolCallId, toolName, input: JSON.stringify(input),
+  });
+  await runAgent({
+    scripts: [
+      step('0', ['先看', '这张图。'], [toolCall('m1', 'explain_card', { title: '作用域图', svg })]),
+      step('0', ['所以', '闭包记住变量。'], [
+        toolCall('m2', 'ask_question', { question: '题一', context: '前提甲' }),
+        toolCall('m3', 'ask_question', { question: '题二' }),
+      ]),
+    ],
+    generateOptions: async ({ question, context }) => {
+      seen.push([question, context]);
+      return { status: 'ready', options: [{ level: 'basic', text: 'x' }] };
+    },
+  });
+  assert.deepEqual(seen.map(([question]) => question), ['题一', '题二']);
+  for (const [, context] of seen) {
+    assert.match(context, /【学生本轮的输入】\n教教我闭包/);
+    assert.match(context, /先看这张图。\n（图：作用域图）\n所以闭包记住变量。/);
+    assert.doesNotMatch(context, /图内源码/);
+  }
+  assert.match(seen[0][1], /前提甲/);
+  assert.doesNotMatch(seen[1][1], /前提甲/);
+});
+
+// ── 调试记录 ──────────────
+test('调试记录：含主模型上下文、主模型写的 context、实际材料与结果，不含端点和密钥', async () => {
+  const merged = new Map();
+  const { events } = await runAgent({
+    scripts: [toolScript([
+      { input: { question: '题一', context: '前提甲' } },
+      { input: { question: '题二' } },
+      { input: { question: '题三', context: '无' } },
+    ])],
+    generateOptions: async ({ question }) =>
+      question === '题二'
+        ? { status: 'unavailable', errorCode: 'failed', detail: 'timeout' }
+        : { status: 'ready', options: [{ level: 'basic', text: 'x' }] },
+    onDebug: (record) => merged.set(record.id, { ...merged.get(record.id), ...record }),
+  });
+  const records = [...merged.values()];
+  const main = records.find((item) => item.kind === 'main');
+  assert.equal(main.messages[0].content, '教教我闭包');
+  assert.ok(main.system.length > 0);
+  assert.ok(main.tools.includes('ask_question'));
+
+  const [one, two, three] = records.filter((item) => item.kind === 'option');
+  assert.deepEqual([one.source, two.source, three.source], ['model', 'fallback', 'none']);
+  assert.equal(one.modelContext, '前提甲');
+  assert.match(one.prompt, /前提甲[^]*题一/);
+  assert.deepEqual([one.status, two.status, two.errorCode], ['ready', 'unavailable', 'failed / timeout']);
+  assert.equal(one.options.length, 1);
+
+  const dump = JSON.stringify(records);
+  assert.equal(dump.includes(CONFIG.apiKey), false);
+  assert.equal(dump.includes('example.invalid'), false);
+  assert.equal(events.some((event) => event.type.includes('debug')), false);
+});
+
+test('调试回调抛错不影响运行', async () => {
+  const { result } = await runAgent({
+    scripts: [toolScript([{ input: { question: '题', context: '无' } }])],
+    onDebug: () => {
+      throw new Error('boom');
+    },
+  });
+  assert.equal(result.reason, 'awaiting_user');
 });

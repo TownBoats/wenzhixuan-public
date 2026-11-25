@@ -90,6 +90,42 @@
       "optionDefault": "Please select a mode"
     },
     "AgentChat": {
+      "debug": {
+        "open": "Debug",
+        "title": "Debug: model context",
+        "settingsTitle": "Debug",
+        "settingsLabel": "Record the context models receive",
+        "settingsHint": "Adds a debug entry to the header to inspect every later request. Records stay in memory and are cleared on refresh or when turned off; they never enter history or backups and contain no endpoint or API key.",
+        "hint": "Shows requests made after debug was turned on, up to 40, newest first. For the main model, only the first request of each turn is shown, without later tool round trips. Copied content may include your conversation.",
+        "noRecords": "No records yet. Send a message first.",
+        "clear": "Clear",
+        "close": "Close debug",
+        "empty": "(empty)",
+        "main": "Main model",
+        "option": "Answer option model",
+        "modelContext": "context written by the main model",
+        "prompt": "Content actually sent (material + question)",
+        "system": "System prompt",
+        "options": "Returned options",
+        "messages": "Conversation messages sent",
+        "tools": "Available tools",
+        "chars": "{{count}} chars",
+        "source": {
+          "model": "Written by main model",
+          "none": "Declared no dependency",
+          "fallback": "Missing, program fallback used"
+        },
+        "status": {
+          "running": "Running",
+          "ready": "Ready",
+          "unavailable": "Unavailable"
+        },
+        "copy": {
+          "idle": "Copy",
+          "copied": "Copied",
+          "failed": "Copy failed"
+        }
+      },
       "context": {
         "label": "Context",
         "details": "Context window",
