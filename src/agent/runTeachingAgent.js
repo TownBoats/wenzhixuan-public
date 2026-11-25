@@ -26,6 +26,7 @@ import { createExplainCardTool } from './tools/explainCard.js';
 import { createUpdateLearningPlanTool } from './tools/updateLearningPlan.js';
 import { createVisualizeTool } from './tools/visualize.js';
 import { planFromMessages } from './learningPlan.js';
+import { collectReferences, createFigureId, describeRefs, resolveRefs } from './references.js';
 
 /** 每轮最多 3 步（安全上限，防模型跑飞）。 */
 export const MAX_STEPS = 3;
@@ -222,6 +223,17 @@ export async function runTeachingAgent({
   /** 当前学习计划：本轮开始时取自上下文，本轮更新后取最新。 */
   let currentPlan = planFromMessages(messages);
 
+  /** 可引用的图与概念：先取自上下文，本轮新增的随时补上。 */
+  const references = collectReferences(messages);
+  let latestFigure = null;
+  const figureOptions = {
+    createRefId: () => createFigureId((refId) => references.has(refId)),
+    onFigure: ({ refId, title }) => {
+      references.set(refId, { title: `图「${title}」`, text: '' });
+      latestFigure = refId;
+    },
+  };
+
   /**
    * 停止条件之一：最后一步的**任一**工具结果带 `nextAction:'await_user'`。
    * 不用「按工具名判定停止」的内置条件：它在「模型调用了工具」时就停，参数非法也会停，
@@ -258,13 +270,14 @@ export async function runTeachingAgent({
   };
 
   /** 组装失败只影响候选质量，不能连累问题本身。 */
-  const buildQuestionContext = (modelContext) => {
+  const buildQuestionContext = (modelContext, refs = []) => {
     try {
       return buildOptionContext({
         messages,
         currentText: runText,
         modelContext,
         conventions: currentPlan?.conventions,
+        references: describeRefs(refs, references),
       });
     } catch {
       return { text: modelContext ?? '', source: CONTEXT_SOURCES.MODEL };
@@ -289,6 +302,7 @@ export async function runTeachingAgent({
       optionSystemPrompt,
       generateOptions,
       getRemainingMs,
+      resolveRefs: (refs) => resolveRefs(refs, (ref) => references.has(ref), latestFigure),
       buildContext: buildQuestionContext,
       onDebug: (record) => debug({ ...record, id: `option:${identity.runId}:${record.toolCallId}` }),
     }),
@@ -299,13 +313,17 @@ export async function runTeachingAgent({
       initialPlan: currentPlan,
       studentTexts,
       onPlan: (plan) => {
+        const moved = plan.currentConceptId !== currentPlan?.currentConceptId;
         currentPlan = plan;
+        const concept = plan.concepts.find((item) => item.id === plan.currentConceptId);
+        // 讲解就在本轮正文里，材料已含，不重复附上
+        if (moved && concept) references.set(`concept:${concept.id}`, { title: `概念「${concept.name}」`, text: '' });
       },
     }),
     [ASK_QUESTION_TOOL]: askQuestionTool,
     // visualize / explain_card 无外部依赖、不打断运行，无需并发闸门，每轮新实例保证幂等表不跨轮。
-    [VISUALIZE_TOOL]: createVisualizeTool(),
-    [EXPLAIN_CARD_TOOL]: createExplainCardTool(),
+    [VISUALIZE_TOOL]: createVisualizeTool(figureOptions),
+    [EXPLAIN_CARD_TOOL]: createExplainCardTool(figureOptions),
   });
 
   // ── 2. 事件转发：不属于本次运行的事件丢弃（返回原状态、不报错、不记日志）──

@@ -17,6 +17,7 @@ import {
   projectLearningPlan,
   createInitialState,
   deriveViewState,
+  projectReferences,
   projectTurns,
   reduceSession,
 } from '../utils/conversationState.js';
@@ -358,6 +359,7 @@ export function useChatSession({
 
   const view = deriveViewState(state);
   const renderedTurns = useMemo(() => projectTurns(state.turns), [state.turns]);
+  const references = useMemo(() => projectReferences(state.turns), [state.turns]);
   const learningPlan = useMemo(() => projectLearningPlan(state.turns), [state.turns]);
 
   return {
@@ -367,6 +369,7 @@ export function useChatSession({
     turns: view.turns,
     renderedTurns,
     learningPlan,
+    references,
     pendingQuestions: view.pendingQuestions,
     isRunning: view.isRunning,
     isAwaitingUser: view.isAwaitingUser,

@@ -13,6 +13,7 @@ import {
   collectStudentTexts,
   deriveViewState,
   projectLearningPlan,
+  projectReferences,
   projectTurns,
   reduceSession,
 } from '../conversationState.js';
@@ -874,4 +875,44 @@ test('REQUEST_PLAN_CHANGE：没有待答题时不重复发送旧答案', () => {
   const done = reduceSession(runningState(), { type: 'RUN_FINISHED', runId: 'r1', reason: 'completed', responseMessages: [] });
   const next = reduceSession(done, { type: 'REQUEST_PLAN_CHANGE', text: '先讲例子', turnId: 't2', runId: 'r2' });
   assert.equal(next.turns[1].userMessage.text, '要求调整学习计划：先讲例子');
+});
+
+test('引用：题目保存合法引用并进入投影，重复完成事件不丢', () => {
+  const output = { ...readyOutput('q1', '看图'), refs: ['fig-aaaaaa', 'bad', 'concept:a'] };
+  let state = completeTool(runningState(), { output });
+  state = completeTool(state, { output, withStart: false });
+  assert.deepEqual(projectTurns(state.turns)[0].questions[0].refs, ['fig-aaaaaa', 'concept:a']);
+  const plain = completeTool(runningState(), { output: readyOutput('q1', '无引用') });
+  assert.equal('refs' in plain.turns[0].questions[0], false);
+  assert.deepEqual(projectTurns(plain.turns)[0].questions[0].refs, []);
+});
+
+test('引用目标：图按顺序编号、旧图不编号、概念指向最近一次成为当前的轮次、失败轮的计划不计', () => {
+  const figure = (refId, title) => ({ type: 'tool', toolName: 'visualize', output: { status: 'ready', refId, title } });
+  const planMessages = (currentConceptId) => [{
+    role: 'tool',
+    content: [{ type: 'tool-result', toolName: 'update_learning_plan', toolCallId: 'p', output: {
+      status: 'ready',
+      plan: { goal: 'g', currentConceptId, concepts: [{ id: 'a', name: '甲' }, { id: 'b', name: '乙' }] },
+    } }],
+  }];
+  const turn = (id, status, parts, modelMessages) => ({ id, runId: id, status, parts, modelMessages });
+  const references = projectReferences([
+    turn('t1', 'completed', [figure(undefined, '旧图'), figure('fig-aaaaaa', '一')], planMessages('a')),
+    turn('t2', 'completed', [], planMessages('b')),
+    turn('t3', 'failed', [figure('fig-bbbbbb', '二')], planMessages('b')),
+    turn('t4', 'completed', [figure('fig-cccccc', '三')], planMessages('a')),
+    turn('t5', 'completed', [], planMessages('a')),
+  ]);
+  assert.deepEqual(
+    [...references.values()].map((item) => [item.ref, item.number, item.anchor]),
+    [
+      ['fig-aaaaaa', 1, 'fig-aaaaaa'],
+      ['concept:a', undefined, 'turn:t4'],
+      ['concept:b', undefined, 'turn:t2'],
+      ['fig-bbbbbb', 2, 'fig-bbbbbb'],
+      ['fig-cccccc', 3, 'fig-cccccc'],
+    ],
+  );
+  assert.equal(projectReferences(null).size, 0);
 });

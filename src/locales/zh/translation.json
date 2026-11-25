@@ -90,6 +90,13 @@
       "optionDefault": "请选择模式"
     },
     "AgentChat": {
+      "references": {
+        "jump": "跳到{{name}}",
+        "figure": "图 {{number}}：{{title}}",
+        "figureNumber": "图 {{number}}",
+        "concept": "讲解：{{title}}",
+        "back": "回到原处"
+      },
       "plan": {
         "title": "学习计划",
         "toggle": "查看学习计划",

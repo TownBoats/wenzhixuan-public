@@ -655,3 +655,24 @@ test('普通模式没有学习计划工具', async () => {
   await runAgent({ scripts: [textScript('0', ['x'])], modeId: 'normal', onDebug: (record) => merged.push(record) });
   assert.deepEqual(merged[0].tools, []);
 });
+
+test('同一步先画图再提问：latest_figure 变成真实编号，未知引用忽略并告知，材料带图标题', async () => {
+  const seen = [];
+  const { result, events } = await runAgent({
+    scripts: [[
+      { type: 'tool-call', toolCallId: 'f1', toolName: 'visualize', input: JSON.stringify({ title: '树状图', html: '<div>x</div>' }) },
+      { type: 'tool-call', toolCallId: 'f2', toolName: 'ask_question', input: JSON.stringify({ question: '题', context: '无', refs: ['latest_figure', 'fig-zzzzzz'] }) },
+      finish('tool-calls'),
+    ]],
+    generateOptions: async ({ context }) => {
+      seen.push(context);
+      return { status: 'ready', options: [{ level: 'basic', text: 'x' }] };
+    },
+  });
+  assert.equal(result.reason, 'awaiting_user');
+  const output = (id) => events.find((event) => event.type === 'tool-completed' && event.toolCallId === id).output;
+  assert.match(output('f1').refId, /^fig-[a-z0-9]{6}$/);
+  assert.deepEqual(output('f2').refs, [output('f1').refId]);
+  assert.match(output('f2').notice, /fig-zzzzzz/);
+  assert.match(seen[0], /【题目引用的内容】\n图「树状图」/);
+});

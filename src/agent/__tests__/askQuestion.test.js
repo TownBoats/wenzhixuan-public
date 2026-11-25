@@ -52,6 +52,14 @@ function createTool({
   });
 }
 
+test('引用异常只忽略，不拒绝问题；未接入解析时不带引用', async () => {
+  for (const refs of ['x', 1, null, ['fig-aaaaaa']]) {
+    const output = await createTool().execute({ question: '题', context: '无', refs }, { toolCallId: String(refs) });
+    assert.equal(output.status, 'ready');
+    assert.equal('refs' in output, false);
+  }
+});
+
 test('正常输入 → ready，问题 ID 由程序生成，带完整 options 与 await_user', async () => {
   const spy = createSpy({ status: 'ready', options: READY_OPTIONS });
   const askTool = createTool({ generateOptions: spy.fn });

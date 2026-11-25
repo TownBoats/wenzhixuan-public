@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import MODES from '../../agent/modePrompts';
@@ -12,10 +12,14 @@ import {
 } from '../../utils/promptMigration';
 import AnswerCard from '../../components/AnswerCard/AnswerCard';
 import MessageContent from '../../components/MessageContent/MessageContent';
+import { ReferenceChips } from '../../components/References/References';
+import { ReferenceContext } from '../../components/References/referenceContext';
+import { turnAnchor } from '../../utils/conversationState';
 import { BrandLogo, Button, Icon, Textarea, cn } from '@/components/ui';
 import QuestionGroup from './QuestionGroup';
 import DebugDrawer from './DebugDrawer';
 import PlanBar from './PlanBar';
+import { useReferenceJump } from './useReferenceJump';
 import { useDebugLog } from './useDebugLog';
 import HistoryDrawer from './HistoryDrawer';
 import ConfigPanel from './ConfigPanel';
@@ -218,6 +222,20 @@ function AgentChatPage() {
     return null;
   }, [openQuestionId, session.renderedTurns]);
 
+  // 引用跳转：查看原文时答题卡只隐藏不卸载，保留已输入的内容
+  const scrollRef = useRef(null);
+  const { active: viewingReference, jump, goBack, reset: resetReference } = useReferenceJump(scrollRef);
+  const references = useDeferredValue(session.references);
+  const referenceValue = useMemo(() => ({ references, jump }), [references, jump]);
+  useEffect(() => resetReference(), [session.conversationId, resetReference]);
+  const handleOpenQuestion = useCallback(
+    (questionId) => {
+      resetReference();
+      setOpenQuestionId(questionId);
+    },
+    [resetReference],
+  );
+
   const trimmedInput = inputText.trim();
   const canSend = configReady && session.canSendMessage && trimmedInput.length > 0;
 
@@ -288,6 +306,7 @@ function AgentChatPage() {
   };
 
   return (
+    <ReferenceContext.Provider value={referenceValue}>
     <div className="flex h-dvh flex-col bg-paper-50">
       {/* ChatGPT 式沉浸画布（2026-10-19 用户反馈）：整页统一 paper-50 亮底、
           页头无分隔线只留「左 logo / 右按钮」；吸顶必须不透明，否则正文会透上来 */}
@@ -420,7 +439,7 @@ function AgentChatPage() {
         </div>
       )}
 
-      <main className="flex-1 overflow-y-auto scrollbar-custom">
+      <main ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-custom">
         <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
           {/* 恢复完成前不显示空态，避免「历史里明明有会话」却先闪一下空提示 */}
           {history.ready && renderedTurns.length === 0 && (
@@ -489,7 +508,9 @@ function AgentChatPage() {
                 </div>
               )}
 
-              <MessageContent blocks={turn.blocks} />
+              <div tabIndex={-1} data-ref-target={turnAnchor(turn.id)} className="scroll-mt-4 rounded-md outline-none">
+                <MessageContent blocks={turn.blocks} />
+              </div>
 
               {/* 刷新时没跑完的那一轮：内容保留、明确告知、不自动重放 */}
               {turn.status === 'interrupted' && (
@@ -502,7 +523,7 @@ function AgentChatPage() {
               <QuestionGroup
                 questions={turn.questions}
                 blocks={turn.blocks}
-                onOpen={setOpenQuestionId}
+                onOpen={handleOpenQuestion}
                 onSkip={(questionId) => session.skipQuestion({ questionId })}
                 onExplain={handleExplain}
               />
@@ -566,6 +587,17 @@ function AgentChatPage() {
           </div>
         </div>
       </main>
+
+      {viewingReference && (
+        <div className="pointer-events-none relative z-10 h-0">
+          <div className="absolute inset-x-0 bottom-2 flex justify-center">
+            <Button intent="primary" size="sm" className="pointer-events-auto shadow-lift" onClick={goBack}>
+              <Icon name="Undo2" size={14} className="text-current" />
+              {t('AgentChat.references.back')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <footer>
         <div className="mx-auto w-full max-w-3xl px-4 py-4 sm:px-6">
@@ -631,7 +663,7 @@ function AgentChatPage() {
         // 全屏定位容器：
         // AnswerCard 桌面端靠 Draggable bounds="parent" + absolute 居中，
         // 父容器必须撑满视口且不占文档流，否则浮层位置跳脱、挤压页面
-        <div className="pointer-events-none fixed inset-0 z-[9999]">
+        <div className={cn('pointer-events-none fixed inset-0 z-[9999]', viewingReference && 'hidden')}>
           {openQuestion.optionsStatus === 'unavailable' && (
             <div className="absolute left-1/2 top-4 -translate-x-1/2 rounded-sm border border-paper-200 bg-paper-50 px-3 py-2 text-small text-ink-700 shadow-lift">
               {t('AgentChat.page.optionsUnavailableHint')}
@@ -642,6 +674,7 @@ function AgentChatPage() {
             question={toAnswerCardModel(openQuestion)}
             answerSettled
             onLevelSelect={handleLevelSelect}
+            extra={<ReferenceChips refs={openQuestion.refs} className="mt-2" />}
             onExplain={() => handleExplain(openQuestion.id)}
             onClose={() => setOpenQuestionId(null)}
           />
@@ -701,6 +734,7 @@ function AgentChatPage() {
         onDismissError={dismissHistoryError}
       />
     </div>
+    </ReferenceContext.Provider>
   );
 }
 

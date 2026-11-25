@@ -7,6 +7,7 @@
  * - 损坏数据只跳过，不丢弃整键、不写回
  */
 
+import { sanitizeRefs } from '../agent/references.js';
 import { sanitizeTokenUsage } from './tokenUsage.js';
 
 /** 新键：v2 记录数组。 */
@@ -189,6 +190,7 @@ function sanitizeQuestion(question) {
   const options = Array.isArray(question.options)
     ? question.options.map(sanitizeOption).filter(Boolean)
     : [];
+  const refs = sanitizeRefs(question.refs);
   const optionsStatus =
     question.optionsStatus === 'ready' || question.optionsStatus === 'unavailable'
       ? question.optionsStatus
@@ -205,6 +207,7 @@ function sanitizeQuestion(question) {
     answer: typeof question.answer === 'string' ? stripGate(question.answer) : null,
     selectedLevel: isNonEmptyString(question.selectedLevel) ? question.selectedLevel : null,
     state: QUESTION_STATES.has(question.state) ? question.state : 'pending',
+    ...(refs.length > 0 ? { refs } : {}),
     ...(QUESTION_RESOLUTIONS.has(question.resolution) ? { resolution: question.resolution } : {}),
   };
 }

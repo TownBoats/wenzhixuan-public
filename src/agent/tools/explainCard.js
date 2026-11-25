@@ -8,6 +8,8 @@
  */
 import { jsonSchema, tool } from 'ai';
 
+import { createFigureId } from '../references.js';
+
 export const EXPLAIN_CARD_TOOL_NAME = 'explain_card';
 
 export const TITLE_MAX_LENGTH = 80;
@@ -121,9 +123,12 @@ export function validateExplainCardInput(input) {
 /**
  * 创建 `explain_card` 工具（每轮一个实例）。
  *
+ * @param {Object} [params]
+ * @param {() => string} [params.createRefId] 生成图编号，由上层保证会话内不重复
+ * @param {(figure: Object) => void} [params.onFigure] 图就绪后的通知（供同轮提问引用）
  * @returns {Object} AI SDK 工具对象
  */
-export function createExplainCardTool() {
+export function createExplainCardTool({ createRefId = () => createFigureId(), onFigure } = {}) {
   const resultsByCallId = new Map();
 
   const remember = (toolCallId, result) => {
@@ -151,8 +156,11 @@ export function createExplainCardTool() {
       }
 
       // ── 3. 就绪：viewBox 一并返回，展示层靠它定高（无需 iframe 内脚本）──
+      const refId = createRefId();
+      onFigure?.({ refId, title: checked.title });
       return remember(toolCallId, {
         status: 'ready',
+        refId,
         title: checked.title,
         svg: checked.svg,
         viewBox: checked.viewBox,

@@ -159,9 +159,15 @@ turn 状态为 streaming / awaiting_user / completed / failed / cancelled / inte
 
 页头下常驻行 `PlanBar` 展示计划并可提交调整。`REQUEST_PLAN_CHANGE` 立即续轮并暂缓待答题，是“有待答题不能发送”的例外；消息来源为 `plan_request`，学生原话单独存 `requestText`。旧会话无计划时按需新建。旧代码会把该来源清洗为 `input` 并丢弃 `requestText`，计划显示为通用工具卡。
 
+### 引用与跳转（2026-11-25）
+
+`explain_card` / `visualize` 的就绪结果带程序生成的 `refId`（`fig-` + 6 位）；`agent/references.js` 负责编号、收集与解析。正文用 `[文字](#ref:fig-…)`、`[文字](#concept:id)`，题目用可选 `refs`（至多 3 个，本轮刚画的图写 `latest_figure`）；未知引用忽略并在结果中告知模型。概念指向它最近一次成为当前概念的轮次。
+
+`projectReferences` 给出页面可跳转的目录与“图 N”编号。跳转在页内比对 `data-ref-target`，不拼选择器、不改地址；失效引用显示为普通文字。从答题卡跳转只隐藏卡片，草稿保留。被引用内容（标题与所在轮讲解开头 500 字）作为材料发给副模型，优先级在约定之后、本轮正文之前。旧图没有 `refId`，照常显示但不可引用；旧代码丢弃 `refs`。
+
 ### 候选答案材料与调试（2026-11-25）
 
-`services/buildOptionContext.js` 组装材料：主模型写的 `context`、学习计划的约定、本轮正文、学生本轮输入；`context` 为空时才附最近 6 轮历史兜底，写“无”视为声明无依赖。总预算 6000 字，按上述顺序优先保留。图只放标题；工具结果、源码、候选项与 reasoning 不进入。`context` 在工具声明中必填，手写校验仍允许缺省，漏写不拒绝问题。材料、问题与防编造约束放在同一条 user 消息，system prompt 仍由配置决定。学生本轮输入会发送到副模型端点。
+`services/buildOptionContext.js` 组装材料：主模型写的 `context`、学习计划的约定、题目引用的内容、本轮正文、学生本轮输入；`context` 为空时才附最近 6 轮历史兜底，写“无”视为声明无依赖。总预算 6000 字，按上述顺序优先保留。图只放标题；工具结果、源码、候选项与 reasoning 不进入。`context` 在工具声明中必填，手写校验仍允许缺省，漏写不拒绝问题。材料、问题与防编造约束放在同一条 user 消息，system prompt 仍由配置决定。学生本轮输入会发送到副模型端点。
 
 调试沿用 `developerMode` 开关键。打开后运行层经 `onDebug` 旁路回调产生记录，不进事件流、reducer、历史或备份；不含端点与密钥，只存页面内存，最多 40 条，关闭即清空。主模型记录是本轮首次请求的内容，不含后续步骤的工具往返。
 

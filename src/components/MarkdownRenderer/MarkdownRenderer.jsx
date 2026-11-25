@@ -4,6 +4,8 @@ import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Icon, cn } from '@/components/ui';
+import { isRefHref } from '../../agent/references.js';
+import { ReferenceLink } from '../References/References';
 import { MATH_REHYPE_PLUGINS, MATH_REMARK_PLUGINS, escapeCurrency } from '../../utils/markdownMath';
 
 /**
@@ -106,13 +108,18 @@ const MarkdownRenderer = ({
           </code>
         );
       },
-      a: ({ ...props }) => (
+      a: ({ href, children, ...props }) => isRefHref(href) ? (
+        <ReferenceLink href={href}>{children}</ReferenceLink>
+      ) : (
         <a
           className="text-sage-700 underline-offset-2 hover:text-sage-900 hover:underline"
           target="_blank"
           rel="noopener noreferrer"
+          href={href}
           {...props}
-        />
+        >
+          {children}
+        </a>
       ),
       ul: ({ ...props }) => <ul className="my-2 list-disc space-y-1 pl-6" {...props} />,
       ol: ({ ...props }) => <ol className="my-2 list-decimal space-y-1 pl-6" {...props} />,

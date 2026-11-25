@@ -9,6 +9,7 @@
  */
 
 import { PLAN_TOOL_NAME, planFromMessages, planFromToolOutput } from '../agent/learningPlan.js';
+import { figureFromToolOutput, sanitizeRefs } from '../agent/references.js';
 import { sanitizeTokenUsage } from './tokenUsage.js';
 
 /** turn 状态。`interrupted` 只在恢复历史时出现。 */
@@ -183,12 +184,14 @@ function questionFromToolResult(toolCallId, output) {
   if (output.status !== 'ready' || output.nextAction !== 'await_user') return null;
 
   const options = Array.isArray(output.options) ? output.options : [];
+  const refs = sanitizeRefs(output.refs);
   return {
     toolCallId,
     id: output.questionId,
     text: stripGate(output.question),
     options,
     optionsStatus: output.optionsStatus ?? (options.length > 0 ? 'ready' : 'unavailable'),
+    ...(refs.length > 0 ? { refs } : {}),
     answer: null,
     selectedLevel: null,
     state: QUESTION_STATE.PENDING,
@@ -979,6 +982,7 @@ export function projectTurns(turns) {
         selectedLevel: question.selectedLevel,
         state: question.state,
         resolution: question.resolution ?? null,
+        refs: question.refs ?? [],
       })),
       error: turn.error ?? null,
       errorKind: turn.errorKind ?? null,
@@ -1010,23 +1014,55 @@ export function collectStudentTexts(turns) {
 export function projectLearningPlan(turns) {
   const list = Array.isArray(turns) ? turns : [];
   for (let i = list.length - 1; i >= 0; i -= 1) {
-    const turn = list[i];
-    let plan = null;
-    if (turn?.status === TURN_STATUS.STREAMING) {
-      const part = (turn.parts ?? []).findLast(
-        (item) =>
-          item?.type === 'tool' &&
-          item.toolName === PLAN_TOOL_NAME &&
-          item.runId === turn.runId &&
-          planFromToolOutput(item.output),
-      );
-      plan = part ? planFromToolOutput(part.output) : null;
-    } else if (CONTEXT_ELIGIBLE_STATUSES.has(turn?.status)) {
-      plan = planFromMessages(turn.modelMessages);
-    }
+    const plan = planOfTurn(list[i]);
     if (plan) return plan;
   }
   return null;
+}
+
+function planOfTurn(turn) {
+  if (turn?.status === TURN_STATUS.STREAMING) {
+    const part = (turn.parts ?? []).findLast(
+      (item) =>
+        item?.type === 'tool' &&
+        item.toolName === PLAN_TOOL_NAME &&
+        item.runId === turn.runId &&
+        planFromToolOutput(item.output),
+    );
+    return part ? planFromToolOutput(part.output) : null;
+  }
+  return CONTEXT_ELIGIBLE_STATUSES.has(turn?.status) ? planFromMessages(turn.modelMessages) : null;
+}
+
+/** 跳转目标的标识：图用编号，讲解用所在轮。 */
+export const turnAnchor = (turnId) => `turn:${turnId}`;
+
+/**
+ * 页面上可跳转的引用目标：`ref → { ref, kind, title, anchor, number? }`。
+ * 图按出现顺序编号；概念指向它最近一次成为当前概念的那一轮。没有编号的旧图不在其中。
+ */
+export function projectReferences(turns) {
+  const references = new Map();
+  let number = 0;
+  let currentConceptId = '';
+  for (const turn of Array.isArray(turns) ? turns : []) {
+    for (const part of Array.isArray(turn?.parts) ? turn.parts : []) {
+      const figure = part?.type === 'tool' ? figureFromToolOutput(part.toolName, part.output) : null;
+      if (!figure || references.has(figure.refId)) continue;
+      number += 1;
+      references.set(figure.refId, {
+        ref: figure.refId, kind: 'figure', number, title: figure.title, anchor: figure.refId,
+      });
+    }
+    const plan = planOfTurn(turn);
+    if (!plan || plan.currentConceptId === currentConceptId) continue;
+    currentConceptId = plan.currentConceptId;
+    const concept = plan.concepts.find((item) => item.id === currentConceptId);
+    if (!concept) continue;
+    const ref = `concept:${concept.id}`;
+    references.set(ref, { ref, kind: 'concept', title: concept.name, anchor: turnAnchor(turn.id) });
+  }
+  return references;
 }
 
 /**

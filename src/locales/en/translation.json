@@ -90,6 +90,13 @@
       "optionDefault": "Please select a mode"
     },
     "AgentChat": {
+      "references": {
+        "jump": "Jump to {{name}}",
+        "figure": "Figure {{number}}: {{title}}",
+        "figureNumber": "Figure {{number}}",
+        "concept": "Explanation: {{title}}",
+        "back": "Go back"
+      },
       "plan": {
         "title": "Learning plan",
         "toggle": "View learning plan",

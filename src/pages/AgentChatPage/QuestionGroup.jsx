@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Icon, cn } from '@/components/ui';
+import { ReferenceChips } from '../../components/References/References';
 import MarkdownContent from '../../components/MessageContent/MarkdownContent';
 import {
   QUESTION_STATE,
@@ -184,6 +185,8 @@ function QuestionTile({ question, index, onOpen, onSkip, onExplain }) {
         )}
       </div>
 
+      <ReferenceChips refs={question.refs} className="mt-2" />
+
       {isAnswered && question.answer ? (
         <p className="mt-2 line-clamp-2 border-t border-dashed border-paper-200 pt-1.5 text-caption leading-relaxed text-ink-500">
           {t('AgentChat.questionGroup.yourAnswer', { answer: question.answer })}
@@ -248,6 +251,7 @@ QuestionTile.propTypes = {
     optionsStatus: PropTypes.string,
     options: PropTypes.array,
     answer: PropTypes.string,
+    refs: PropTypes.arrayOf(PropTypes.string),
   }).isRequired,
   index: PropTypes.number.isRequired,
   onOpen: PropTypes.func.isRequired,

@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
 import { Icon, cn } from '@/components/ui';
+import { isRefHref } from '../../agent/references.js';
+import { ReferenceLink } from '../References/References';
 import { MATH_REHYPE_PLUGINS, MATH_REMARK_PLUGINS, escapeCurrency } from '../../utils/markdownMath';
 
 /**
@@ -82,7 +84,9 @@ function MarkdownContent({ content, compact = false }) {
       strong: ({ children }) => <strong className="font-semibold text-ink-900">{children}</strong>,
       em: ({ children }) => <em className="italic text-ink-700">{children}</em>,
       del: ({ children }) => <del className="text-ink-500 line-through">{children}</del>,
-      a: ({ children, href }) => (
+      a: ({ children, href }) => isRefHref(href) ? (
+        <ReferenceLink href={href}>{children}</ReferenceLink>
+      ) : (
         <a
           href={href}
           target="_blank"

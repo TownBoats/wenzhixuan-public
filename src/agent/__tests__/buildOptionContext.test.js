@@ -106,6 +106,15 @@ test('任意预算都不超限，兜底历史优先保留最近的内容', () =>
   assert.doesNotMatch(result, /很早/);
 });
 
+test('题目引用的内容：缺省不出现，任意预算不超限', () => {
+  assert.match(buildOptionContext({ references: '图「一」' }).text, /^【题目引用的内容】\n图「一」$/);
+  assert.doesNotMatch(buildOptionContext({ messages: HISTORY }).text, /题目引用/);
+  for (let maxChars = 0; maxChars <= 300; maxChars += 7) {
+    const { text: result } = buildOptionContext({ references: '引'.repeat(200), currentText: '讲'.repeat(200), maxChars });
+    assert.ok(length(result) <= maxChars);
+  }
+});
+
 test('没有材料或输入异常时 text 为空串', () => {
   assert.equal(buildOptionContext().text, '');
   assert.equal(buildOptionContext({ messages: null, currentText: 1, modelContext: ' ' }).text, '');

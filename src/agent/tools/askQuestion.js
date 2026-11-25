@@ -10,6 +10,7 @@
  */
 import { jsonSchema, tool } from 'ai';
 
+import { LATEST_FIGURE, MAX_REFS } from '../references.js';
 import {
   OPTION_ERROR_FAILED,
   OPTION_ERROR_NOT_CONFIGURED,
@@ -45,13 +46,20 @@ export const ASK_QUESTION_INPUT_SCHEMA = jsonSchema({
       type: 'string',
       description: `回答这个问题必需的事实、约定和前文结论，例如「本例中数组从 0 开始编号；前面已得出比较次数不超过 2log₂(n+1)」。系统会附上你本轮的讲解和学生本轮的输入，不必重复；更早的依据只能靠这里提供。确实没有依赖时写「无」（≤${CONTEXT_MAX_LENGTH} 字）`,
     },
+    refs: {
+      type: 'array',
+      items: { type: 'string' },
+      description:
+        `可选，这道题要学生对照的图或讲解，至多 ${MAX_REFS} 个：图的 refId（如 fig-k3x9ab）、` +
+        `concept:概念id；本轮刚画、还不知道编号的图写 ${LATEST_FIGURE}。学生可从题目跳过去看`,
+    },
   },
   // 声明必填以促使主模型填写；漏写时不拒绝问题，由材料组装兜底
   required: ['question', 'context'],
   additionalProperties: false,
 });
 
-const ALLOWED_FIELDS = new Set(['question', 'context']);
+const ALLOWED_FIELDS = new Set(['question', 'context', 'refs']);
 
 /** 按码点计长度，避免 emoji 之类被算成两个字符。 */
 const charLength = (text) => [...text].length;
@@ -88,7 +96,7 @@ export function validateAskQuestionInput(input) {
     return { ok: false, message: `context 不能超过 ${CONTEXT_MAX_LENGTH} 字` };
   }
 
-  return { ok: true, question, context: context || undefined };
+  return { ok: true, question, context: context || undefined, ...(input.refs === undefined ? {} : { refs: input.refs }) };
 }
 
 let fallbackSequence = 0;
@@ -110,6 +118,7 @@ function createQuestionId() {
  * @param {string} params.optionSystemPrompt   副模型提示词（上层从配置层读取后传入）
  * @param {Function} [params.generateOptions]  副模型服务，默认 `generateAnswerOptions`；测试注入假函数
  * @param {Function} [params.getRemainingMs]   主运行剩余时间，用于夹住副模型预算
+ * @param {Function} [params.resolveRefs]      解析引用，返回 { refs, unknown }；缺省时忽略引用
  * @param {Function} [params.buildContext]     把主模型的补充说明扩展为完整教学材料；缺省时只用补充说明
  * @param {(record: Object) => void} [params.onDebug] 调试记录回调
  * @returns {Object} AI SDK 工具对象
@@ -120,6 +129,7 @@ export function createAskQuestionTool({
   optionSystemPrompt,
   generateOptions = generateAnswerOptions,
   getRemainingMs,
+  resolveRefs,
   buildContext,
   onDebug,
 } = {}) {
@@ -163,9 +173,15 @@ export function createAskQuestionTool({
 
       // ── 5. 问题 ID 由程序生成 ──
       const questionId = createQuestionId();
+      // 引用有误只忽略，不影响问题
+      const { refs, unknown } = resolveRefs?.(checked.refs) ?? { refs: [], unknown: [] };
+      const referenceFields = {
+        ...(refs.length > 0 ? { refs } : {}),
+        ...(unknown.length > 0 ? { notice: `以下引用不存在，已忽略：${unknown.join('、')}` } : {}),
+      };
 
       const material =
-        typeof buildContext === 'function' ? buildContext(checked.context) : { text: checked.context };
+        typeof buildContext === 'function' ? buildContext(checked.context, refs) : { text: checked.context };
       const startedAt = Date.now();
       const debug = (patch) => onDebug?.({ toolCallId, ...patch });
       debug({
@@ -187,6 +203,7 @@ export function createAskQuestionTool({
           status: 'ready',
           questionId,
           question: checked.question,
+          ...referenceFields,
           options: [],
           optionsStatus: 'unavailable',
           errorCode: OPTION_ERROR_NOT_CONFIGURED,
@@ -216,6 +233,7 @@ export function createAskQuestionTool({
           status: 'ready',
           questionId,
           question: checked.question,
+          ...referenceFields,
           options: optionResult.options,
           optionsStatus: 'ready',
           nextAction: 'await_user',
@@ -226,6 +244,7 @@ export function createAskQuestionTool({
         status: 'ready',
         questionId,
         question: checked.question,
+        ...referenceFields,
         options: [],
         optionsStatus: 'unavailable',
         errorCode: optionResult?.errorCode || OPTION_ERROR_FAILED,

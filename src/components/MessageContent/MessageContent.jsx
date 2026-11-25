@@ -1,10 +1,11 @@
-import { memo, useId, useState } from 'react';
+import { memo, useContext, useId, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Icon, cn } from '@/components/ui';
 import ToolCallCard from '../ToolCallCard/ToolCallCard';
 import VisualizeCard from '../VisualizeCard/VisualizeCard';
 import ExplainCard from '../ExplainCard/ExplainCard';
+import { ReferenceContext } from '../References/referenceContext';
 import MarkdownContent from './MarkdownContent';
 
 /** visualize 工具的就绪结果交给沙箱渲染卡；其余状态（running / rejected / failed）仍走通用工具卡。 */
@@ -143,6 +144,26 @@ function ThinkingBlock({ text }) {
 
 ThinkingBlock.propTypes = { text: PropTypes.string.isRequired };
 
+/** 可被引用的图：显示编号并作为跳转目标；旧图没有编号，原样显示。 */
+function FigureAnchor({ refId, children }) {
+  const { t } = useTranslation();
+  const { references } = useContext(ReferenceContext);
+  if (!refId) return children;
+  const number = references.get(refId)?.number;
+  return (
+    <figure tabIndex={-1} data-ref-target={refId} className="m-0 scroll-mt-4 rounded-md outline-none">
+      {children}
+      {number && (
+        <figcaption className="mt-1 text-center text-caption text-ink-500">
+          {t('AgentChat.references.figureNumber', { number })}
+        </figcaption>
+      )}
+    </figure>
+  );
+}
+
+FigureAnchor.propTypes = { refId: PropTypes.string, children: PropTypes.node.isRequired };
+
 function MessageContent({ blocks }) {
   return (
     <div className="space-y-3">
@@ -181,21 +202,20 @@ function MessageContent({ blocks }) {
           }
           if (isReadyVisualizeBlock(block)) {
             return (
-              <VisualizeCard
-                key={block.toolCallId ?? `tool-${index}`}
-                title={block.output.title}
-                html={block.output.html}
-              />
+              <FigureAnchor key={block.toolCallId ?? `tool-${index}`} refId={block.output.refId}>
+                <VisualizeCard title={block.output.title} html={block.output.html} />
+              </FigureAnchor>
             );
           }
           if (isReadyExplainCardBlock(block)) {
             return (
-              <ExplainCard
-                key={block.toolCallId ?? `tool-${index}`}
-                title={block.output.title}
-                svg={block.output.svg}
-                viewBox={block.output.viewBox}
-              />
+              <FigureAnchor key={block.toolCallId ?? `tool-${index}`} refId={block.output.refId}>
+                <ExplainCard
+                  title={block.output.title}
+                  svg={block.output.svg}
+                  viewBox={block.output.viewBox}
+                />
+              </FigureAnchor>
             );
           }
           if (isStreamingExplainCardBlock(block)) {

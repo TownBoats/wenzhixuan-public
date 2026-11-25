@@ -6,6 +6,8 @@
  */
 import { jsonSchema, tool } from 'ai';
 
+import { createFigureId } from '../references.js';
+
 export const VISUALIZE_TOOL_NAME = 'visualize';
 
 export const TITLE_MAX_LENGTH = 80;
@@ -88,9 +90,12 @@ export function validateVisualizeInput(input) {
  *
  * 无外部依赖：不联网、不读存储、不碰 React，可被 `node --test` 直接导入。
  *
+ * @param {Object} [params]
+ * @param {() => string} [params.createRefId] 生成图编号，由上层保证会话内不重复
+ * @param {(figure: Object) => void} [params.onFigure] 图就绪后的通知（供同轮提问引用）
  * @returns {Object} AI SDK 工具对象
  */
-export function createVisualizeTool() {
+export function createVisualizeTool({ createRefId = () => createFigureId(), onFigure } = {}) {
   const resultsByCallId = new Map();
 
   const remember = (toolCallId, result) => {
@@ -118,8 +123,11 @@ export function createVisualizeTool() {
       }
 
       // ── 3. 片段就绪：展示层从 output 里取 title / html 渲染沙箱 ──
+      const refId = createRefId();
+      onFigure?.({ refId, title: checked.title });
       return remember(toolCallId, {
         status: 'ready',
+        refId,
         title: checked.title,
         html: checked.html,
       });
